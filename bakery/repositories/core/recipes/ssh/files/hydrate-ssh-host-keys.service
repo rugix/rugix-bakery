@@ -1,0 +1,10 @@
+[Unit]
+Description=Hydrate SSH Host Keys
+Before=ssh.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/rugpi/scripts/hydrate-ssh-host-keys.sh
+
+[Install]
+WantedBy=multi-user.target

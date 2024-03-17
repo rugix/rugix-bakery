@@ -1,0 +1,2 @@
+description = "disable swapping"
+priority = 700_000  # Execute very early.
