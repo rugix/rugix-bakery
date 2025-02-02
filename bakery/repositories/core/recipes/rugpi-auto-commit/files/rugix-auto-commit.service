@@ -3,7 +3,7 @@ Description=Commit the Currently Booted System
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/rugpi-ctrl system commit
+ExecStart=/usr/bin/rugix-ctrl system commit
 
 [Install]
 WantedBy=multi-user.target

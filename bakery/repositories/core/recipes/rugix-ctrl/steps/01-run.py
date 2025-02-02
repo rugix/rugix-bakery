@@ -4,10 +4,10 @@ import os
 import pathlib
 import sys
 
-RUGPI_ROOT_DIR = os.environ.get("RUGPI_ROOT_DIR", None)
+RUGIX_ROOT_DIR = os.environ.get("RUGIX_ROOT_DIR", None)
 
-if RUGPI_ROOT_DIR is not None:
-    fstab = pathlib.Path(RUGPI_ROOT_DIR) / "etc" / "fstab"
+if RUGIX_ROOT_DIR is not None:
+    fstab = pathlib.Path(RUGIX_ROOT_DIR) / "etc" / "fstab"
 else:
     try:
         fstab = pathlib.Path(sys.argv[1])

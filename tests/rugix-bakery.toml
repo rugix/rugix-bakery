@@ -1,5 +1,5 @@
 [repositories]
-rugpi-extra = { git = "https://github.com/silitics/rugpi-extra.git" }
+rugix-extra = { git = "https://github.com/silitics/rugix-extra.git" }
 
 [systems.tryboot]
 layer = "customized"

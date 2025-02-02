@@ -1,5 +1,5 @@
 [repositories]
-rugpi-extra = { git = "https://github.com/silitics/rugpi-extra.git", branch = "v0.7" }
+rugix-extra = { git = "https://github.com/silitics/rugix-extra.git", branch = "v0.8" }
 
 [images.customized-amd64]
 layer = "customized"
