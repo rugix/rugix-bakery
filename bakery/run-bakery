@@ -17,7 +17,7 @@ else
     RUGIX_VERSION=${RUGIX_VERSION:-"dev"}
 fi
 
-RUGIX_BAKERY_IMAGE=${RUGIX_BAKERY_IMAGE:-"ghcr.io/silitics/rugix-bakery:${RUGIX_VERSION}"}
+RUGIX_BAKERY_IMAGE=${RUGIX_BAKERY_IMAGE:-"ghcr.io/rugix/rugix-bakery:${RUGIX_VERSION}"}
 
 if [ "${RUGIX_DEV}" = "false" ]; then
     $DOCKER pull "${RUGIX_BAKERY_IMAGE}"

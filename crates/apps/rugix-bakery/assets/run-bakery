@@ -14,7 +14,7 @@ else
     RUGIX_VERSION=${RUGIX_VERSION:-"dev"}
 fi
 
-RUGIX_BAKERY_IMAGE=${RUGIX_BAKERY_IMAGE:-"ghcr.io/silitics/rugix-bakery:${RUGIX_VERSION}"}
+RUGIX_BAKERY_IMAGE=${RUGIX_BAKERY_IMAGE:-"ghcr.io/rugix/rugix-bakery:${RUGIX_VERSION}"}
 
 if [ -t 0 ] && [ -t 1 ]; then
     DOCKER_FLAGS="${DOCKER_FLAGS} -it"

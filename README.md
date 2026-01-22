@@ -8,8 +8,8 @@
     The open-source tool suite to build <em>secure</em> and <em>reliable</em> embedded Linux<br> devices with <em>efficient and secure</em> over-the-air update capabilities.
 </h4>
 <p align="center">
-  <a href="https://github.com/silitics/rugix/releases"><img alt="Rugix Version Badge" src="https://img.shields.io/github/v/tag/silitics/rugix?label=version"></a>
-  <a href="https://github.com/silitics/rugix/actions"><img alt="Pipeline Status Badge" src="https://img.shields.io/github/actions/workflow/status/silitics/rugix/check-and-lint.yml"></a>
+  <a href="https://github.com/rugix/rugix/releases"><img alt="Rugix Version Badge" src="https://img.shields.io/github/v/tag/rugix/rugix?label=version"></a>
+  <a href="https://github.com/rugix/rugix/actions"><img alt="Pipeline Status Badge" src="https://img.shields.io/github/actions/workflow/status/rugix/rugix/check-and-lint.yml"></a>
 </p>
 
 💡 **TL;DR**: Rugix is a suite of open-source tools to **build and deploy reliable embedded Linux devices at scale with efficient and secure over-the-air (OTA) update capabilities**.
@@ -23,7 +23,6 @@ By providing a unified and efficient modern development workflow, **Rugix enable
 If you prefer [Yocto](https://www.yoctoproject.org) over Rugix Bakery, we also provide open-source [Yocto layers for Rugix](https://github.com/silitics/meta-rugix/).
 
 [**Get started today! Build your first system and deploy an update, all in under 30 minutes!**](https://rugix.org/docs/getting-started) 🚀
-
 
 ## Rugix Ctrl: The Update Mechanism
 
@@ -43,7 +42,6 @@ Rugix Ctrl **supports or can be adapted to almost any requirements you may have*
 
 [For details, check out Rugix Ctrl's documentation.](https://rugix.org/docs/ctrl)
 
-
 ## Rugix Bakery: The Development Tool
 
 You wrote your application and now need to integrate it into a full system ready to be flashed onto your device or deployed as an update?
@@ -59,7 +57,6 @@ With Rugix Bakery, you get a **comprehensive tool to build, test, and run your s
 
 [For details, check out Rugix Bakery's documentation.](https://rugix.org/docs/bakery)
 
-
 ## Why Rugix?
 
 While there are already plenty of tools for building images, updating systems, and managing state in the embedded Linux ecosystem, integrating them into a robust, coherent solution remains a significant challenge.
@@ -70,10 +67,9 @@ While simplicity is our first key tenet, our second is to **provide solutions th
 Embedded devices must stay operational no matter what, always, anywhere.
 With Rugix, we **make it easy to follow best practices** for building reliable devices, like read-only system partitions, fully atomic updates with on-device validation, and declarative, ideally fully reproducible builds.
 
-
 ## ⚖️ Licensing
 
-This project is licensed under either [MIT](https://github.com/silitics/rugix/blob/main/LICENSE-MIT) or [Apache 2.0](https://github.com/silitics/rugix/blob/main/LICENSE-APACHE) at your opinion.
+This project is licensed under either [MIT](https://github.com/rugix/rugix/blob/main/LICENSE-MIT) or [Apache 2.0](https://github.com/rugix/rugix/blob/main/LICENSE-APACHE) at your opinion.
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this project by you, as defined in the Apache 2.0 license, shall be dual licensed as above, without any additional terms or conditions.
 

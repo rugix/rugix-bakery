@@ -1,4 +1,4 @@
-#:schema https://raw.githubusercontent.com/silitics/rugix/refs/heads/main/schemas/rugix-bundle-manifest.schema.json
+#:schema https://raw.githubusercontent.com/rugix/rugix/refs/heads/main/schemas/rugix-bundle-manifest.schema.json
 
 update-type = "incremental"
 

@@ -6,7 +6,7 @@ resolver = "2"
 authors = ["Silitics GmbH <info@silitics.com>"]
 version = "0.1.0"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/silitics/rugix/"
+repository = "https://github.com/rugix/rugix/"
 homepage = "https://rugix.org/"
 
 [workspace.dependencies]

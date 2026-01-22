@@ -14,7 +14,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: "ghcr.io/silitics/rugix-bakery"
+  IMAGE_NAME: "ghcr.io/rugix/rugix-bakery"
 
 jobs:
   build_binaries_linux:
