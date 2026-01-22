@@ -217,6 +217,9 @@ jobs:
   test_bakery_image:
     name: Test Bakery Image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     needs:
       - bakery_metadata
       - build_bakery_images
