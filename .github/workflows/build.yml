@@ -139,6 +139,9 @@ jobs:
   build_bakery_images:
     name: "Build Bakery Image (${{ matrix.arch }})"
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
     needs:
       - bakery_metadata
       - build_binaries_linux
