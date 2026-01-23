@@ -315,6 +315,9 @@ jobs:
   upload_release_assets:
     name: "Upload Release Assets"
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     needs:
       - build_binaries_linux
       - build_binaries_mac
