@@ -159,6 +159,25 @@ pub fn customize(
 
         return Err(error);
     }
+
+    // Clean up /run and /tmp directories - we can't mount tmpfs in a user namespace,
+    // so we remove and recreate them to ensure they're empty in the final image.
+    for dir_name in ["run", "tmp"] {
+        let dir_path = root_dir.join(dir_name);
+        if dir_path.exists() {
+            // Preserve the original permissions
+            let permissions = fs::metadata(&dir_path)
+                .whatever_with(|_| format!("unable to read permissions of /{dir_name}"))?
+                .permissions();
+            fs::remove_dir_all(&dir_path)
+                .whatever_with(|_| format!("unable to remove /{dir_name}"))?;
+            fs::create_dir_all(&dir_path)
+                .whatever_with(|_| format!("unable to create /{dir_name}"))?;
+            fs::set_permissions(&dir_path, permissions)
+                .whatever_with(|_| format!("unable to set permissions of /{dir_name}"))?;
+        }
+    }
+
     info!("packing system files");
     run!([
         "tar",
@@ -334,26 +353,16 @@ fn apply_recipes(
         stack: &mut MountStack,
     ) -> BakeryResult<()> {
         stack.push(
-            Mounted::bind("/dev", root_dir_path.join("dev")).whatever("unable to mount /dev")?,
+            Mounted::bind_recursive("/dev", root_dir_path.join("dev"))
+                .whatever("unable to mount /dev")?,
         );
         stack.push(
-            Mounted::bind("/dev/pts", root_dir_path.join("dev/pts"))
-                .whatever("unable to mount /dev/pts")?,
+            Mounted::bind_recursive("/sys", root_dir_path.join("sys"))
+                .whatever("unable to mount /sys")?,
         );
         stack.push(
-            Mounted::bind("/sys", root_dir_path.join("sys")).whatever("unable to mount /sys")?,
-        );
-        stack.push(
-            Mounted::mount_fs("proc", "proc", root_dir_path.join("proc"))
+            Mounted::bind_recursive("/proc", root_dir_path.join("proc"))
                 .whatever("unable to mount /proc")?,
-        );
-        stack.push(
-            Mounted::mount_fs("tmpfs", "tmpfs", root_dir_path.join("run"))
-                .whatever("unable to mount /run")?,
-        );
-        stack.push(
-            Mounted::mount_fs("tmpfs", "tmpfs", root_dir_path.join("tmp"))
-                .whatever("unable to mount /tmp")?,
         );
 
         let project_dir = root_dir_path.join("run/rugix/bakery/project");
@@ -440,8 +449,9 @@ fn apply_recipes(
                     let build_env_path = root_dir_path.join("run/rugix/bakery/build-env");
                     fs::create_dir_all(&build_env_path)
                         .whatever("unable to create recipe directory")?;
-                    let _mounted_build_env = Mounted::bind("/run/rugix/bakery", &build_env_path)
-                        .whatever("unable to bind mount recipe")?;
+                    let _mounted_build_env =
+                        Mounted::bind_recursive("/run/rugix/bakery", &build_env_path)
+                            .whatever("unable to bind mount recipe")?;
                     let script = format!("/run/rugix/bakery/recipe/steps/{}", step.filename);
                     let mut vars = vars! {
                         DEBIAN_FRONTEND = "noninteractive",

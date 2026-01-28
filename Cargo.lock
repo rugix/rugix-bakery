@@ -2517,6 +2517,7 @@ dependencies = [
  "rugix-cli",
  "rugix-common",
  "rugix-fs",
+ "rugix-isolator",
  "rugix-tasks",
  "rugix-version",
  "russh",
@@ -2702,6 +2703,22 @@ dependencies = [
  "rugix-tasks",
  "tracing",
  "xscript 0.4.0",
+]
+
+[[package]]
+name = "rugix-isolate"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "libc",
+ "rugix-isolator",
+]
+
+[[package]]
+name = "rugix-isolator"
+version = "0.1.0"
+dependencies = [
+ "nix 0.29.0",
 ]
 
 [[package]]

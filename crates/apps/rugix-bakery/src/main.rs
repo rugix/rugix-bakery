@@ -21,5 +21,9 @@ pub type BakeryResult<T> = Result<T, Report<BakeryError>>;
 
 /// Entrypoint of the executable.
 pub fn main() {
+    if let Err(error) = rugix_isolator::Isolator::new().isolate() {
+        eprintln!("warning: unable to isolate process: {error}");
+        eprintln!("continuing without isolation...");
+    }
     rugix_cli::CliBuilder::new().run(|| cli::run(cli::args::Args::parse()))
 }
