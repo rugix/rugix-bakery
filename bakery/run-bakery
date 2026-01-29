@@ -2,7 +2,20 @@
 
 set -euo pipefail
 
-DOCKER=${DOCKER:-"docker"}
+if command -v podman >/dev/null 2>&1 && [ -z "${DOCKER:-}" ]; then
+    echo ">>> Using podman as the container runtime." >&2
+    DOCKER="podman"
+    RUGIX_PRIVILEGED=${RUGIX_PRIVILEGED:-"false"}
+else
+    DOCKER=${DOCKER:-"docker"}
+    RUGIX_PRIVILEGED=${RUGIX_PRIVILEGED:-"true"}
+fi
+
+if [ "${RUGIX_PRIVILEGED}" = "false" ]; then
+    echo ">>> Running without extended privileges." >&2
+    RUGIX_PRIVILEGED="false"
+fi
+
 DOCKER_FLAGS=${DOCKER_FLAGS:-""}
 
 RUGIX_DEV=${RUGIX_DEV:-"false"}
@@ -41,7 +54,13 @@ if [ "${1:-}" == "run" ]; then
     DOCKER_FLAGS="${DOCKER_FLAGS} -p 127.0.0.1:2222:2222 -p [::1]:2222:2222"
 fi
 
-exec $DOCKER run --rm --privileged \
+PRIVILEGED_FLAG=""
+if [ "${RUGIX_PRIVILEGED}" = "true" ]; then
+    PRIVILEGED_FLAG="--privileged"
+fi
+
+exec $DOCKER run --rm \
+    $PRIVILEGED_FLAG \
     $DOCKER_FLAGS \
     -v "$(pwd)":/project \
     -v "$(pwd)/${RUGIX_CONTEXT_DIR}":/run/rugix/bakery/context \
