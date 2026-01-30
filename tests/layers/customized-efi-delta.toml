@@ -1,5 +1,0 @@
-parent = "customized-efi"
-
-recipes = [
-    "update-hello-world",
-]

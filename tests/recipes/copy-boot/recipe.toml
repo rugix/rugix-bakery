@@ -1,2 +1,0 @@
-description = "copy boot partition into system"
-priority = -5_000_000
