@@ -1,3 +1,6 @@
 [submodule "tests"]
 	path = tests
 	url = ../rugix-tests
+[submodule "repos/rugix"]
+	path = repos/rugix
+	url = ../rugix
