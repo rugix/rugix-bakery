@@ -66,7 +66,14 @@ jobs:
         run: |
           cd target/${{ matrix.target }}/release
           for binary in rugix-*[!d]; do
-            cp ../../../crates/apps/$binary/$binary.cdx.json $binary.cdx.json
+            # Check both locations: bakery apps and core apps from submodule
+            if [ -f "../../../crates/apps/$binary/$binary.cdx.json" ]; then
+              cp ../../../crates/apps/$binary/$binary.cdx.json $binary.cdx.json
+            elif [ -f "../../../repos/rugix/crates/apps/$binary/$binary.cdx.json" ]; then
+              cp ../../../repos/rugix/crates/apps/$binary/$binary.cdx.json $binary.cdx.json
+            else
+              echo "Warning: SBOM not found for $binary"
+            fi
           done
           tar -cf ../../../${{ matrix.target }}.tar rugix-*[!d] *.cdx.json
       - name: Upload Artifact
