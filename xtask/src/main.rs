@@ -86,7 +86,7 @@ pub fn build_image() -> anyhow::Result<()> {
             "-t",
             "ghcr.io/rugix/rugix-bakery:dev",
             "-f",
-            "bakery/Dockerfile",
+            "container/Dockerfile",
             "."
         ]
         .with_stdout(Out::Inherit)

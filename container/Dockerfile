@@ -106,8 +106,8 @@ RUN locale-gen en_US.UTF-8 \
 ENV LANGUAGE=en_US.UTF-8 LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 
 COPY boot /usr/share/rugix/boot
-COPY bakery/repositories /usr/share/rugix/repositories
-COPY bakery/templates /usr/share/rugix/templates
+COPY container/repositories /usr/share/rugix/repositories
+COPY container/templates /usr/share/rugix/templates
 
 COPY build/binaries /usr/share/rugix/binaries
 
