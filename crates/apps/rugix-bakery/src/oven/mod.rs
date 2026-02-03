@@ -7,8 +7,7 @@ use clap::Args;
 use layer::FrozenLayer;
 use reportify::{bail, whatever, ResultExt};
 use rugix_bundle::manifest::{self, BundleManifest, ChunkerAlgorithm};
-use rugix_common::loop_dev::LoopDevice;
-use rugix_common::mount::Mounted;
+use rugix_common::img_extract::extract_image_partitions;
 use system::ReleaseInfo;
 use tempfile::tempdir;
 use tracing::info;
@@ -181,12 +180,13 @@ fn extract(project: &ProjectRef, image_url: &str, layer_path: &Path) -> BakeryRe
         run!(["tar", "-c", "-f", &layer_path, "-C", temp_dir_path, "."])
             .whatever("unable to create layer tar file")?;
     } else {
-        info!("creating `.tar` archive with system files");
-        let loop_dev = LoopDevice::attach(image_path).whatever("unable to setup loop device")?;
-        let _mounted_root = Mounted::mount(loop_dev.partition(2), &system_dir)
-            .whatever("unable to mount system partition")?;
-        let _mounted_boot = Mounted::mount(loop_dev.partition(1), temp_dir_path.join("roots/boot"))
-            .whatever("unable to mount boot partition")?;
+        info!("extracting partitions from disk image");
+        extract_image_partitions(
+            &image_path,
+            &[(1, boot_dir.as_path()), (2, system_dir.as_path())],
+            temp_dir_path,
+        )
+        .whatever("unable to extract partitions from disk image")?;
         run!(["tar", "-c", "-f", &layer_path, "-C", temp_dir_path, "."])
             .whatever("unable to create layer tar file")?;
     }
