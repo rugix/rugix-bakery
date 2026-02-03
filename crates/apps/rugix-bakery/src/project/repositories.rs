@@ -13,6 +13,7 @@ use reportify::{bail, ResultExt};
 use crate::config::repositories::{
     GitSourceConfig, PathSourceConfig, RepositoryConfig, SourceConfig,
 };
+use crate::paths;
 use crate::utils::idx_vec::{new_idx_type, IdxVec};
 use crate::BakeryResult;
 
@@ -31,7 +32,7 @@ impl ProjectRepositories {
         let mut repositories = RepositoriesLoader::new(project.dir());
         let core = repositories.load_source(
             SourceConfig::Path(PathSourceConfig {
-                path: "/usr/share/rugix/repositories/core".into(),
+                path: paths::repositories_dir().join("core"),
             }),
             false,
         )?;

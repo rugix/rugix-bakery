@@ -25,6 +25,7 @@ use tracing::{debug, error};
 use crate::cli::status::CliLog;
 use crate::config::systems::Architecture;
 use crate::config::tests::SystemConfig;
+use crate::paths;
 use crate::BakeryResult;
 
 use super::TestCtx;
@@ -319,8 +320,7 @@ pub async fn start(
     command.args(&["-device", "virtio-net-pci,netdev=net0", "-netdev"]);
     command.arg("user,id=net0,hostfwd=tcp:0.0.0.0:2222-:22");
     let efi_code = match arch {
-        Architecture::Amd64 => "/usr/share/OVMF/OVMF_CODE.fd",
-        Architecture::Arm64 => "/usr/share/AAVMF/AAVMF_CODE.fd",
+        Architecture::Amd64 | Architecture::Arm64 => paths::ovmf_code_path(arch),
         _ => bail!("unsupported architecture {arch}"),
     };
     command.args(&[

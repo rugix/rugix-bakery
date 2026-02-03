@@ -5,6 +5,7 @@ use reportify::{bail, ResultExt};
 use rugix_common::boot::grub::grub_write_defaults;
 
 use crate::config::systems::{Architecture, SystemConfig};
+use crate::paths;
 use crate::BakeryResult;
 
 pub fn initialize_grub<'cx>(config: &SystemConfig, config_dir: &Path) -> BakeryResult<()> {
@@ -13,7 +14,7 @@ pub fn initialize_grub<'cx>(config: &SystemConfig, config_dir: &Path) -> BakeryR
     let mut copier = rugix_fs::Copier::new();
     copier
         .copy_file(
-            "/usr/share/rugix/boot/grub/cfg/first.grub.cfg".as_ref(),
+            &paths::boot_dir().join("grub/cfg/first.grub.cfg"),
             &config_dir.join("rugpi/grub.cfg"),
         )
         .whatever("unable to copy first stage boot script")?;
@@ -22,7 +23,7 @@ pub fn initialize_grub<'cx>(config: &SystemConfig, config_dir: &Path) -> BakeryR
         Architecture::Arm64 => {
             copier
                 .copy_file(
-                    "/usr/share/rugix/boot/grub/bin/BOOTAA64.efi".as_ref(),
+                    &paths::boot_dir().join("grub/bin/BOOTAA64.efi"),
                     &config_dir.join("EFI/BOOT/BOOTAA64.efi"),
                 )
                 .whatever("unable to copy Grub binary")?;
@@ -30,7 +31,7 @@ pub fn initialize_grub<'cx>(config: &SystemConfig, config_dir: &Path) -> BakeryR
         Architecture::Amd64 => {
             copier
                 .copy_file(
-                    "/usr/share/rugix/boot/grub/bin/BOOTX64.efi".as_ref(),
+                    &paths::boot_dir().join("grub/bin/BOOTX64.efi"),
                     &config_dir.join("EFI/BOOT/BOOTX64.efi"),
                 )
                 .whatever("unable to copy Grub binary")?;

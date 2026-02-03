@@ -315,7 +315,7 @@ pub fn make_system(
                         {
                             let entry = entry.whatever("error reading filesystem entry")?;
                             run!([
-                                "/usr/bin/mcopy",
+                                "mcopy",
                                 "-i",
                                 &fs_image,
                                 "-snop",
