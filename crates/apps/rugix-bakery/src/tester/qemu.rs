@@ -25,8 +25,7 @@ use tracing::{debug, error};
 use crate::cli::status::CliLog;
 use crate::config::systems::Architecture;
 use crate::config::tests::SystemConfig;
-use crate::paths;
-use crate::BakeryResult;
+use crate::{paths, BakeryResult};
 
 use super::TestCtx;
 
@@ -323,15 +322,9 @@ pub async fn start(
         Architecture::Amd64 | Architecture::Arm64 => paths::ovmf_code_path(arch),
         _ => bail!("unsupported architecture {arch}"),
     };
-    command.args(&[
-        "-device",
-        "virtio-rng-pci",
-        "-bios",
-        efi_code,
-        "-nographic",
-        "-serial",
-        "mon:stdio",
-    ]);
+    command.args(["-device", "virtio-rng-pci", "-bios"]);
+    command.arg(efi_code);
+    command.args(["-nographic", "-serial", "mon:stdio"]);
     command
         .kill_on_drop(true)
         .stdout(Stdio::piped())

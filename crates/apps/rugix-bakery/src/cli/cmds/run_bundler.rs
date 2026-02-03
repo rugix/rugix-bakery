@@ -7,8 +7,7 @@ use std::os::unix::ffi::OsStrExt;
 use reportify::ResultExt;
 
 use crate::cli::args::BundlerCommand;
-use crate::paths;
-use crate::BakeryResult;
+use crate::{paths, BakeryResult};
 
 /// Run the `bundler` command.
 pub fn run(cmd: &BundlerCommand) -> BakeryResult<()> {

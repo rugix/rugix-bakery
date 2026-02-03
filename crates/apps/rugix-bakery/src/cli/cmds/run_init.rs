@@ -12,8 +12,7 @@ use reportify::{bail, ResultExt};
 use rugix_common::fsutils::copy_recursive;
 
 use crate::cli::{args, current_dir};
-use crate::paths;
-use crate::BakeryResult;
+use crate::{paths, BakeryResult};
 
 /// Run the `init` command.
 pub fn run(cmd: &args::InitCommand) -> BakeryResult<()> {

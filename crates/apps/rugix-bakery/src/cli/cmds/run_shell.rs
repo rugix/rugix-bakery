@@ -5,8 +5,7 @@ use std::os::unix::ffi::OsStrExt;
 
 use reportify::ResultExt;
 
-use crate::paths;
-use crate::BakeryResult;
+use crate::{paths, BakeryResult};
 
 /// Run the `shell` command.
 pub fn run() -> BakeryResult<()> {

@@ -6,8 +6,7 @@ use rugix_common::boot::uboot::UBootEnv;
 use rugix_common::fsutils::copy_recursive;
 
 use crate::config::systems::{Architecture, SystemConfig};
-use crate::paths;
-use crate::BakeryResult;
+use crate::{paths, BakeryResult};
 
 pub fn initialize_uboot(config: &SystemConfig, config_dir: &Path) -> BakeryResult<()> {
     copy_recursive(paths::pi_firmware_dir(), &config_dir)
@@ -33,8 +32,7 @@ pub fn initialize_uboot(config: &SystemConfig, config_dir: &Path) -> BakeryResul
             .whatever("unable to copy `config.txt`")?;
             for model in ["zerow", "pi1", "pi2", "pi3"] {
                 copy_recursive(
-                    paths::boot_dir()
-                        .join(format!("u-boot/bin/u-boot-armhf-{model}.bin")),
+                    paths::boot_dir().join(format!("u-boot/bin/u-boot-armhf-{model}.bin")),
                     config_dir.join(format!("u-boot-armhf-{model}.bin")),
                 )
                 .whatever("unable to copy U-Boot binary")?;

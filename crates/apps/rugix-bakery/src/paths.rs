@@ -17,7 +17,8 @@ fn env_or_default(name: &str, default: &str, compile_time: Option<&'static str>)
 
 static SHARE_DIR: OnceLock<PathBuf> = OnceLock::new();
 
-/// Base directory that contains Rugix shared assets (boot files, templates, repositories).
+/// Base directory that contains Rugix shared assets (boot files, templates,
+/// repositories).
 pub fn share_dir() -> &'static Path {
     SHARE_DIR
         .get_or_init(|| {

@@ -5,8 +5,7 @@ use reportify::{bail, ResultExt};
 use rugix_common::boot::grub::grub_write_defaults;
 
 use crate::config::systems::{Architecture, SystemConfig};
-use crate::paths;
-use crate::BakeryResult;
+use crate::{paths, BakeryResult};
 
 pub fn initialize_grub<'cx>(config: &SystemConfig, config_dir: &Path) -> BakeryResult<()> {
     rugix_fs::create_dir_recursive(&config_dir.join("EFI/BOOT")).ok();

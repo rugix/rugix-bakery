@@ -314,15 +314,8 @@ pub fn make_system(
                             fs::read_dir(&fs_path).whatever("error reading filesystem content")?
                         {
                             let entry = entry.whatever("error reading filesystem entry")?;
-                            run!([
-                                "mcopy",
-                                "-i",
-                                &fs_image,
-                                "-snop",
-                                entry.path(),
-                                "::"
-                            ])
-                            .whatever("error copying files into image")?;
+                            run!(["mcopy", "-i", &fs_image, "-snop", entry.path(), "::"])
+                                .whatever("error copying files into image")?;
                         }
                     }
                     let mut src =
