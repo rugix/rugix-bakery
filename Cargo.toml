@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "crates/libs/*",
     "crates/apps/*",
     # Core Rugix apps (from submodule)
     "repos/rugix/crates/apps/rugix-ctrl",
