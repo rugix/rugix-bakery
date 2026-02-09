@@ -32,7 +32,7 @@ if [ -n "${RECIPE_PARAM_SNAPSHOT}" ]; then
     OPTS+=("--aptopt=Apt::Key::gpgvcommand=/usr/libexec/mmdebstrap/gpgvnoexpkeysig")
     OPTS+=("--include=ca-certificates,mmdebstrap")
 elif [ -n "${RECIPE_PARAM_MIRROR}" ]; then
-    TARGET_MIRROR="deb [trusted=yes] ${RECIPE_PARAM_MIRROR} ${RECIPE_PARAM_SUITE} main"
+    TARGET_MIRROR="deb [trusted=yes] ${RECIPE_PARAM_MIRROR} ${RECIPE_PARAM_SUITE} ${RECIPE_PARAM_COMPONENTS}"
 fi
 
 mmdebstrap \
