@@ -18,6 +18,8 @@
 
       cargo-deny
 
+      openssl
+
       podman
 
       pkgsCross.musl64.stdenv.cc

@@ -2,18 +2,18 @@
 
 set -eu
 
+# Install .deb packages if they were downloaded by the run step.
+if ls /tmp/rugix-ctrl*.deb 1>/dev/null 2>&1; then
+    dpkg -i /tmp/rugix-ctrl*.deb
+    rm -f /tmp/rugix-ctrl*.deb
+fi
+
 if [ ! -x /usr/bin/rugix-ctrl ]; then
     echo "Rugix Ctrl does not exist or is not executable." >&2;
     exit 1;
 fi
 
 mkdir -p /etc/rugix || true
-
-if [ "${RECIPE_PARAM_RUGIX_ADMIN}" = "true" ]; then
-    install -D -m 644 "${RECIPE_DIR}/files/rugix-admin.service" -t /usr/lib/systemd/system/
-
-    systemctl enable rugix-admin
-fi
 
 
 prog_exists() {

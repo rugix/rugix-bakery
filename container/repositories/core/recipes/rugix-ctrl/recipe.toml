@@ -3,6 +3,9 @@ priority = 700_000                               # Execute very early.
 dependencies = ["pkg-update"]
 
 [parameters]
-rugix_admin = { default = false }
 # Use MUSL builds by default.
 use_musl = { default = true }
+# Where to get binaries: "container" uses pre-built container binaries,
+# a major version (e.g., "v1") resolves the latest matching GitHub release,
+# an exact tag (e.g., "v1.0.0-rc.1") downloads that specific release.
+source = { default = "v1" }

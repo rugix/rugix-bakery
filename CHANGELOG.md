@@ -1,5 +1,121 @@
 # Changelog
 
+## Unreleased
+
+- Unprivileged builds with Podman user namespaces.
+- Consolidate split of Rugix Ctrl and Rugix Bakery.
+- The `rugix-ctrl` recipe no longer installs Rugix Admin.
+
+## Version 0.8.17
+
+- Re-release of v0.8.16 due to immutable release preventing CI from publishing assets.
+
+## Version 0.8.16
+
+- Use `/usr/bin/env` instead of hard-coded paths.
+- Improved progress reporting for delta updates.
+
+**Note:** This release migrates to the Rugix GitHub organization.
+
+## Version 0.8.15
+
+- Parallel compression of Rugix update bundles.
+- Project templates now default to Debian Trixie.
+
+## Version 0.8.14
+
+- Cryptographic integrity verification through embedded signatures.
+- Compatibility with Mender and RAUC.
+- State resets with backups of the old state.
+- Data partition mount scripts.
+
+## Version 0.8.13
+
+- Fix build issues caused by layout changes in Raspberry Pi's firmware repository.
+
+## Version 0.8.12
+
+- Static delta updates using Xdelta.
+- Update simulator as part of Rugix Bundler.
+
+## Version 0.8.11
+
+- Fix `fsck` invocation on data partition.
+
+## Version 0.8.10
+
+- Automated, built-in generation of SPDX SBOMs through Syft.
+
+## Version 0.8.7
+
+- Fix issue determining block device size on 32-bit platforms.
+
+## Version 0.8.6
+
+New features:
+
+- Support GPT-based partition layouts on Raspberry Pi.
+
+Bug fixes:
+
+- Fix spurious boot errors after `fsck` repaired the data partition.
+- Fix incompatibility issues with Raspberry Pi OS's initial ramdisk.
+
+## Version 0.8.5
+
+New features:
+
+- Allow `auto_initramfs=1` on Raspberry Pi (required for SquashFS).
+- Add new `update-install/progress` hook to report installation progress.
+
+Bug fixes:
+
+- Allow the default image path to be passed to `bake image`.
+- Resolve compatibility issues when updating from older Rugix (Rugpi) versions.
+
+## Version 0.8.4
+
+- Fix broken reading of `system-build-info.json` on builds with a hot cache.
+
+## Version 0.8.3
+
+New features:
+
+- Write release information to `/etc/rugix/system-build-info.json`.
+- Support for SquashFS root filesystems (#6).
+
+Bug fixes:
+
+- Persist `machine-id` from state after updating rootfs.
+- Check whether stdout is piped instead of stderr (#51).
+- Change slot db directory to `/var/lib/rugix` (was `/var/rugix` before).
+- Only copy image when output path differs from system image path (#53).
+
+## Version 0.8.2
+
+- Prevent error during update installation when using multiple block indices.
+
+## Version 0.8.1
+
+- Fix caching issue where cache is always cleared regardless of whether Docker image changed.
+
+## Version 0.8.0
+
+Rename to Rugix.
+
+Rugix Ctrl:
+
+- New format for update bundles.
+- Adaptive delta updates with HTTP range queries.
+- Support for any update scenario, including non-A/B updates and incremental updates.
+- Support for any bootloader and boot process through custom boot flows.
+- New JSON-based system information format.
+
+Rugix Bakery:
+
+- Ability to run VMs.
+- Integrated system testing framework.
+
 ## Version 0.7.5
 
 - Fixes off-by-one error in partition table sanity check affecting GPT layouts.
@@ -36,13 +152,13 @@ Breaking changes to the image building pipeline:
 - The `boot_flow` option has been superseded by `target`.
 - The `include_firmware` option has been removed. To include a firmware update for Raspberry Pi, use the `core/rpi-include-firmware` recipe.
 - The following recipes have been renamed:
-    - `core/raspberrypi` => `core/rpi-raspios-setup`
-    - `core/pi-cleanup` => `core/rpi-raspios-cleanup`
-    - `core/apt-cleanup` => `core/pkg-cleanup` (also supports `apk` now)
-    - `core/apt-update` => `core/pkg-cleanup` (also supports `apk` now)
-    - `core/apt-upgrade` => `core/pkg-upgrade` (also supports `apk` now)
+  - `core/raspberrypi` => `core/rpi-raspios-setup`
+  - `core/pi-cleanup` => `core/rpi-raspios-cleanup`
+  - `core/apt-cleanup` => `core/pkg-cleanup` (also supports `apk` now)
+  - `core/apt-update` => `core/pkg-cleanup` (also supports `apk` now)
+  - `core/apt-upgrade` => `core/pkg-upgrade` (also supports `apk` now)
 - The following recipes have been removed:
-    - `core/disable-swap` (now part of `rpi-raspios-cleanup` via parameter)
+  - `core/disable-swap` (now part of `rpi-raspios-cleanup` via parameter)
 
 ## Version 0.6.6
 
@@ -80,9 +196,9 @@ Breaking changes to the image building pipeline:
 - Introduction of layers.
 - Introduction of repositories.
 - Backwards-incompatible changes to image building pipeline:
-    + Layers instead of recipes in `rugpi-bakery.toml`.
-    + Removal of default recipes. Recipes must be explicitly enabled.
-    + Separate `images` sections in `rugpi-bakery.toml`.
+  - Layers instead of recipes in `rugpi-bakery.toml`.
+  - Removal of default recipes. Recipes must be explicitly enabled.
+  - Separate `images` sections in `rugpi-bakery.toml`.
 
 ## Version 0.5.0
 

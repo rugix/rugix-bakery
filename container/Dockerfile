@@ -11,6 +11,7 @@ RUN apt-get -y update \
         file \
         git \
         gpg \
+        jq \
         mmdebstrap \
         mtools \
         proot \
