@@ -20,7 +20,7 @@ use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::process::{Child, Command};
 use tokio::sync::{oneshot, Mutex};
 use tokio::{fs, time};
-use tracing::{debug, error};
+use tracing::debug;
 
 use crate::cli::status::CliLog;
 use crate::config::systems::Architecture;

@@ -1,6 +1,6 @@
 //! Implementation of the CLI.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use reportify::ResultExt;
 use tracing::info;

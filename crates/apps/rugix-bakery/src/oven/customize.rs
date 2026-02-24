@@ -383,8 +383,6 @@ fn apply_recipes(
         Ok(())
     }
 
-    let project_dir = root_dir_path.join("run/rugix/bakery/project");
-
     for (idx, job) in jobs.iter().enumerate() {
         let recipe = &job.recipe;
         info!(
@@ -488,9 +486,9 @@ fn apply_recipes(
                         RUGIX_ROOT_DIR = root_dir_path,
                         RUGIX_CONTEXT_DIR = "/run/rugix/bakery/context",
                         RUGIX_CACHE_DIR = Path::new("/run/rugix/bakery/cache").join(project.local_id().as_str()),
-                        RUGIX_PROJECT_DIR = &project_dir,
+                        RUGIX_PROJECT_DIR = project.dir(),
                         RUGIX_ARCH = arch.as_str(),
-                        LAYER_REBUILD_IF_CHANGED = project_dir.join(&layer_ctx.output_dir).join("rebuild-if-changed.txt"),
+                        LAYER_REBUILD_IF_CHANGED = project.dir().join(&layer_ctx.output_dir).join("rebuild-if-changed.txt"),
                         RECIPE_DIR = &recipe.path,
                         RECIPE_STEP_PATH = &script,
                         SOURCE_DATE_EPOCH = source_date_epoch.to_string(),
