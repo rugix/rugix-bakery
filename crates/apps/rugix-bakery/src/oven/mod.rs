@@ -198,7 +198,7 @@ fn extract(project: &ProjectRef, image_url: &str, layer_path: &Path) -> BakeryRe
 pub struct BundleOpts {
     /// Disable compression of the bundle.
     #[clap(long)]
-    without_compression: bool,
+    disable_compression: bool,
     /// Use a specific chunking algorithm.
     #[clap(long)]
     chunker: Option<ChunkerAlgorithm>,
@@ -259,7 +259,7 @@ pub fn bake_bundle(
 }
 
 fn rpi_bundle_config(opts: &BundleOpts, is_gpt: bool) -> BundleManifest {
-    let compression = if opts.without_compression {
+    let compression = if opts.disable_compression {
         None
     } else {
         Some(manifest::Compression::Xz(manifest::XzCompression::new()))
@@ -298,7 +298,7 @@ fn rpi_bundle_config(opts: &BundleOpts, is_gpt: bool) -> BundleManifest {
 }
 
 fn efi_bundle_config(opts: &BundleOpts) -> BundleManifest {
-    let compression = if opts.without_compression {
+    let compression = if opts.disable_compression {
         None
     } else {
         Some(manifest::Compression::Xz(manifest::XzCompression::new()))
