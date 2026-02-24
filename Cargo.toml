@@ -86,7 +86,7 @@ new_without_default = "allow"
 codegen-units = 1
 lto = true
 opt-level = "z"
-panic = "abort"
+panic = "unwind"
 strip = "symbols"
 # Ensure that any overflows will panic.
 overflow-checks = true
