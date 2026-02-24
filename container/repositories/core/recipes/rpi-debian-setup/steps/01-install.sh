@@ -17,7 +17,8 @@ install -m 644 "${RECIPE_DIR}/files/raspberrypi.list" "/etc/apt/sources.list.d/"
 sed -i "s/RELEASE/$RELEASE/g" "/etc/apt/sources.list.d/raspberrypi.list"
 
 apt-get update -y
-apt-get install -y raspberrypi-archive-keyring
+# Make sure we overwrite the keyring we installed in the previous run step.
+apt-get -o Dpkg::Options::="--force-confnew" install -y raspberrypi-archive-keyring
 
 if [ "${RECIPE_PARAM_WITH_NONFREE}" == "true" ]; then
     # Make sure that the non-free sources are available.

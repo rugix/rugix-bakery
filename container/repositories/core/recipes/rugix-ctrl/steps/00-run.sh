@@ -93,33 +93,33 @@ install_from_deb() {
 }
 
 resolve_version() {
-    local source="$1"
-    # If source matches a major version prefix (e.g., "v1", "v2"), resolve via GitHub API.
-    if echo "${source}" | grep -qE '^v[0-9]+$'; then
-        echo "Resolving latest release for ${source}..." >&2
+    local version="$1"
+    # If version matches a major version prefix (e.g., "v1", "v2"), resolve via GitHub API.
+    if echo "${version}" | grep -qE '^v[0-9]+$'; then
+        echo "Resolving latest release for ${version}..." >&2
         local resolved
         resolved=$(curl -fSs "https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=100" \
-            | jq -r --arg prefix "${source}." \
+            | jq -r --arg prefix "${version}." \
                 '[.[] | select(.tag_name | startswith($prefix))]
                  | map(.tag_name | ltrimstr("v"))
                  | sort_by([(split("-")[0] | split(".") | map(tonumber))[], (if test("-") then 0 else 1 end)])
                  | last
                  | if . then "v" + . else null end')
         if [ -z "${resolved}" ] || [ "${resolved}" = "null" ]; then
-            echo "No release found matching '${source}.*'." >&2
+            echo "No release found matching '${version}.*'." >&2
             exit 1
         fi
         echo "Resolved to ${resolved}." >&2
         echo "${resolved}"
     else
-        echo "${source}"
+        echo "${version}"
     fi
 }
 
-if [ "${RECIPE_PARAM_SOURCE}" = "container" ]; then
+if [ "${RECIPE_PARAM_VERSION}" = "container" ]; then
     install_from_container
 else
-    VERSION=$(resolve_version "${RECIPE_PARAM_SOURCE}")
+    VERSION=$(resolve_version "${RECIPE_PARAM_VERSION}")
     if [ -x "${RUGIX_ROOT_DIR}/usr/bin/dpkg" ]; then
         install_from_deb "${VERSION}"
     else
