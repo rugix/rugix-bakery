@@ -218,7 +218,7 @@ pub fn bake_bundle(
     system_path: &Path,
     output: &Path,
     opts: &BundleOpts,
-) -> BakeryResult<()> {
+) -> BakeryResult<si_crypto_hashes::HashDigest> {
     let bundle_dir = tempdir().whatever("unable to create temporary directory")?;
     let bundle_dir = bundle_dir.path();
     let system_config = project.config().resolve_system_config(system)?;
@@ -254,8 +254,9 @@ pub fn bake_bundle(
     if let Some(parent) = output.parent() {
         std::fs::create_dir_all(parent).ok();
     }
-    rugix_bundle::builder::pack(bundle_dir, output).whatever("unable to create bundle")?;
-    Ok(())
+    let hash =
+        rugix_bundle::builder::pack(bundle_dir, output).whatever("unable to create bundle")?;
+    Ok(hash)
 }
 
 fn rpi_bundle_config(opts: &BundleOpts, is_gpt: bool) -> BundleManifest {
