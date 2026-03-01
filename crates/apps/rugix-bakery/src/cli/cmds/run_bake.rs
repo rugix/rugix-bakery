@@ -66,8 +66,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
             let output = output
                 .clone()
                 .unwrap_or_else(|| system_path.join("system.rugixb"));
-            let hash =
-                oven::bake_bundle(&project, system, &system_path, &output, opts)?;
+            let hash = oven::bake_bundle(&project, system, &system_path, &output, opts)?;
             let hash_output = output.with_extension("rugixb-hash");
             std::fs::write(&hash_output, hash.to_string())
                 .whatever("unable to write bundle hash")?;
