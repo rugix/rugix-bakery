@@ -16,6 +16,7 @@ use crate::{oven, BakeryResult};
 /// Run the `run` command.
 pub fn run(args: &args::Args, cmd: &args::RunCommand) -> BakeryResult<()> {
     let project = load_project(args)?;
+    let param_overrides = oven::load_parameter_overrides(&cmd.params.param_files)?;
 
     let now = jiff::Timestamp::now().as_second() as u64;
 
@@ -26,6 +27,7 @@ pub fn run(args: &args::Args, cmd: &args::RunCommand) -> BakeryResult<()> {
         &cmd.system,
         &output,
         now,
+        &param_overrides,
     )
     .whatever("error baking image")?;
 

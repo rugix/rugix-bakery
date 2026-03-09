@@ -70,6 +70,14 @@ pub enum ListCommand {
     Systems,
 }
 
+/// Parameter file arguments for overriding recipe parameters.
+#[derive(Debug, clap::Args)]
+pub struct ParamFileArgs {
+    /// Parameter files to override recipe parameters.
+    #[clap(long = "param-file")]
+    pub param_files: Vec<PathBuf>,
+}
+
 /// The `bake` command.
 #[derive(Debug, Parser)]
 pub enum BakeCommand {
@@ -83,6 +91,8 @@ pub enum BakeCommand {
         release: ReleaseInfoArgs,
         #[clap(long)]
         source_date: Option<jiff::Timestamp>,
+        #[clap(flatten)]
+        params: ParamFileArgs,
     },
     /// Bake a layer.
     Layer {
@@ -93,6 +103,8 @@ pub enum BakeCommand {
         layer: String,
         #[clap(long)]
         source_date: Option<jiff::Timestamp>,
+        #[clap(flatten)]
+        params: ParamFileArgs,
     },
     /// Bake a bundle.
     Bundle {
@@ -103,6 +115,8 @@ pub enum BakeCommand {
         opts: BundleOpts,
         #[clap(flatten)]
         release: ReleaseInfoArgs,
+        #[clap(flatten)]
+        params: ParamFileArgs,
     },
 }
 
@@ -125,6 +139,8 @@ pub struct RunCommand {
     #[clap(flatten)]
     pub release: ReleaseInfoArgs,
     pub system: String,
+    #[clap(flatten)]
+    pub params: ParamFileArgs,
 }
 
 /// The `bake` command.

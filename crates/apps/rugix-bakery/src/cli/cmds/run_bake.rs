@@ -5,8 +5,8 @@ use std::path::Path;
 use reportify::ResultExt;
 
 use crate::cli::{args, load_project};
-use crate::oven::LayerBakery;
-use crate::{oven, BakeryResult};
+use crate::oven::{self, LayerBakery};
+use crate::BakeryResult;
 
 /// Run the `bake` command.
 pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
@@ -17,7 +17,9 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
             output,
             release,
             source_date,
+            params,
         } => {
+            let param_overrides = oven::load_parameter_overrides(&params.param_files)?;
             let system_path = Path::new("build").join(system);
             let source_date_epoch =
                 source_date.unwrap_or_else(jiff::Timestamp::now).as_second() as u64;
@@ -27,6 +29,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
                 system,
                 &system_path,
                 source_date_epoch,
+                &param_overrides,
             )?;
             if let Some(output) = output {
                 if let Some(parent) = output.parent() {
@@ -49,20 +52,32 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
             layer,
             arch,
             source_date,
+            params,
         } => {
+            let param_overrides = oven::load_parameter_overrides(&params.param_files)?;
             let source_date_epoch =
                 source_date.unwrap_or_else(jiff::Timestamp::now).as_second() as u64;
-            LayerBakery::new(&project, *arch).bake_root(layer, source_date_epoch)?;
+            LayerBakery::new(&project, *arch, &param_overrides)
+                .bake_root(layer, source_date_epoch)?;
         }
         args::BakeCommand::Bundle {
             system,
             output,
             opts,
             release,
+            params,
         } => {
+            let param_overrides = oven::load_parameter_overrides(&params.param_files)?;
             let system_path = Path::new("build").join(system);
             let now = jiff::Timestamp::now().as_second() as u64;
-            oven::bake_system(&project, &release.release_info(), system, &system_path, now)?;
+            oven::bake_system(
+                &project,
+                &release.release_info(),
+                system,
+                &system_path,
+                now,
+                &param_overrides,
+            )?;
             let output = output
                 .clone()
                 .unwrap_or_else(|| system_path.join("system.rugixb"));

@@ -84,11 +84,12 @@ pub fn customize(
     target: &Path,
     layer_path: &Path,
     source_date_epoch: u64,
+    param_overrides: &super::ParameterOverrides,
 ) -> BakeryResult<()> {
     let library = project.library()?;
     // Collect the recipes to apply.
     let config = layer.config(arch).unwrap();
-    let jobs = recipe_schedule(layer.repo, config, &library)?;
+    let jobs = recipe_schedule(layer.repo, config, &library, param_overrides)?;
     if jobs.is_empty() {
         bail!("layer must have recipes")
     }
@@ -205,6 +206,7 @@ fn recipe_schedule(
     repo: RepositoryIdx,
     layer: &LayerConfig,
     library: &Library,
+    param_overrides: &super::ParameterOverrides,
 ) -> BakeryResult<Vec<RecipeJob>> {
     let mut stack = layer
         .recipes
@@ -265,9 +267,14 @@ fn recipe_schedule(
                     }
                 }
             }
+            let override_params = param_overrides.get(&*recipe.name);
             let mut parameters = HashMap::new();
             if let Some(p) = &recipe.config.parameters {
                 for (name, def) in p {
+                    if let Some(value) = override_params.and_then(|p| p.get(name.as_str())) {
+                        parameters.insert(name.to_owned(), value.to_string());
+                        continue;
+                    }
                     if let Some(params) = recipe_params {
                         if let Some(value) = params.get(name) {
                             parameters.insert(name.to_owned(), value.to_string());

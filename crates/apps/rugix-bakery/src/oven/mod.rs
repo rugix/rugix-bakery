@@ -1,5 +1,6 @@
 //! Functionality for baking layers and images.
 
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -15,6 +16,7 @@ use url::Url;
 use xscript::{run, Run};
 
 use crate::config::images::PartitionTableType;
+use crate::config::recipes::ParameterValue;
 use crate::config::systems::{Architecture, Target};
 use crate::project::library::LayerIdx;
 use crate::project::ProjectRef;
@@ -26,19 +28,42 @@ pub mod layer;
 pub mod system;
 pub mod targets;
 
+/// Parameter overrides loaded from parameter files.
+///
+/// Maps recipe names to their parameter key-value pairs.
+pub type ParameterOverrides = HashMap<String, HashMap<String, ParameterValue>>;
+
+/// Load and merge parameter overrides from the given parameter files.
+///
+/// Later files take precedence over earlier ones.
+pub fn load_parameter_overrides(param_files: &[PathBuf]) -> BakeryResult<ParameterOverrides> {
+    let mut overrides = ParameterOverrides::new();
+    for path in param_files {
+        let contents = fs::read_to_string(path)
+            .whatever_with(|_| format!("unable to read parameter file {path:?}"))?;
+        let file_overrides: ParameterOverrides = toml::from_str(&contents)
+            .whatever_with(|_| format!("unable to parse parameter file {path:?}"))?;
+        for (recipe, params) in file_overrides {
+            overrides.entry(recipe).or_default().extend(params);
+        }
+    }
+    Ok(overrides)
+}
+
 pub fn bake_system(
     project: &ProjectRef,
     release_info: &ReleaseInfo,
     system: &str,
     output: &Path,
     source_date_epoch: u64,
+    param_overrides: &ParameterOverrides,
 ) -> BakeryResult<()> {
     let system_config = project
         .config()
         .get_system_config(system)
         .ok_or_else(|| whatever!("unable to find image {system}"))?;
     info!("baking image `{system}`");
-    let layer_bakery = LayerBakery::new(project, system_config.architecture);
+    let layer_bakery = LayerBakery::new(project, system_config.architecture, param_overrides);
     let baked_layer = layer_bakery.bake_root(&system_config.layer, source_date_epoch)?;
     let frozen = FrozenLayer::new(system_config.layer.clone(), baked_layer);
     system::make_system(
@@ -54,11 +79,20 @@ pub fn bake_system(
 pub struct LayerBakery<'p> {
     project: &'p ProjectRef,
     arch: Architecture,
+    param_overrides: &'p ParameterOverrides,
 }
 
 impl<'p> LayerBakery<'p> {
-    pub fn new(project: &'p ProjectRef, arch: Architecture) -> Self {
-        Self { project, arch }
+    pub fn new(
+        project: &'p ProjectRef,
+        arch: Architecture,
+        param_overrides: &'p ParameterOverrides,
+    ) -> Self {
+        Self {
+            project,
+            arch,
+            param_overrides,
+        }
     }
 
     pub fn bake_root(&self, layer: &str, source_date_epoch: u64) -> BakeryResult<PathBuf> {
@@ -81,6 +115,20 @@ impl<'p> LayerBakery<'p> {
         layer_id.push("layer", &layer.name);
         layer_id.push("repository", repositories[layer.repo].source.id.as_str());
         layer_id.push("arch", self.arch.as_str());
+        if !self.param_overrides.is_empty() {
+            let mut sorted_overrides: Vec<_> = self.param_overrides.iter().collect();
+            sorted_overrides.sort_by_key(|(k, _)| k.as_str());
+            for (recipe, params) in &sorted_overrides {
+                let mut sorted_params: Vec<_> = params.iter().collect();
+                sorted_params.sort_by_key(|(k, _)| k.as_str());
+                for (param, value) in &sorted_params {
+                    layer_id.push(
+                        &format!("override:{recipe}:{param}"),
+                        value.to_string(),
+                    );
+                }
+            }
+        }
         if let Some(url) = &config.url {
             layer_id.push("url", url);
             let layer_id = layer_id.finalize();
@@ -110,6 +158,7 @@ impl<'p> LayerBakery<'p> {
                 &target,
                 &layer_path,
                 source_date_epoch,
+                self.param_overrides,
             )?;
             Ok(target)
         } else if config.root.unwrap_or(false) {
@@ -126,6 +175,7 @@ impl<'p> LayerBakery<'p> {
                 &target,
                 &layer_path,
                 source_date_epoch,
+                self.param_overrides,
             )?;
             Ok(target)
         } else {
