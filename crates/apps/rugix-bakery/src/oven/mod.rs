@@ -122,10 +122,7 @@ impl<'p> LayerBakery<'p> {
                 let mut sorted_params: Vec<_> = params.iter().collect();
                 sorted_params.sort_by_key(|(k, _)| k.as_str());
                 for (param, value) in &sorted_params {
-                    layer_id.push(
-                        &format!("override:{recipe}:{param}"),
-                        value.to_string(),
-                    );
+                    layer_id.push(&format!("override:{recipe}:{param}"), value.to_string());
                 }
             }
         }
