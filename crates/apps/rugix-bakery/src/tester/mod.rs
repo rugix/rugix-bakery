@@ -78,7 +78,11 @@ pub fn main(project: &ProjectRef, test_path: &Path) -> BakeryResult<()> {
                         may_disconnect,
                         may_fail,
                     }) => {
-                        info!("running script");
+                        if let Some(description) = description {
+                            info!("running script: {description}");
+                        } else {
+                            info!("running script");
+                        }
                         ctx.status
                             .set_description(description.clone().unwrap_or_default());
                         {
@@ -121,6 +125,13 @@ pub fn main(project: &ProjectRef, test_path: &Path) -> BakeryResult<()> {
                         description,
                         duration,
                     }) => {
+                        if let Some(description) = description {
+                            info!("waiting: {description}");
+                        } else if *duration == 1.0 {
+                            info!("waiting for 1 second");
+                        } else {
+                            info!("waiting for {duration:.1} seconds");
+                        }
                         ctx.status
                             .set_description(description.clone().unwrap_or_else(|| {
                                 if *duration == 1.0 {
