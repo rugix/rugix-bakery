@@ -307,7 +307,9 @@ pub async fn start(
         Architecture::Arm64 => {
             let mut command = Command::new("qemu-system-aarch64");
             let cpu = if kvm_available { "host" } else { "cortex-a72" };
-            command.args(&["-machine", "virt", "-cpu", cpu, "-m", "2G", "-smp", "cpus=2"]);
+            command.args(&[
+                "-machine", "virt", "-cpu", cpu, "-m", "2G", "-smp", "cpus=2",
+            ]);
             command
         }
         _ => bail!("unsupported architecture {arch}"),
