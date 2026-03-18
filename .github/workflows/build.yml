@@ -207,17 +207,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: bakery-digest-amd64
-          path: /tmp/digests
+          path: build/digests
       - name: Run Tests
         shell: bash
         run: |
           set -euo pipefail
 
-          DIGEST=$(ls /tmp/digests/bakery-digest-amd64/)
-
-          echo "===BEGIN DIGEST==="
-          echo "$DIGEST"
-          echo "===END DIGEST==="
+          DIGEST=$(ls build/digests/bakery-digest-amd64/)
 
           cd tests
 
