@@ -292,6 +292,12 @@ pub async fn start(
     ])
     .await
     .whatever("unable to create VM image")?;
+    let kvm_available = Path::new("/dev/kvm").exists()
+        && match arch {
+            Architecture::Amd64 => std::env::consts::ARCH == "x86_64",
+            Architecture::Arm64 => std::env::consts::ARCH == "aarch64",
+            _ => false,
+        };
     let mut command = match arch {
         Architecture::Amd64 => {
             let mut command = Command::new("qemu-system-x86_64");
@@ -300,20 +306,15 @@ pub async fn start(
         }
         Architecture::Arm64 => {
             let mut command = Command::new("qemu-system-aarch64");
-            command.args(&[
-                "-machine",
-                "virt",
-                "-cpu",
-                "cortex-a72",
-                "-m",
-                "2G",
-                "-smp",
-                "cpus=2",
-            ]);
+            let cpu = if kvm_available { "host" } else { "cortex-a72" };
+            command.args(&["-machine", "virt", "-cpu", cpu, "-m", "2G", "-smp", "cpus=2"]);
             command
         }
         _ => bail!("unsupported architecture {arch}"),
     };
+    if kvm_available {
+        command.args(["-accel", "kvm"]);
+    }
     command.arg("-drive");
     command.arg("file=.rugix/vm-image.img,format=qcow2,if=virtio");
     command.args(&["-device", "virtio-net-pci,netdev=net0", "-netdev"]);
