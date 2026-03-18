@@ -215,6 +215,10 @@ jobs:
 
           DIGEST=$(ls /tmp/digests/bakery-digest-amd64/)
 
+          echo "===BEGIN DIGEST==="
+          echo "$DIGEST"
+          echo "===END DIGEST==="
+
           cd tests
 
           ./generate-test-keys.sh
