@@ -218,7 +218,8 @@ pub fn make_system(
                     let Some(gpt_id) = table.partitions[3].gpt_id else {
                         bail!("unable to determine GTP partition ID");
                     };
-                    format!("PARTUUID={gpt_id}")
+                    let part_uuid = gpt_id.to_hex_str(ascii_numbers::Case::Lower);
+                    format!("PARTUUID={part_uuid}")
                 }
                 _ => bail!("unsupported GPT partition layout"),
             };
