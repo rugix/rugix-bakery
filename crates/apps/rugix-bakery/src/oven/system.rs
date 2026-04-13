@@ -5,7 +5,7 @@ use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
-use tracing::info;
+use tracing::{info, warn};
 
 use reportify::{bail, whatever, ResultExt};
 use xscript::{cmd, cmd_os, run, vars, ParentEnv, Run};
@@ -20,7 +20,8 @@ use rugix_common::utils::ascii_numbers;
 use rugix_common::utils::units::NumBytes;
 use rugix_common::{grub_patch_env, rpi_patch_boot};
 
-use crate::config::images::{Filesystem, ImageLayout};
+use crate::config::bsp::BspConfig;
+use crate::config::images::{Filesystem, ImageLayout, ImagePartition, RawBlob};
 use crate::config::load_json;
 use crate::config::systems::{SystemConfig, Target};
 use crate::oven::targets;
@@ -82,9 +83,12 @@ pub fn make_system(
 
     let artifacts_dir = layer_path.join("artifacts");
     if artifacts_dir.exists() {
-        rugix_fs::Copier::new()
-            .copy_dir(&layer.path().join("artifacts"), &out.join("artifacts"))
-            .whatever("error copying artifacts")?;
+        copy_dir_no_ownership(&artifacts_dir, &out.join("artifacts"))?;
+    }
+
+    let bsp_dir = layer_path.join("bsp");
+    if bsp_dir.exists() {
+        copy_dir_no_ownership(&bsp_dir, &out.join("bsp"))?;
     }
 
     let system_dir = layer_path.join("roots/system");
@@ -157,10 +161,13 @@ pub fn make_system(
             Target::GenericGrubEfi => {
                 initialize_grub(&config, &config_dir)?;
             }
+            Target::Bsp => {
+                warn!("The `bsp` target is experimental and may change in future releases.");
+            }
             Target::Unknown => { /* nothing to do */ }
         }
 
-        if !matches!(target, Target::Unknown) {
+        if !matches!(target, Target::Bsp | Target::Unknown) {
             std::fs::create_dir_all(config_dir.join(".rugix")).ok();
             std::fs::File::create(config_dir.join(".rugix/bootstrap"))
                 .whatever("unable to create file `.rugix/bootstrap`")?;
@@ -173,14 +180,19 @@ pub fn make_system(
         .as_ref()
         .and_then(|image| image.layout.clone())
         .or_else(|| {
-            config.target.as_ref().and_then(|target| {
-                targets::get_default_layout(
+            config.target.as_ref().and_then(|target| match target {
+                Target::Bsp => {
+                    let bsp = load_bsp_config(&layer_path.join("bsp/rugix-bsp.toml"))
+                        .expect("unable to load BSP config");
+                    Some(bsp_to_image_layout(&bsp).expect("invalid BSP layout"))
+                }
+                _ => targets::get_default_layout(
                     target,
                     config
                         .options
                         .as_ref()
                         .and_then(|options| options.use_squashfs.as_ref()),
-                )
+                ),
             })
         })
         .ok_or_else(|| whatever!("image layout needs to be specified"))?;
@@ -188,7 +200,7 @@ pub fn make_system(
     let image_file = out.join("system.img");
 
     info!("Computing partition table.");
-    let table = compute_partition_table(&layout, &layer_path.join("roots"))?;
+    let table = compute_partition_table(&layout, &layer_path.join("roots"), layer_path)?;
 
     let size_bytes = table.blocks_to_bytes(table.disk_size);
 
@@ -204,6 +216,12 @@ pub fn make_system(
     table
         .write(&image_file)
         .whatever("error writing image partition table")?;
+
+    // Write raw firmware blobs at their specified offsets.  Partitions are
+    // already placed after the blobs, so there is no overlap.
+    if let Some(raw_blobs) = &layout.raw_blobs {
+        write_raw_blobs(raw_blobs, layer_path, &image_file)?;
+    }
 
     let table =
         PartitionTable::read(&image_file).whatever("error reading image partition table")?;
@@ -391,6 +409,53 @@ pub struct SystemReleaseInfo {
     pub version: String,
 }
 
+/// Copy a directory recursively without preserving ownership.
+fn copy_dir_no_ownership(src: &Path, dst: &Path) -> BakeryResult<()> {
+    run!(["cp", "-r", "--no-preserve=ownership", src, dst]).whatever("error copying directory")?;
+    Ok(())
+}
+
+/// Load a `BspConfig` from a `rugix-bsp.toml` file.
+fn load_bsp_config(path: &Path) -> BakeryResult<BspConfig> {
+    info!("Loading BSP config from `{}`.", path.display());
+    let content = fs::read_to_string(path).whatever("unable to read rugix-bsp.toml")?;
+    toml::from_str(&content).whatever("unable to parse rugix-bsp.toml")
+}
+
+/// Convert a `BspConfig` disk layout into an `ImageLayout`.
+fn bsp_to_image_layout(bsp: &BspConfig) -> BakeryResult<ImageLayout> {
+    let dl = &bsp.image.layout;
+
+    let raw_blobs: Vec<RawBlob> = dl
+        .raw_blobs
+        .iter()
+        .flatten()
+        .map(|b| RawBlob {
+            file: b.file.clone(),
+            offset: b.offset.clone(),
+            size: b.size.clone(),
+        })
+        .collect();
+
+    let partitions: Vec<ImagePartition> = dl
+        .partitions
+        .iter()
+        .flatten()
+        .map(|p| ImagePartition {
+            size: p.size.clone(),
+            filesystem: p.filesystem.clone(),
+            root: p.root.clone(),
+            ty: p.ty,
+        })
+        .collect();
+
+    Ok(ImageLayout {
+        ty: Some(dl.ty),
+        raw_blobs: Some(raw_blobs),
+        partitions: Some(partitions),
+    })
+}
+
 /// We are calculating everything with a portable block size of 512 bytes.
 const BLOCK_SIZE: NumBytes = NumBytes::from_raw(512);
 
@@ -403,7 +468,11 @@ fn bytes_to_blocks(bytes: NumBytes) -> NumBlocks {
 }
 
 /// Compute the partition table for an image based on the provided layout.
-fn compute_partition_table(layout: &ImageLayout, roots_dir: &Path) -> BakeryResult<PartitionTable> {
+fn compute_partition_table(
+    layout: &ImageLayout,
+    roots_dir: &Path,
+    layer_path: &Path,
+) -> BakeryResult<PartitionTable> {
     let table_type = layout
         .ty
         .map(|ty| match ty {
@@ -412,7 +481,30 @@ fn compute_partition_table(layout: &ImageLayout, roots_dir: &Path) -> BakeryResu
         })
         .unwrap_or(PartitionTableType::Mbr);
     let mut partitions = Vec::new();
+    // Start partitions after any raw blobs so they don't overlap.
     let mut next_usable = ALIGNMENT;
+    if let Some(raw_blobs) = &layout.raw_blobs {
+        for blob in raw_blobs {
+            let region_size = if let Some(reserved) = &blob.size {
+                reserved.raw
+            } else {
+                let blob_path = layer_path.join(&blob.file);
+                if blob_path.exists() {
+                    fs::metadata(&blob_path)
+                        .whatever("unable to read raw blob metadata")?
+                        .len()
+                } else {
+                    continue;
+                }
+            };
+            let blob_end = blob.offset.raw + region_size;
+            let blob_end_blocks = bytes_to_blocks(NumBytes::from_raw(blob_end));
+            let aligned = blob_end_blocks.ceil_align_to(ALIGNMENT);
+            if aligned > next_usable {
+                next_usable = aligned;
+            }
+        }
+    }
     let mut next_number = 1;
     let mut in_extended = false;
     if let Some(layout_partitions) = &layout.partitions {
@@ -500,6 +592,29 @@ fn compute_partition_table(layout: &ImageLayout, roots_dir: &Path) -> BakeryResu
         .validate()
         .whatever("unable to validate image partitions")?;
     Ok(table)
+}
+
+/// Write raw firmware blobs at their specified byte offsets on the disk image.
+fn write_raw_blobs(blobs: &[RawBlob], layer_path: &Path, image_file: &Path) -> BakeryResult<()> {
+    use std::io::Write;
+    for blob in blobs {
+        let blob_path = layer_path.join(&blob.file);
+        if !blob_path.exists() {
+            bail!("raw blob file not found: {}", blob_path.display());
+        }
+        let offset = blob.offset.raw;
+        info!("Writing raw blob `{}` at offset {offset}.", blob.file,);
+        let blob_data = fs::read(&blob_path).whatever("unable to read raw blob file")?;
+        let mut dst = File::options()
+            .write(true)
+            .open(image_file)
+            .whatever("unable to open image file")?;
+        dst.seek(std::io::SeekFrom::Start(offset))
+            .whatever("unable to seek in image file")?;
+        dst.write_all(&blob_data)
+            .whatever("unable to write raw blob")?;
+    }
+    Ok(())
 }
 
 /// Compute the required size for a filesystem based on the given root path.

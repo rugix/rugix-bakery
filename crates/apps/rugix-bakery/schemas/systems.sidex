@@ -48,6 +48,8 @@ variant Target {
     RpiTryboot,
     /// Raspberry Pi-specific target using U-Boot.
     RpiUboot,
+    /// Custom BSP target — reads disk layout from `bsp/rugix-bsp.toml` in the layer.
+    Bsp,
     /// Target for unsupported devices.
     Unknown,
 }

@@ -282,6 +282,7 @@ pub fn bake_bundle(
         Target::GenericGrubEfi => efi_bundle_config(opts),
         Target::RpiTryboot => rpi_bundle_config(opts, is_gpt),
         Target::RpiUboot => rpi_bundle_config(opts, is_gpt),
+        Target::Bsp => bsp_bundle_config(system_path, opts)?,
         Target::Unknown => bail!("cannot bake bundles for unknown targets"),
     };
     std::fs::write(
@@ -374,8 +375,61 @@ fn efi_bundle_config(opts: &BundleOpts) -> BundleManifest {
             .with_block_encoding(Some(
                 manifest::BlockEncoding::new(opts.chunker_algorithm())
                     .with_deduplicate(Some(true))
-                    .with_compression(compression.clone()),
+                    .with_compression(compression),
             )),
         ],
     )
+}
+
+fn bsp_bundle_config(system_path: &Path, opts: &BundleOpts) -> BakeryResult<BundleManifest> {
+    use crate::config::bsp::BspConfig;
+
+    let bsp_toml_path = system_path.join("bsp/rugix-bsp.toml");
+    let content = fs::read_to_string(&bsp_toml_path)
+        .whatever("unable to read rugix-bsp.toml for bundle config")?;
+    let bsp: BspConfig = toml::from_str(&content).whatever("unable to parse rugix-bsp.toml")?;
+
+    let bundle = bsp.bundle.as_ref();
+    let payloads_list = bundle.map(|b| &b.payloads).filter(|p| !p.is_empty());
+    let Some(payloads_list) = payloads_list else {
+        bail!("rugix-bsp.toml has no [[bundle.payloads]] entries");
+    };
+
+    let compression = if opts.disable_compression {
+        None
+    } else {
+        Some(manifest::Compression::Xz(manifest::XzCompression::new()))
+    };
+
+    let payloads = payloads_list
+        .iter()
+        .map(|p| {
+            let filename = if let Some(partition) = p.partition {
+                format!("partition-{partition}.img")
+            } else if let Some(file) = &p.file {
+                file.clone()
+            } else {
+                panic!(
+                    "bundle payload for slot {:?} must have either `partition` or `file`",
+                    p.slot
+                );
+            };
+            manifest::Payload::new(
+                manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig {
+                    slot: p.slot.clone(),
+                }),
+                filename,
+            )
+            .with_block_encoding(Some(
+                manifest::BlockEncoding::new(opts.chunker_algorithm())
+                    .with_deduplicate(Some(true))
+                    .with_compression(compression.clone()),
+            ))
+        })
+        .collect();
+
+    Ok(manifest::BundleManifest::new(
+        manifest::UpdateType::Full,
+        payloads,
+    ))
 }

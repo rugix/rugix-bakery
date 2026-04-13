@@ -21,7 +21,7 @@ pub fn get_default_layout(
         Target::GenericGrubEfi => Some(default_gpt_layout(squashfs_options)),
         Target::RpiTryboot => Some(default_mbr_layout(squashfs_options)),
         Target::RpiUboot => Some(default_mbr_layout(squashfs_options)),
-        Target::Unknown => None,
+        Target::Bsp | Target::Unknown => None,
     }
 }
 
