@@ -44,11 +44,175 @@
   "required": [],
   "unevaluatedProperties": false,
   "$defs": {
+    "rugix_bakery.bsp.BspBundle": {
+      "$id": "rugix_bakery.bsp.BspBundle",
+      "type": "object",
+      "description": "Bundle payload mapping.",
+      "properties": {
+        "payloads": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rugix_bakery.bsp.BspBundlePayload"
+          }
+        }
+      },
+      "required": [
+        "payloads"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.bsp.BspBundlePayload": {
+      "$id": "rugix_bakery.bsp.BspBundlePayload",
+      "type": "object",
+      "description": "Bundle payload mapping entry.",
+      "properties": {
+        "slot": {
+          "type": "string"
+        },
+        "partition": {
+          "type": "integer",
+          "format": "uint32"
+        },
+        "file": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "slot"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.bsp.BspConfig": {
+      "$id": "rugix_bakery.bsp.BspConfig",
+      "type": "object",
+      "description": "BSP configuration.",
+      "properties": {
+        "bsp": {
+          "$ref": "#/$defs/rugix_bakery.bsp.BspMetadata"
+        },
+        "image": {
+          "$ref": "#/$defs/rugix_bakery.bsp.BspImage"
+        },
+        "bundle": {
+          "$ref": "#/$defs/rugix_bakery.bsp.BspBundle"
+        }
+      },
+      "required": [
+        "bsp",
+        "image"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.bsp.BspImage": {
+      "$id": "rugix_bakery.bsp.BspImage",
+      "type": "object",
+      "description": "BSP image configuration.",
+      "properties": {
+        "layout": {
+          "$ref": "#/$defs/rugix_bakery.bsp.BspImageLayout"
+        }
+      },
+      "required": [
+        "layout"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.bsp.BspImageLayout": {
+      "$id": "rugix_bakery.bsp.BspImageLayout",
+      "type": "object",
+      "description": "Image layout specification.",
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/rugix_bakery.images.PartitionTableType"
+        },
+        "raw-blobs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rugix_bakery.bsp.BspRawBlob"
+          }
+        },
+        "partitions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rugix_bakery.bsp.BspPartition"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.bsp.BspMetadata": {
+      "$id": "rugix_bakery.bsp.BspMetadata",
+      "type": "object",
+      "description": "BSP metadata.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "architecture": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "architecture"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.bsp.BspPartition": {
+      "$id": "rugix_bakery.bsp.BspPartition",
+      "type": "object",
+      "description": "Partition in the BSP disk layout.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "size": {
+          "$ref": "#/$defs/rugix_bakery.foreign.NumBytes"
+        },
+        "filesystem": {
+          "$ref": "#/$defs/rugix_bakery.images.Filesystem"
+        },
+        "type": {
+          "$ref": "#/$defs/rugix_bakery.images.PartitionType"
+        },
+        "root": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.bsp.BspRawBlob": {
+      "$id": "rugix_bakery.bsp.BspRawBlob",
+      "type": "object",
+      "description": "Raw firmware blob written at a fixed offset on the disk.",
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "offset": {
+          "$ref": "#/$defs/rugix_bakery.foreign.NumBytes"
+        },
+        "size": {
+          "$ref": "#/$defs/rugix_bakery.foreign.NumBytes"
+        }
+      },
+      "required": [
+        "file",
+        "offset"
+      ],
+      "unevaluatedProperties": false
+    },
     "rugix_bakery.foreign.NumBytes": {
       "$id": "rugix_bakery.foreign.NumBytes",
       "type": [
-        "number",
-        "string"
+        "string",
+        "number"
       ],
       "description": "Number of bytes."
     },
@@ -156,6 +320,12 @@
         "type": {
           "$ref": "#/$defs/rugix_bakery.images.PartitionTableType"
         },
+        "raw-blobs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rugix_bakery.images.RawBlob"
+          }
+        },
         "partitions": {
           "type": "array",
           "items": {
@@ -201,6 +371,27 @@
         "string"
       ],
       "description": "Partition type."
+    },
+    "rugix_bakery.images.RawBlob": {
+      "$id": "rugix_bakery.images.RawBlob",
+      "type": "object",
+      "description": "Raw firmware blob written at a fixed offset on the disk.",
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "offset": {
+          "$ref": "#/$defs/rugix_bakery.foreign.NumBytes"
+        },
+        "size": {
+          "$ref": "#/$defs/rugix_bakery.foreign.NumBytes"
+        }
+      },
+      "required": [
+        "file",
+        "offset"
+      ],
+      "unevaluatedProperties": false
     },
     "rugix_bakery.images.SquashfsOptions": {
       "$id": "rugix_bakery.images.SquashfsOptions",
@@ -473,6 +664,7 @@
         "generic-grub-efi",
         "rpi-tryboot",
         "rpi-uboot",
+        "bsp",
         "unknown"
       ],
       "description": "Target."
