@@ -78,7 +78,6 @@ install_from_deb() {
         "amd64") deb_arch="amd64" ;;
         "arm64") deb_arch="arm64" ;;
         "armv7") deb_arch="armhf" ;;
-        "armhf") deb_arch="armhf" ;;
         *)
             echo "No .deb package available for architecture '${RUGIX_ARCH}', falling back to tar."
             install_from_tar "${version}"
