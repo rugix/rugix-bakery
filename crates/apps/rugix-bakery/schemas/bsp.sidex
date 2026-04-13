@@ -1,0 +1,86 @@
+//! Rugix BSP configuration (`rugix-bsp.toml`).
+
+import foreign::NumBytes
+import images::PartitionTableType
+import images::PartitionType
+import images::Filesystem
+
+/// BSP configuration.
+#[json(rename_all = "kebab-case")]
+record BspConfig {
+    /// BSP metadata.
+    bsp: BspMetadata,
+    /// Image configuration.
+    image: BspImage,
+    /// Bundle payload mapping.
+    bundle?: BspBundle,
+}
+
+/// BSP image configuration.
+record BspImage {
+    /// Image layout.
+    layout: BspImageLayout,
+}
+
+/// BSP metadata.
+record BspMetadata {
+    /// Name of the BSP.
+    name: string,
+    /// Architecture.
+    architecture: string,
+}
+
+/// Image layout specification.
+#[json(rename_all = "kebab-case")]
+record BspImageLayout {
+    /// Partition table type.
+    #[json(name = "type")]
+    ty: PartitionTableType,
+    /// Raw firmware blobs written at fixed byte offsets.
+    raw_blobs?: [BspRawBlob],
+    /// Partitions.
+    partitions?: [BspPartition],
+}
+
+/// Raw firmware blob written at a fixed offset on the disk.
+record BspRawBlob {
+    /// Path to the blob file (relative to the BSP archive root).
+    file: string,
+    /// Byte offset from the start of the disk image.
+    offset: NumBytes,
+    /// Reserved size for the blob region. When set, partition offsets are
+    /// computed from `offset + size` instead of `offset + file_size`. Must
+    /// be at least as large as the actual blob file.
+    size?: NumBytes,
+}
+
+/// Partition in the BSP disk layout.
+record BspPartition {
+    /// Partition label.
+    name: string,
+    /// Size of the partition.
+    size?: NumBytes,
+    /// Filesystem type and options.
+    filesystem?: Filesystem,
+    /// Partition type (GUID or MBR hex value).
+    #[json(name = "type")]
+    ty?: PartitionType,
+    /// Root directory name in the layer.
+    root?: string,
+}
+
+/// Bundle payload mapping.
+record BspBundle {
+    /// Payload definitions for update bundles.
+    payloads: [BspBundlePayload],
+}
+
+/// Bundle payload mapping entry.
+record BspBundlePayload {
+    /// Slot name in rugix-ctrl.
+    slot: string,
+    /// Partition number (1-based) whose filesystem image is the payload.
+    partition?: u32,
+    /// File path (relative to artifacts) for file-based payloads.
+    file?: string,
+}

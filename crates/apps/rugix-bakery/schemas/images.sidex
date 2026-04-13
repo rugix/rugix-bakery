@@ -37,10 +37,14 @@ record ImageLayout {
 
 /// Raw firmware blob written at a fixed offset on the disk.
 record RawBlob {
-    /// Path to the blob file (relative to the artifacts directory).
+    /// Path to the blob file (relative to the layer root).
     file: string,
     /// Byte offset from the start of the disk image.
     offset: NumBytes,
+    /// Reserved size for the blob region. When set, partition offsets are
+    /// computed from `offset + size` instead of `offset + file_size`. Must
+    /// be at least as large as the actual blob file.
+    size?: NumBytes,
 }
 
 /// Partition table type.

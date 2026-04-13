@@ -1,6 +1,0 @@
-__pycache__
-build
-.venv
-cache
-output
-.*_cache
