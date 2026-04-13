@@ -6,7 +6,6 @@ use std::time::Duration;
 
 use xscript::{run, RunAsync};
 
-use async_trait::async_trait;
 use byte_calc::NumBytes;
 use reportify::{bail, whatever, ErrorExt, Report, ResultExt, Whatever};
 
@@ -217,8 +216,7 @@ impl Vm {
         let Some(private_key) = self.private_key.clone() else {
             bail!("no private key");
         };
-        let key = PrivateKeyWithHashAlg::new(private_key, Some(ssh_key::HashAlg::Sha512))
-            .whatever("unable to construct SSH key for SSH authentication")?;
+        let key = PrivateKeyWithHashAlg::new(private_key, Some(ssh_key::HashAlg::Sha512));
         time::timeout(Duration::from_secs(120), async {
             loop {
                 debug!("trying to connect to VM via SSH");
@@ -232,6 +230,7 @@ impl Vm {
                         .authenticate_publickey("root", key)
                         .await
                         .whatever("unable to authenticate via SSH")?
+                        .success()
                     {
                         bail!("unable to authenticate with the provided private key");
                     }
@@ -420,7 +419,6 @@ impl Whatever for SshError {
     }
 }
 
-#[async_trait]
 impl russh::client::Handler for SshHandler {
     type Error = SshError;
 
