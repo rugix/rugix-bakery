@@ -1,0 +1,5 @@
+description = "Install BSP artifacts from a pre-built Rugix Bakery BSP archive."
+priority = 900_000
+
+[parameters]
+bsp_archive = { default = "" }

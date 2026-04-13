@@ -24,12 +24,23 @@ record ImageConfig {
 }
 
 /// Layout of an image.
+#[json(rename_all = "kebab-case")]
 record ImageLayout {
     /// Type of the partition table.
     #[json(name = "type")]
     ty?: PartitionTableType,
+    /// Raw blobs written at fixed byte offsets on the disk image.
+    raw_blobs?: [RawBlob],
     /// Image partitions.
     partitions?: [ImagePartition],
+}
+
+/// Raw firmware blob written at a fixed offset on the disk.
+record RawBlob {
+    /// Path to the blob file (relative to the artifacts directory).
+    file: string,
+    /// Byte offset from the start of the disk image.
+    offset: NumBytes,
 }
 
 /// Partition table type.

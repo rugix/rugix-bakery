@@ -20,7 +20,7 @@ use rugix_common::utils::ascii_numbers;
 use rugix_common::utils::units::NumBytes;
 use rugix_common::{grub_patch_env, rpi_patch_boot};
 
-use crate::config::images::{Filesystem, ImageLayout};
+use crate::config::images::{Filesystem, ImageLayout, RawBlob};
 use crate::config::load_json;
 use crate::config::systems::{SystemConfig, Target};
 use crate::oven::targets;
@@ -188,7 +188,7 @@ pub fn make_system(
     let image_file = out.join("system.img");
 
     info!("Computing partition table.");
-    let table = compute_partition_table(&layout, &layer_path.join("roots"))?;
+    let table = compute_partition_table(&layout, &layer_path.join("roots"), &artifacts_dir)?;
 
     let size_bytes = table.blocks_to_bytes(table.disk_size);
 
@@ -204,6 +204,12 @@ pub fn make_system(
     table
         .write(&image_file)
         .whatever("error writing image partition table")?;
+
+    // Write raw firmware blobs at their specified offsets.  Partitions are
+    // already placed after the blobs, so there is no overlap.
+    if let Some(raw_blobs) = &layout.raw_blobs {
+        write_raw_blobs(raw_blobs, &artifacts_dir, &image_file)?;
+    }
 
     let table =
         PartitionTable::read(&image_file).whatever("error reading image partition table")?;
@@ -403,7 +409,11 @@ fn bytes_to_blocks(bytes: NumBytes) -> NumBlocks {
 }
 
 /// Compute the partition table for an image based on the provided layout.
-fn compute_partition_table(layout: &ImageLayout, roots_dir: &Path) -> BakeryResult<PartitionTable> {
+fn compute_partition_table(
+    layout: &ImageLayout,
+    roots_dir: &Path,
+    artifacts_dir: &Path,
+) -> BakeryResult<PartitionTable> {
     let table_type = layout
         .ty
         .map(|ty| match ty {
@@ -412,7 +422,24 @@ fn compute_partition_table(layout: &ImageLayout, roots_dir: &Path) -> BakeryResu
         })
         .unwrap_or(PartitionTableType::Mbr);
     let mut partitions = Vec::new();
+    // Start partitions after any raw blobs so they don't overlap.
     let mut next_usable = ALIGNMENT;
+    if let Some(raw_blobs) = &layout.raw_blobs {
+        for blob in raw_blobs {
+            let blob_path = artifacts_dir.join(&blob.file);
+            if blob_path.exists() {
+                let blob_size = fs::metadata(&blob_path)
+                    .whatever("unable to read raw blob metadata")?
+                    .len();
+                let blob_end = blob.offset.raw + blob_size;
+                let blob_end_blocks = bytes_to_blocks(NumBytes::from_raw(blob_end));
+                let aligned = blob_end_blocks.ceil_align_to(ALIGNMENT);
+                if aligned > next_usable {
+                    next_usable = aligned;
+                }
+            }
+        }
+    }
     let mut next_number = 1;
     let mut in_extended = false;
     if let Some(layout_partitions) = &layout.partitions {
@@ -500,6 +527,32 @@ fn compute_partition_table(layout: &ImageLayout, roots_dir: &Path) -> BakeryResu
         .validate()
         .whatever("unable to validate image partitions")?;
     Ok(table)
+}
+
+/// Write raw firmware blobs at their specified byte offsets on the disk image.
+fn write_raw_blobs(blobs: &[RawBlob], artifacts_dir: &Path, image_file: &Path) -> BakeryResult<()> {
+    use std::io::Write;
+    for blob in blobs {
+        let blob_path = artifacts_dir.join(&blob.file);
+        if !blob_path.exists() {
+            bail!("raw blob file not found: {}", blob_path.display());
+        }
+        let offset = blob.offset.raw;
+        info!(
+            "Writing raw blob `{}` at offset {offset}.",
+            blob.file,
+        );
+        let blob_data = fs::read(&blob_path).whatever("unable to read raw blob file")?;
+        let mut dst = File::options()
+            .write(true)
+            .open(image_file)
+            .whatever("unable to open image file")?;
+        dst.seek(std::io::SeekFrom::Start(offset))
+            .whatever("unable to seek in image file")?;
+        dst.write_all(&blob_data)
+            .whatever("unable to write raw blob")?;
+    }
+    Ok(())
 }
 
 /// Compute the required size for a filesystem based on the given root path.
