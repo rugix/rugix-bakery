@@ -31,7 +31,7 @@ With Rugix, you get a **comprehensive tool suite to build, test, and run your sy
 
 ## Using Rugix Ctrl with Other Build Systems
 
-Rugix Bakery is the easiest way to get started, but it's not the only option. If you already have a favorite build system or must use Yocto, you can integrate [Rugix Ctrl](https://github.com/rugix/rugix) directly using our [open-source Yocto layers](https://github.com/rugix/meta-rugix).
+If you have no prior experience with Linux and embedded devices, Rugix Bakery is the easiest way to get started. If you are already using Yocto, you can integrate Rugix Ctrl directly using our [open-source Yocto layers](https://github.com/rugix/meta-rugix), which are equally well supported.
 
 ## ⚖️ Licensing
 
