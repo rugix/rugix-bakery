@@ -77,7 +77,6 @@
         }
       },
       "required": [
-        "bsp",
         "image"
       ],
       "unevaluatedProperties": false
@@ -134,10 +133,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "name",
-        "architecture"
-      ],
+      "required": [],
       "unevaluatedProperties": false
     },
     "rugix_bakery.bsp.BspPartition": {

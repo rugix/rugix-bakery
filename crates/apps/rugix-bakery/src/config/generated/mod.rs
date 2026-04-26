@@ -9,8 +9,8 @@ pub mod bsp {
     #[doc = "BSP configuration.\n"]
     #[derive(Clone, Debug)]
     pub struct BspConfig {
-        #[doc = "BSP metadata.\n"]
-        pub bsp: BspMetadata,
+        #[doc = "BSP metadata. Optional — the bake doesn't read these fields, they're\npurely descriptive.\n"]
+        pub bsp: ::std::option::Option<BspMetadata>,
         #[doc = "Image configuration.\n"]
         pub image: BspImage,
         #[doc = "Bundle payload mapping.\n"]
@@ -18,20 +18,20 @@ pub mod bsp {
     }
     impl BspConfig {
         #[doc = "Creates a new [`BspConfig`]."]
-        pub fn new(bsp: BspMetadata, image: BspImage) -> Self {
+        pub fn new(image: BspImage) -> Self {
             Self {
-                bsp,
                 image,
+                bsp: ::std::default::Default::default(),
                 bundle: ::std::default::Default::default(),
             }
         }
         #[doc = "Sets the value of `bsp`."]
-        pub fn set_bsp(&mut self, bsp: BspMetadata) -> &mut Self {
+        pub fn set_bsp(&mut self, bsp: ::std::option::Option<BspMetadata>) -> &mut Self {
             self.bsp = bsp;
             self
         }
         #[doc = "Sets the value of `bsp`."]
-        pub fn with_bsp(mut self, bsp: BspMetadata) -> Self {
+        pub fn with_bsp(mut self, bsp: ::std::option::Option<BspMetadata>) -> Self {
             self.bsp = bsp;
             self
         }
@@ -64,7 +64,7 @@ pub mod bsp {
         ) -> ::std::result::Result<__S::Ok, __S::Error> {
             let mut __record =
                 __sidex_serde::ser::RecordSerializer::new(__serializer, "BspConfig", 3usize)?;
-            __record.serialize_field("bsp", &self.bsp)?;
+            __record.serialize_optional_field("bsp", ::core::option::Option::as_ref(&self.bsp))?;
             __record.serialize_field("image", &self.image)?;
             __record
                 .serialize_optional_field("bundle", ::core::option::Option::as_ref(&self.bundle))?;
@@ -96,18 +96,17 @@ pub mod bsp {
                 where
                     __A: __serde::de::SeqAccess<'de>,
                 {
-                    let __field0 =
-                        match __serde::de::SeqAccess::next_element::<BspMetadata>(&mut __seq)? {
-                            ::core::option::Option::Some(__value) => __value,
-                            ::core::option::Option::None => {
-                                return ::core::result::Result::Err(
-                                    __serde::de::Error::invalid_length(
-                                        0usize,
-                                        &"record with 3 fields",
-                                    ),
-                                );
-                            }
-                        };
+                    let __field0 = match __serde::de::SeqAccess::next_element::<
+                        ::std::option::Option<BspMetadata>,
+                    >(&mut __seq)?
+                    {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => {
+                            return ::core::result::Result::Err(
+                                __serde::de::Error::invalid_length(0usize, &"record with 3 fields"),
+                            );
+                        }
+                    };
                     let __field1 =
                         match __serde::de::SeqAccess::next_element::<BspImage>(&mut __seq)? {
                             ::core::option::Option::Some(__value) => __value,
@@ -227,7 +226,7 @@ pub mod bsp {
                             )
                         }
                     }
-                    let mut __field0: ::core::option::Option<BspMetadata> =
+                    let mut __field0: ::core::option::Option<::std::option::Option<BspMetadata>> =
                         ::core::option::Option::None;
                     let mut __field1: ::core::option::Option<BspImage> =
                         ::core::option::Option::None;
@@ -244,7 +243,9 @@ pub mod bsp {
                                     );
                                 }
                                 __field0 = ::core::option::Option::Some(
-                                    __serde::de::MapAccess::next_value::<BspMetadata>(&mut __map)?,
+                                    __serde::de::MapAccess::next_value::<
+                                        ::std::option::Option<BspMetadata>,
+                                    >(&mut __map)?,
                                 );
                             }
                             __Identifier::__Identifier1 => {
@@ -282,11 +283,7 @@ pub mod bsp {
                     }
                     let __field0 = match __field0 {
                         ::core::option::Option::Some(__value) => __value,
-                        ::core::option::Option::None => {
-                            return ::core::result::Result::Err(
-                                <__A::Error as __serde::de::Error>::missing_field("bsp"),
-                            );
-                        }
+                        ::core::option::Option::None => ::core::option::Option::None,
                     };
                     let __field1 = match __field1 {
                         ::core::option::Option::Some(__value) => __value,
@@ -527,34 +524,51 @@ pub mod bsp {
     #[derive(Clone, Debug)]
     pub struct BspMetadata {
         #[doc = "Name of the BSP.\n"]
-        pub name: ::std::string::String,
+        pub name: ::std::option::Option<::std::string::String>,
         #[doc = "Architecture.\n"]
-        pub architecture: ::std::string::String,
+        pub architecture: ::std::option::Option<::std::string::String>,
     }
     impl BspMetadata {
         #[doc = "Creates a new [`BspMetadata`]."]
-        pub fn new(name: ::std::string::String, architecture: ::std::string::String) -> Self {
-            Self { name, architecture }
+        pub fn new() -> Self {
+            Self {
+                name: ::std::default::Default::default(),
+                architecture: ::std::default::Default::default(),
+            }
         }
         #[doc = "Sets the value of `name`."]
-        pub fn set_name(&mut self, name: ::std::string::String) -> &mut Self {
+        pub fn set_name(
+            &mut self,
+            name: ::std::option::Option<::std::string::String>,
+        ) -> &mut Self {
             self.name = name;
             self
         }
         #[doc = "Sets the value of `name`."]
-        pub fn with_name(mut self, name: ::std::string::String) -> Self {
+        pub fn with_name(mut self, name: ::std::option::Option<::std::string::String>) -> Self {
             self.name = name;
             self
         }
         #[doc = "Sets the value of `architecture`."]
-        pub fn set_architecture(&mut self, architecture: ::std::string::String) -> &mut Self {
+        pub fn set_architecture(
+            &mut self,
+            architecture: ::std::option::Option<::std::string::String>,
+        ) -> &mut Self {
             self.architecture = architecture;
             self
         }
         #[doc = "Sets the value of `architecture`."]
-        pub fn with_architecture(mut self, architecture: ::std::string::String) -> Self {
+        pub fn with_architecture(
+            mut self,
+            architecture: ::std::option::Option<::std::string::String>,
+        ) -> Self {
             self.architecture = architecture;
             self
+        }
+    }
+    impl ::std::default::Default for BspMetadata {
+        fn default() -> Self {
+            Self::new()
         }
     }
     #[automatically_derived]
@@ -565,8 +579,12 @@ pub mod bsp {
         ) -> ::std::result::Result<__S::Ok, __S::Error> {
             let mut __record =
                 __sidex_serde::ser::RecordSerializer::new(__serializer, "BspMetadata", 2usize)?;
-            __record.serialize_field("name", &self.name)?;
-            __record.serialize_field("architecture", &self.architecture)?;
+            __record
+                .serialize_optional_field("name", ::core::option::Option::as_ref(&self.name))?;
+            __record.serialize_optional_field(
+                "architecture",
+                ::core::option::Option::as_ref(&self.architecture),
+            )?;
             __record.end()
         }
     }
@@ -596,7 +614,7 @@ pub mod bsp {
                     __A: __serde::de::SeqAccess<'de>,
                 {
                     let __field0 = match __serde::de::SeqAccess::next_element::<
-                        ::std::string::String,
+                        ::std::option::Option<::std::string::String>,
                     >(&mut __seq)?
                     {
                         ::core::option::Option::Some(__value) => __value,
@@ -607,7 +625,7 @@ pub mod bsp {
                         }
                     };
                     let __field1 = match __serde::de::SeqAccess::next_element::<
-                        ::std::string::String,
+                        ::std::option::Option<::std::string::String>,
                     >(&mut __seq)?
                     {
                         ::core::option::Option::Some(__value) => __value,
@@ -710,10 +728,12 @@ pub mod bsp {
                             )
                         }
                     }
-                    let mut __field0: ::core::option::Option<::std::string::String> =
-                        ::core::option::Option::None;
-                    let mut __field1: ::core::option::Option<::std::string::String> =
-                        ::core::option::Option::None;
+                    let mut __field0: ::core::option::Option<
+                        ::std::option::Option<::std::string::String>,
+                    > = ::core::option::Option::None;
+                    let mut __field1: ::core::option::Option<
+                        ::std::option::Option<::std::string::String>,
+                    > = ::core::option::Option::None;
                     while let ::core::option::Option::Some(__key) =
                         __serde::de::MapAccess::next_key::<__Identifier>(&mut __map)?
                     {
@@ -725,9 +745,9 @@ pub mod bsp {
                                     );
                                 }
                                 __field0 = ::core::option::Option::Some(
-                                    __serde::de::MapAccess::next_value::<::std::string::String>(
-                                        &mut __map,
-                                    )?,
+                                    __serde::de::MapAccess::next_value::<
+                                        ::std::option::Option<::std::string::String>,
+                                    >(&mut __map)?,
                                 );
                             }
                             __Identifier::__Identifier1 => {
@@ -739,9 +759,9 @@ pub mod bsp {
                                     );
                                 }
                                 __field1 = ::core::option::Option::Some(
-                                    __serde::de::MapAccess::next_value::<::std::string::String>(
-                                        &mut __map,
-                                    )?,
+                                    __serde::de::MapAccess::next_value::<
+                                        ::std::option::Option<::std::string::String>,
+                                    >(&mut __map)?,
                                 );
                             }
                             _ => {
@@ -753,19 +773,11 @@ pub mod bsp {
                     }
                     let __field0 = match __field0 {
                         ::core::option::Option::Some(__value) => __value,
-                        ::core::option::Option::None => {
-                            return ::core::result::Result::Err(
-                                <__A::Error as __serde::de::Error>::missing_field("name"),
-                            );
-                        }
+                        ::core::option::Option::None => ::core::option::Option::None,
                     };
                     let __field1 = match __field1 {
                         ::core::option::Option::Some(__value) => __value,
-                        ::core::option::Option::None => {
-                            return ::core::result::Result::Err(
-                                <__A::Error as __serde::de::Error>::missing_field("architecture"),
-                            );
-                        }
+                        ::core::option::Option::None => ::core::option::Option::None,
                     };
                     ::core::result::Result::Ok(BspMetadata {
                         name: __field0,

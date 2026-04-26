@@ -9,7 +9,7 @@ import images::Filesystem
 #[json(rename_all = "kebab-case")]
 record BspConfig {
     /// BSP metadata.
-    bsp: BspMetadata,
+    bsp?: BspMetadata,
     /// Image configuration.
     image: BspImage,
     /// Bundle payload mapping.
@@ -25,9 +25,9 @@ record BspImage {
 /// BSP metadata.
 record BspMetadata {
     /// Name of the BSP.
-    name: string,
+    name?: string,
     /// Architecture.
-    architecture: string,
+    architecture?: string,
 }
 
 /// Image layout specification.
