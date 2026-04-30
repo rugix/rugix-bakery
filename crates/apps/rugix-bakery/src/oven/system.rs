@@ -137,7 +137,12 @@ pub fn make_system(
         release_version,
         "--quiet",
         "-o",
-        format!("spdx-json={}", out.join("sbom.spdx.json").to_string_lossy())
+        format!("spdx-json={}", out.join("sbom.spdx.json").to_string_lossy()),
+        "-o",
+        format!(
+            "cyclonedx-json={}",
+            out.join("sbom.cdx.json").to_string_lossy()
+        )
     ])
     .whatever("unable to generate SBOM")?;
 
