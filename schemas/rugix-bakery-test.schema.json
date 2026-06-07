@@ -250,6 +250,12 @@
             "type": {
               "const": "squashfs"
             },
+            "additional-options": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
             "no-compression": {
               "type": "boolean"
             }
@@ -373,6 +379,12 @@
       "type": "object",
       "description": "",
       "properties": {
+        "additional-options": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "no-compression": {
           "type": "boolean"
         }

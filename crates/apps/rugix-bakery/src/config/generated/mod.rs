@@ -4573,14 +4573,33 @@ pub mod images {
     #[derive(Clone, Debug)]
     pub struct SquashfsOptions {
         #[doc = ""]
+        pub additional_options: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+        #[doc = ""]
         pub no_compression: ::std::option::Option<bool>,
     }
     impl SquashfsOptions {
         #[doc = "Creates a new [`SquashfsOptions`]."]
         pub fn new() -> Self {
             Self {
+                additional_options: ::std::default::Default::default(),
                 no_compression: ::std::default::Default::default(),
             }
+        }
+        #[doc = "Sets the value of `additional_options`."]
+        pub fn set_additional_options(
+            &mut self,
+            additional_options: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+        ) -> &mut Self {
+            self.additional_options = additional_options;
+            self
+        }
+        #[doc = "Sets the value of `additional_options`."]
+        pub fn with_additional_options(
+            mut self,
+            additional_options: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+        ) -> Self {
+            self.additional_options = additional_options;
+            self
         }
         #[doc = "Sets the value of `no_compression`."]
         pub fn set_no_compression(
@@ -4608,7 +4627,11 @@ pub mod images {
             __serializer: __S,
         ) -> ::std::result::Result<__S::Ok, __S::Error> {
             let mut __record =
-                __sidex_serde::ser::RecordSerializer::new(__serializer, "SquashfsOptions", 1usize)?;
+                __sidex_serde::ser::RecordSerializer::new(__serializer, "SquashfsOptions", 2usize)?;
+            __record.serialize_optional_field(
+                "additional-options",
+                ::core::option::Option::as_ref(&self.additional_options),
+            )?;
             __record.serialize_optional_field(
                 "no-compression",
                 ::core::option::Option::as_ref(&self.no_compression),
@@ -4642,18 +4665,30 @@ pub mod images {
                     __A: __serde::de::SeqAccess<'de>,
                 {
                     let __field0 = match __serde::de::SeqAccess::next_element::<
+                        ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+                    >(&mut __seq)?
+                    {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => {
+                            return ::core::result::Result::Err(
+                                __serde::de::Error::invalid_length(0usize, &"record with 2 fields"),
+                            );
+                        }
+                    };
+                    let __field1 = match __serde::de::SeqAccess::next_element::<
                         ::std::option::Option<bool>,
                     >(&mut __seq)?
                     {
                         ::core::option::Option::Some(__value) => __value,
                         ::core::option::Option::None => {
                             return ::core::result::Result::Err(
-                                __serde::de::Error::invalid_length(0usize, &"record with 1 fields"),
+                                __serde::de::Error::invalid_length(1usize, &"record with 2 fields"),
                             );
                         }
                     };
                     ::core::result::Result::Ok(SquashfsOptions {
-                        no_compression: __field0,
+                        additional_options: __field0,
+                        no_compression: __field1,
                     })
                 }
                 #[inline]
@@ -4665,14 +4700,16 @@ pub mod images {
                     __A: __serde::de::MapAccess<'de>,
                 {
                     #[doc(hidden)]
-                    const __IDENTIFIERS: &'static [&'static str] = &["no-compression"];
+                    const __IDENTIFIERS: &'static [&'static str] =
+                        &["additional-options", "no-compression"];
                     #[doc(hidden)]
                     const __EXPECTING_IDENTIFIERS: &'static str =
-                        "an identifier in [\"no-compression\"]";
+                        "an identifier in [\"additional-options\", \"no-compression\"]";
                     #[derive(:: core :: clone :: Clone, :: core :: marker :: Copy)]
                     #[doc(hidden)]
                     enum __Identifier {
                         __Identifier0,
+                        __Identifier1,
                         __Unknown,
                     }
                     #[doc(hidden)]
@@ -4694,6 +4731,7 @@ pub mod images {
                         {
                             match __value {
                                 0u64 => ::core::result::Result::Ok(__Identifier::__Identifier0),
+                                1u64 => ::core::result::Result::Ok(__Identifier::__Identifier1),
                                 _ => ::core::result::Result::Ok(__Identifier::__Unknown),
                             }
                         }
@@ -4705,8 +4743,11 @@ pub mod images {
                             __E: __serde::de::Error,
                         {
                             match __value {
-                                "no-compression" => {
+                                "additional-options" => {
                                     ::core::result::Result::Ok(__Identifier::__Identifier0)
+                                }
+                                "no-compression" => {
+                                    ::core::result::Result::Ok(__Identifier::__Identifier1)
                                 }
                                 _ => ::core::result::Result::Ok(__Identifier::__Unknown),
                             }
@@ -4719,8 +4760,11 @@ pub mod images {
                             __E: __serde::de::Error,
                         {
                             match __value {
-                                b"no-compression" => {
+                                b"additional-options" => {
                                     ::core::result::Result::Ok(__Identifier::__Identifier0)
+                                }
+                                b"no-compression" => {
+                                    ::core::result::Result::Ok(__Identifier::__Identifier1)
                                 }
                                 _ => ::core::result::Result::Ok(__Identifier::__Unknown),
                             }
@@ -4740,7 +4784,10 @@ pub mod images {
                             )
                         }
                     }
-                    let mut __field0: ::core::option::Option<::std::option::Option<bool>> =
+                    let mut __field0: ::core::option::Option<
+                        ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+                    > = ::core::option::Option::None;
+                    let mut __field1: ::core::option::Option<::std::option::Option<bool>> =
                         ::core::option::Option::None;
                     while let ::core::option::Option::Some(__key) =
                         __serde::de::MapAccess::next_key::<__Identifier>(&mut __map)?
@@ -4750,11 +4797,27 @@ pub mod images {
                                 if ::core::option::Option::is_some(&__field0) {
                                     return ::core::result::Result::Err(
                                         <__A::Error as __serde::de::Error>::duplicate_field(
-                                            "no-compression",
+                                            "additional-options",
                                         ),
                                     );
                                 }
                                 __field0 = ::core::option::Option::Some(
+                                    __serde::de::MapAccess::next_value::<
+                                        ::std::option::Option<
+                                            ::std::vec::Vec<::std::string::String>,
+                                        >,
+                                    >(&mut __map)?,
+                                );
+                            }
+                            __Identifier::__Identifier1 => {
+                                if ::core::option::Option::is_some(&__field1) {
+                                    return ::core::result::Result::Err(
+                                        <__A::Error as __serde::de::Error>::duplicate_field(
+                                            "no-compression",
+                                        ),
+                                    );
+                                }
+                                __field1 = ::core::option::Option::Some(
                                     __serde::de::MapAccess::next_value::<
                                         ::std::option::Option<bool>,
                                     >(&mut __map)?,
@@ -4771,13 +4834,18 @@ pub mod images {
                         ::core::option::Option::Some(__value) => __value,
                         ::core::option::Option::None => ::core::option::Option::None,
                     };
+                    let __field1 = match __field1 {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => ::core::option::Option::None,
+                    };
                     ::core::result::Result::Ok(SquashfsOptions {
-                        no_compression: __field0,
+                        additional_options: __field0,
+                        no_compression: __field1,
                     })
                 }
             }
             #[doc(hidden)]
-            const __FIELDS: &'static [&'static str] = &["no-compression"];
+            const __FIELDS: &'static [&'static str] = &["additional-options", "no-compression"];
             __serde::Deserializer::deserialize_struct(
                 __deserializer,
                 "SquashfsOptions",

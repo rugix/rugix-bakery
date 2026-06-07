@@ -89,6 +89,7 @@ record Ext4Options {
 
 #[json(rename_all = "kebab-case")]
 record SquashfsOptions {
+    additional_options?: [string],
     no_compression?: bool
 }
 
