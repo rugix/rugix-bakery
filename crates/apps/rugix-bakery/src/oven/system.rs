@@ -367,6 +367,9 @@ pub fn make_system(
                         cmd.add_arg("-noF");
                         cmd.add_arg("-noX");
                     }
+                    if let Some(additional_options) = &squashfs_options.additional_options {
+                        cmd.extend_args(additional_options);
+                    }
                     cmd = cmd.with_vars(vars! {
                         SOURCE_DATE_EPOCH = source_date_epoch.to_string(),
                     });
