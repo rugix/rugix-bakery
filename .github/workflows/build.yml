@@ -206,14 +206,23 @@ jobs:
       - name: Download AMD64 Digest
         uses: actions/download-artifact@v8
         with:
-          pattern: bakery-digest-amd64
+          name: bakery-digest-amd64
           path: build/digests
       - name: Run Tests
         shell: bash
         run: |
           set -euo pipefail
 
-          DIGEST=$(ls build/digests/bakery-digest-amd64/)
+          DIGEST=$(
+            find build/digests -maxdepth 1 -type f -printf '%f\n' \
+              | sort \
+              | tee /tmp/bakery-digest-files.txt
+          )
+          if [ "$(wc -l < /tmp/bakery-digest-files.txt)" -ne 1 ]; then
+            echo "expected exactly one AMD64 digest artifact file" >&2
+            find build/digests -maxdepth 2 -type f -print >&2
+            exit 1
+          fi
 
           cd tests
 
