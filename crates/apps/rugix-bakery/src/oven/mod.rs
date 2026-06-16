@@ -1,6 +1,6 @@
 //! Functionality for baking layers and images.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -17,8 +17,8 @@ use xscript::{run, Run};
 
 use crate::config::images::PartitionTableType;
 use crate::config::recipes::ParameterValue;
-use crate::config::systems::{Architecture, Target};
-use crate::project::library::LayerIdx;
+use crate::config::systems::{Architecture, SystemConfig, Target};
+use crate::project::library::{LayerIdx, MixinIdx};
 use crate::project::ProjectRef;
 use crate::utils::caching::{download, Hasher};
 use crate::BakeryResult;
@@ -32,6 +32,23 @@ pub mod targets;
 ///
 /// Maps recipe names to their parameter key-value pairs.
 pub type ParameterOverrides = HashMap<String, HashMap<String, ParameterValue>>;
+
+/// Build-time mixin selection.
+#[derive(Clone, Debug, Default)]
+pub struct MixinSelection {
+    /// Mixins to enable for this bake in addition to system defaults.
+    pub enable: Vec<String>,
+    /// Mixins to disable for this bake.
+    pub disable: Vec<String>,
+    /// Do not enable mixins configured on the system by default.
+    pub no_default_mixins: bool,
+}
+
+#[derive(Debug)]
+struct BakedSystemLayer {
+    path: PathBuf,
+    mixins: Vec<String>,
+}
 
 /// Load and merge parameter overrides from the given parameter files.
 ///
@@ -57,6 +74,7 @@ pub fn bake_system(
     output: &Path,
     source_date_epoch: u64,
     param_overrides: &ParameterOverrides,
+    mixin_selection: &MixinSelection,
 ) -> BakeryResult<()> {
     let system_config = project
         .config()
@@ -64,8 +82,12 @@ pub fn bake_system(
         .ok_or_else(|| whatever!("unable to find image {system}"))?;
     info!("baking image `{system}`");
     let layer_bakery = LayerBakery::new(project, system_config.architecture, param_overrides);
-    let baked_layer = layer_bakery.bake_root(&system_config.layer, source_date_epoch)?;
-    let frozen = FrozenLayer::new(system_config.layer.clone(), baked_layer);
+    let baked_layer =
+        layer_bakery.bake_system_layer(system_config, mixin_selection, source_date_epoch)?;
+    let frozen = FrozenLayer::new(
+        frozen_layer_name(&system_config.layer, &baked_layer.mixins),
+        baked_layer.path,
+    );
     system::make_system(
         system_config,
         release_info,
@@ -73,6 +95,7 @@ pub fn bake_system(
         &frozen,
         output,
         source_date_epoch,
+        &baked_layer.mixins,
     )
 }
 
@@ -103,6 +126,27 @@ impl<'p> LayerBakery<'p> {
         self.bake(layer, source_date_epoch)
     }
 
+    fn bake_system_layer(
+        &self,
+        system_config: &SystemConfig,
+        mixin_selection: &MixinSelection,
+        source_date_epoch: u64,
+    ) -> BakeryResult<BakedSystemLayer> {
+        let mut path = self.bake_root(&system_config.layer, source_date_epoch)?;
+        let mixins = self.resolve_mixins(system_config, mixin_selection)?;
+        let mut mixin_names = Vec::new();
+        for mixin in mixins {
+            let library = self.project.library()?;
+            mixin_names.push(library.mixins[mixin].name.clone());
+            drop(library);
+            path = self.bake_mixin(mixin, &path, source_date_epoch)?;
+        }
+        Ok(BakedSystemLayer {
+            path,
+            mixins: mixin_names,
+        })
+    }
+
     pub fn bake(&self, layer: LayerIdx, source_date_epoch: u64) -> BakeryResult<PathBuf> {
         let repositories = &self.project.repositories()?.repositories;
         let library = self.project.library()?;
@@ -115,17 +159,7 @@ impl<'p> LayerBakery<'p> {
         layer_id.push("layer", &layer.name);
         layer_id.push("repository", repositories[layer.repo].source.id.as_str());
         layer_id.push("arch", self.arch.as_str());
-        if !self.param_overrides.is_empty() {
-            let mut sorted_overrides: Vec<_> = self.param_overrides.iter().collect();
-            sorted_overrides.sort_by_key(|(k, _)| k.as_str());
-            for (recipe, params) in &sorted_overrides {
-                let mut sorted_params: Vec<_> = params.iter().collect();
-                sorted_params.sort_by_key(|(k, _)| k.as_str());
-                for (param, value) in &sorted_params {
-                    layer_id.push(&format!("override:{recipe}:{param}"), value.to_string());
-                }
-            }
-        }
+        push_parameter_overrides(&mut layer_id, self.param_overrides);
         if let Some(url) = &config.url {
             layer_id.push("url", url);
             let layer_id = layer_id.finalize();
@@ -178,6 +212,171 @@ impl<'p> LayerBakery<'p> {
         } else {
             bail!("invalid layer configuration")
         }
+    }
+
+    fn bake_mixin(
+        &self,
+        mixin: MixinIdx,
+        src: &Path,
+        source_date_epoch: u64,
+    ) -> BakeryResult<PathBuf> {
+        let repositories = &self.project.repositories()?.repositories;
+        let library = self.project.library()?;
+        let mixin = &library.mixins[mixin];
+        info!("applying mixin `{}`", mixin.name);
+        if mixin.config(self.arch).is_none() {
+            bail!("no mixin configuration for architecture `{}`", self.arch);
+        }
+        let mut layer_id = Hasher::new();
+        layer_id.push("mixin", &mixin.name);
+        layer_id.push("repository", repositories[mixin.repo].source.id.as_str());
+        layer_id.push("arch", self.arch.as_str());
+        layer_id.push("source", src.to_string_lossy().as_ref());
+        push_parameter_overrides(&mut layer_id, self.param_overrides);
+        let layer_id = layer_id.finalize();
+        let layer_path = PathBuf::from(format!(".rugix/layers/{layer_id}"));
+        let target = self.project.dir().join(&layer_path).join("system.tar");
+        fs::create_dir_all(target.parent().unwrap()).ok();
+        let applied = customize::customize_mixin(
+            self.project,
+            self.arch,
+            mixin,
+            src,
+            &target,
+            &layer_path,
+            source_date_epoch,
+            self.param_overrides,
+        )?;
+        if applied {
+            Ok(target)
+        } else {
+            Ok(src.to_path_buf())
+        }
+    }
+
+    fn resolve_mixins(
+        &self,
+        system_config: &SystemConfig,
+        selection: &MixinSelection,
+    ) -> BakeryResult<Vec<MixinIdx>> {
+        let library = self.project.library()?;
+        let root_repo = library.repositories.root_repository;
+        let disabled = selection
+            .disable
+            .iter()
+            .map(|name| {
+                library
+                    .lookup_mixin(root_repo, name)
+                    .ok_or_else(|| whatever!("unable to find mixin `{name}`"))
+            })
+            .collect::<BakeryResult<HashSet<_>>>()?;
+
+        let mut requested = Vec::new();
+        if !selection.no_default_mixins {
+            for name in system_config.mixins.as_deref().unwrap_or_default() {
+                let idx = library
+                    .lookup_mixin(root_repo, name)
+                    .ok_or_else(|| whatever!("unable to find mixin `{name}`"))?;
+                if !disabled.contains(&idx) {
+                    requested.push(idx);
+                }
+            }
+        }
+        for name in &selection.enable {
+            let idx = library
+                .lookup_mixin(root_repo, name)
+                .ok_or_else(|| whatever!("unable to find mixin `{name}`"))?;
+            if disabled.contains(&idx) {
+                bail!("mixin `{name}` is both enabled and disabled");
+            }
+            requested.push(idx);
+        }
+
+        let mut resolved = Vec::new();
+        let mut state = HashMap::new();
+        for mixin in requested {
+            self.resolve_mixin(mixin, &disabled, &mut state, &mut resolved)?;
+        }
+        Ok(resolved)
+    }
+
+    fn resolve_mixin(
+        &self,
+        mixin: MixinIdx,
+        disabled: &HashSet<MixinIdx>,
+        state: &mut HashMap<MixinIdx, VisitState>,
+        resolved: &mut Vec<MixinIdx>,
+    ) -> BakeryResult<()> {
+        match state.get(&mixin) {
+            Some(VisitState::Done) => return Ok(()),
+            Some(VisitState::Visiting) => bail!("cycle while resolving mixins"),
+            None => {}
+        }
+        if disabled.contains(&mixin) {
+            let library = self.project.library()?;
+            bail!("mixin `{}` is disabled", library.mixins[mixin].name);
+        }
+        state.insert(mixin, VisitState::Visiting);
+        let dependencies = {
+            let library = self.project.library()?;
+            let mixin_ref = &library.mixins[mixin];
+            let mixin_config = mixin_ref.config(self.arch).ok_or_else(|| {
+                whatever!("no mixin configuration for architecture `{}`", self.arch)
+            })?;
+            mixin_config
+                .dependencies
+                .as_deref()
+                .unwrap_or_default()
+                .iter()
+                .map(|dependency| {
+                    let dependency_idx = library
+                        .lookup_mixin(mixin_ref.repo, dependency)
+                        .ok_or_else(|| whatever!("unable to find mixin `{dependency}`"))?;
+                    if disabled.contains(&dependency_idx) {
+                        bail!(
+                            "mixin `{dependency}` is disabled but required by `{}`",
+                            mixin_ref.name
+                        );
+                    }
+                    Ok(dependency_idx)
+                })
+                .collect::<BakeryResult<Vec<_>>>()?
+        };
+        for dependency_idx in dependencies {
+            self.resolve_mixin(dependency_idx, disabled, state, resolved)?;
+        }
+        state.insert(mixin, VisitState::Done);
+        resolved.push(mixin);
+        Ok(())
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum VisitState {
+    Visiting,
+    Done,
+}
+
+fn push_parameter_overrides(layer_id: &mut Hasher, param_overrides: &ParameterOverrides) {
+    if param_overrides.is_empty() {
+        return;
+    }
+    let mut sorted_overrides: Vec<_> = param_overrides.iter().collect();
+    sorted_overrides.sort_by_key(|(k, _)| k.as_str());
+    for (recipe, params) in &sorted_overrides {
+        let mut sorted_params: Vec<_> = params.iter().collect();
+        sorted_params.sort_by_key(|(k, _)| k.as_str());
+        for (param, value) in &sorted_params {
+            layer_id.push(&format!("override:{recipe}:{param}"), value.to_string());
+        }
+    }
+}
+
+fn frozen_layer_name(layer: &str, mixins: &[String]) -> String {
+    if mixins.is_empty() {
+        layer.to_owned()
+    } else {
+        format!("{}+{}", layer, mixins.join("+"))
     }
 }
 

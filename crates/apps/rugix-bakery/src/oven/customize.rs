@@ -18,14 +18,17 @@ use xscript::{cmd, run, vars, Cmd, ParentEnv, Run};
 
 use crate::cli::status::CliLog;
 use crate::config::layers::LayerConfig;
+use crate::config::mixins::MixinConfig;
+use crate::config::recipes::ParameterValue;
 use crate::config::systems::Architecture;
 use crate::oven::layer::LayerContext;
 use crate::project::layers::Layer;
 use crate::project::library::Library;
+use crate::project::mixins::Mixin;
 use crate::project::recipes::{PackageManager, Recipe, StepKind};
 use crate::project::repositories::RepositoryIdx;
 use crate::project::ProjectRef;
-use crate::utils::caching::{mtime, mtime_recursive};
+use crate::utils::caching::{mtime, mtime_recursive, ModificationTime};
 use crate::BakeryResult;
 
 struct Logger {
@@ -86,19 +89,80 @@ pub fn customize(
     source_date_epoch: u64,
     param_overrides: &super::ParameterOverrides,
 ) -> BakeryResult<()> {
+    let config = layer.config(arch).unwrap();
+    customize_recipes(
+        project,
+        arch,
+        &layer.name,
+        layer.repo,
+        layer.modified,
+        RecipeFragment::from_layer(config),
+        src,
+        target,
+        layer_path,
+        source_date_epoch,
+        param_overrides,
+        false,
+    )
+    .map(|_| ())
+}
+
+pub fn customize_mixin(
+    project: &ProjectRef,
+    arch: Architecture,
+    mixin: &Mixin,
+    src: &Path,
+    target: &Path,
+    layer_path: &Path,
+    source_date_epoch: u64,
+    param_overrides: &super::ParameterOverrides,
+) -> BakeryResult<bool> {
+    let config = mixin.config(arch).unwrap();
+    customize_recipes(
+        project,
+        arch,
+        &format!("mixin:{}", mixin.name),
+        mixin.repo,
+        mixin.modified,
+        RecipeFragment::from_mixin(config),
+        Some(src),
+        target,
+        layer_path,
+        source_date_epoch,
+        param_overrides,
+        true,
+    )
+}
+
+fn customize_recipes(
+    project: &ProjectRef,
+    arch: Architecture,
+    name: &str,
+    repo: RepositoryIdx,
+    modified: ModificationTime,
+    fragment: RecipeFragment<'_>,
+    src: Option<&Path>,
+    target: &Path,
+    layer_path: &Path,
+    source_date_epoch: u64,
+    param_overrides: &super::ParameterOverrides,
+    allow_empty: bool,
+) -> BakeryResult<bool> {
     let library = project.library()?;
     // Collect the recipes to apply.
-    let config = layer.config(arch).unwrap();
-    let jobs = recipe_schedule(layer.repo, config, &library, param_overrides)?;
+    let jobs = recipe_schedule(repo, fragment, &library, param_overrides)?;
     if jobs.is_empty() {
-        bail!("layer must have recipes")
+        if allow_empty {
+            return Ok(false);
+        }
+        bail!("{name} must have recipes")
     }
     let mut last_modified = jobs
         .iter()
         .map(|job| job.recipe.modified)
         .max()
         .unwrap()
-        .max(layer.modified);
+        .max(modified);
     if let Some(src) = src {
         last_modified = last_modified.max(mtime(src).whatever("unable to determine mtime")?);
     }
@@ -123,7 +187,7 @@ pub fn customize(
         && last_modified < mtime(target).whatever("unable to read `mtime` of target")?
         && !force_run
     {
-        return Ok(());
+        return Ok(true);
     }
     let bundle_dir = tempdir().whatever("unable to create temporary directory")?;
     let bundle_dir = bundle_dir.path();
@@ -141,7 +205,7 @@ pub fn customize(
     };
     let root_dir = bundle_dir.join("roots/system");
     std::fs::create_dir_all(&root_dir).ok();
-    let logger = Logger::new(&layer.name, layer_path)?;
+    let logger = Logger::new(name, layer_path)?;
     if let Err(error) = apply_recipes(
         &layer_ctx,
         &logger,
@@ -194,7 +258,7 @@ pub fn customize(
         "."
     ])
     .whatever("unable to package system files")?;
-    Ok(())
+    Ok(true)
 }
 
 struct RecipeJob {
@@ -202,15 +266,39 @@ struct RecipeJob {
     parameters: HashMap<String, String>,
 }
 
+#[derive(Clone, Copy)]
+struct RecipeFragment<'a> {
+    recipes: Option<&'a [String]>,
+    exclude: Option<&'a [String]>,
+    parameters: Option<&'a HashMap<String, HashMap<String, ParameterValue>>>,
+}
+
+impl<'a> RecipeFragment<'a> {
+    fn from_layer(config: &'a LayerConfig) -> Self {
+        Self {
+            recipes: config.recipes.as_deref(),
+            exclude: config.exclude.as_deref(),
+            parameters: config.parameters.as_ref(),
+        }
+    }
+
+    fn from_mixin(config: &'a MixinConfig) -> Self {
+        Self {
+            recipes: config.recipes.as_deref(),
+            exclude: config.exclude.as_deref(),
+            parameters: config.parameters.as_ref(),
+        }
+    }
+}
+
 fn recipe_schedule(
     repo: RepositoryIdx,
-    layer: &LayerConfig,
+    fragment: RecipeFragment<'_>,
     library: &Library,
     param_overrides: &super::ParameterOverrides,
 ) -> BakeryResult<Vec<RecipeJob>> {
-    let mut stack = layer
+    let mut stack = fragment
         .recipes
-        .as_deref()
         .unwrap_or_default()
         .iter()
         .map(|name| library.try_lookup(repo, name))
@@ -225,13 +313,12 @@ fn recipe_schedule(
             }
         }
     }
-    for excluded in layer.exclude.as_deref().unwrap_or_default() {
+    for excluded in fragment.exclude.unwrap_or_default() {
         let excluded = library.try_lookup(repo, excluded.deref())?;
         enabled.remove(&excluded);
     }
-    let parameters = layer
+    let parameters = fragment
         .parameters
-        .as_ref()
         .map(|parameters| {
             parameters
                 .iter()

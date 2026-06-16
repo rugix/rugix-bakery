@@ -6,7 +6,7 @@ use clap::Parser;
 
 use crate::config::systems::Architecture;
 use crate::oven::system::ReleaseInfo;
-use crate::oven::BundleOpts;
+use crate::oven::{BundleOpts, MixinSelection};
 
 /// Command line arguments.
 #[derive(Debug, Parser)]
@@ -78,6 +78,30 @@ pub struct ParamFileArgs {
     pub param_files: Vec<PathBuf>,
 }
 
+/// Build-time mixin selection arguments.
+#[derive(Debug, clap::Args)]
+pub struct MixinArgs {
+    /// Enable a mixin for this bake in addition to system defaults.
+    #[clap(long = "enable-mixin")]
+    pub enable_mixins: Vec<String>,
+    /// Disable a default mixin for this bake.
+    #[clap(long = "disable-mixin")]
+    pub disable_mixins: Vec<String>,
+    /// Do not enable mixins configured on the system by default.
+    #[clap(long)]
+    pub no_default_mixins: bool,
+}
+
+impl MixinArgs {
+    pub fn selection(&self) -> MixinSelection {
+        MixinSelection {
+            enable: self.enable_mixins.clone(),
+            disable: self.disable_mixins.clone(),
+            no_default_mixins: self.no_default_mixins,
+        }
+    }
+}
+
 /// The `bake` command.
 #[derive(Debug, Parser)]
 pub enum BakeCommand {
@@ -93,6 +117,8 @@ pub enum BakeCommand {
         source_date: Option<jiff::Timestamp>,
         #[clap(flatten)]
         params: ParamFileArgs,
+        #[clap(flatten)]
+        mixins: MixinArgs,
     },
     /// Bake a layer.
     Layer {
@@ -117,6 +143,8 @@ pub enum BakeCommand {
         release: ReleaseInfoArgs,
         #[clap(flatten)]
         params: ParamFileArgs,
+        #[clap(flatten)]
+        mixins: MixinArgs,
     },
 }
 
@@ -141,6 +169,8 @@ pub struct RunCommand {
     pub system: String,
     #[clap(flatten)]
     pub params: ParamFileArgs,
+    #[clap(flatten)]
+    pub mixins: MixinArgs,
 }
 
 /// The `bake` command.

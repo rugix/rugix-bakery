@@ -6,6 +6,8 @@ import images::{ImageLayout, SquashfsOptions}
 record SystemConfig {
     /// Layer the image is based on.
     layer: string,
+    /// Mixins enabled by default for the system.
+    mixins?: [string],
     /// Architecture of the image.
     architecture: Architecture,
     /// Rugix Bakery target.

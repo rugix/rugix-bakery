@@ -48,18 +48,32 @@ pub fn make_system(
     frozen: &FrozenLayer,
     out: &Path,
     source_date_epoch: u64,
+    mixins: &[String],
 ) -> BakeryResult<()> {
     let system_build_input = out.join("system-build-input.json");
     let system_build_info = out.join("system-build-info.json");
-    if system_build_info.exists() {
+    let build_input = SystemBuildInput {
+        release: release_info.clone(),
+        layer: SystemLayerInput {
+            name: frozen.name().to_owned(),
+            path: frozen.path().to_string_lossy().into_owned(),
+            mixins: mixins.to_vec(),
+        },
+    };
+    if system_build_info.exists() && system_build_input.exists() {
         let system_mtime = mtime(&system_build_info).whatever("unable to get system mtime")?;
         let layer_mtime = frozen.last_modified()?;
         if layer_mtime < system_mtime {
             info!("system is newer than layer");
-            let system_info = load_json::<SystemBuildInput>(&system_build_info)?;
-            if &system_info.release == release_info {
-                info!("release info has not changed, skipping build");
-                return Ok(());
+            match load_json::<SystemBuildInput>(&system_build_input) {
+                Ok(previous_input) if previous_input == build_input => {
+                    info!("system build input has not changed, skipping build");
+                    return Ok(());
+                }
+                Ok(_) => {}
+                Err(_) => {
+                    warn!("unable to load previous system build input, rebuilding");
+                }
             }
         } else {
             info!("layer is newer than system");
@@ -71,10 +85,7 @@ pub fn make_system(
 
     std::fs::write(
         &system_build_input,
-        serde_json::to_string_pretty(&SystemBuildInput {
-            release: release_info.clone(),
-        })
-        .unwrap(),
+        serde_json::to_string_pretty(&build_input).unwrap(),
     )
     .whatever("unable to write system info")?;
 
@@ -400,9 +411,17 @@ pub fn make_system(
     Ok(())
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SystemBuildInput {
     pub release: ReleaseInfo,
+    pub layer: SystemLayerInput,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SystemLayerInput {
+    pub name: String,
+    pub path: String,
+    pub mixins: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -21,6 +21,14 @@ impl FrozenLayer {
         Self { name, path }
     }
 
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
     pub fn last_modified(&self) -> BakeryResult<ModificationTime> {
         mtime(&self.path).whatever_with(|_| {
             format!(

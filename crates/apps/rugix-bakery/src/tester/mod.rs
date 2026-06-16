@@ -38,6 +38,7 @@ pub fn main(project: &ProjectRef, test_path: &Path) -> BakeryResult<()> {
             &system_out,
             source_date_epoch,
             &Default::default(),
+            &Default::default(),
         )
         .whatever("error baking system")?;
 

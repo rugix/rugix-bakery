@@ -1,0 +1,19 @@
+//! Mixin configuration.
+
+import recipes::ParameterValue
+
+/// Mixin configuration.
+record MixinConfig {
+    /// Human-friendly name of the mixin.
+    name?: string,
+    /// Description of the mixin.
+    description?: string,
+    /// Other mixins required by this mixin.
+    dependencies?: [string],
+    /// Recipes to apply with the mixin.
+    recipes?: [string],
+    /// Recipes to specifically exclude from this mixin.
+    exclude?: [string],
+    /// Recipe parameters.
+    parameters?: [string: [string: ParameterValue]],
+}

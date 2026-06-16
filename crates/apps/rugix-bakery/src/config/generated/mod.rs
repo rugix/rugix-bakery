@@ -9,7 +9,7 @@ pub mod bsp {
     #[doc = "BSP configuration.\n"]
     #[derive(Clone, Debug)]
     pub struct BspConfig {
-        #[doc = "BSP metadata. Optional — the bake doesn't read these fields, they're\npurely descriptive.\n"]
+        #[doc = "BSP metadata.\n"]
         pub bsp: ::std::option::Option<BspMetadata>,
         #[doc = "Image configuration.\n"]
         pub image: BspImage,
@@ -2639,7 +2639,7 @@ pub mod images {
                     const __IDENTIFIERS: &'static [&'static str] =
                         &["layer", "architecture", "target", "size", "layout"];
                     #[doc(hidden)]
-                    const __EXPECTING_IDENTIFIERS : & 'static str = "an identifier in [\"layer\", \"architecture\", \"target\", \"size\", \"layout\"]" ;
+                    const __EXPECTING_IDENTIFIERS: &'static str = "an identifier in [\"layer\", \"architecture\", \"target\", \"size\", \"layout\"]";
                     #[derive(:: core :: clone :: Clone, :: core :: marker :: Copy)]
                     #[doc(hidden)]
                     enum __Identifier {
@@ -5222,7 +5222,7 @@ pub mod layers {
                         "parameters",
                     ];
                     #[doc(hidden)]
-                    const __EXPECTING_IDENTIFIERS : & 'static str = "an identifier in [\"name\", \"description\", \"url\", \"parent\", \"root\", \"recipes\", \"exclude\", \"parameters\"]" ;
+                    const __EXPECTING_IDENTIFIERS: &'static str = "an identifier in [\"name\", \"description\", \"url\", \"parent\", \"root\", \"recipes\", \"exclude\", \"parameters\"]";
                     #[derive(:: core :: clone :: Clone, :: core :: marker :: Copy)]
                     #[doc(hidden)]
                     enum __Identifier {
@@ -5554,6 +5554,614 @@ pub mod layers {
             __serde::Deserializer::deserialize_struct(
                 __deserializer,
                 "LayerConfig",
+                __FIELDS,
+                __Visitor {
+                    __phantom_vars: ::core::marker::PhantomData,
+                },
+            )
+        }
+    }
+}
+pub mod mixins {
+    #![doc = "Mixin configuration.\n"]
+    #[allow(unused)]
+    use :: serde as __serde;
+    #[allow(unused)]
+    use :: sidex_serde as __sidex_serde;
+    #[doc = "Mixin configuration.\n"]
+    #[derive(Clone, Debug)]
+    pub struct MixinConfig {
+        #[doc = "Human-friendly name of the mixin.\n"]
+        pub name: ::std::option::Option<::std::string::String>,
+        #[doc = "Description of the mixin.\n"]
+        pub description: ::std::option::Option<::std::string::String>,
+        #[doc = "Other mixins required by this mixin.\n"]
+        pub dependencies: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+        #[doc = "Recipes to apply with the mixin.\n"]
+        pub recipes: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+        #[doc = "Recipes to specifically exclude from this mixin.\n"]
+        pub exclude: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+        #[doc = "Recipe parameters.\n"]
+        pub parameters: ::std::option::Option<
+            ::std::collections::HashMap<
+                ::std::string::String,
+                ::std::collections::HashMap<::std::string::String, super::recipes::ParameterValue>,
+            >,
+        >,
+    }
+    impl MixinConfig {
+        #[doc = "Creates a new [`MixinConfig`]."]
+        pub fn new() -> Self {
+            Self {
+                name: ::std::default::Default::default(),
+                description: ::std::default::Default::default(),
+                dependencies: ::std::default::Default::default(),
+                recipes: ::std::default::Default::default(),
+                exclude: ::std::default::Default::default(),
+                parameters: ::std::default::Default::default(),
+            }
+        }
+        #[doc = "Sets the value of `name`."]
+        pub fn set_name(
+            &mut self,
+            name: ::std::option::Option<::std::string::String>,
+        ) -> &mut Self {
+            self.name = name;
+            self
+        }
+        #[doc = "Sets the value of `name`."]
+        pub fn with_name(mut self, name: ::std::option::Option<::std::string::String>) -> Self {
+            self.name = name;
+            self
+        }
+        #[doc = "Sets the value of `description`."]
+        pub fn set_description(
+            &mut self,
+            description: ::std::option::Option<::std::string::String>,
+        ) -> &mut Self {
+            self.description = description;
+            self
+        }
+        #[doc = "Sets the value of `description`."]
+        pub fn with_description(
+            mut self,
+            description: ::std::option::Option<::std::string::String>,
+        ) -> Self {
+            self.description = description;
+            self
+        }
+        #[doc = "Sets the value of `dependencies`."]
+        pub fn set_dependencies(
+            &mut self,
+            dependencies: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+        ) -> &mut Self {
+            self.dependencies = dependencies;
+            self
+        }
+        #[doc = "Sets the value of `dependencies`."]
+        pub fn with_dependencies(
+            mut self,
+            dependencies: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+        ) -> Self {
+            self.dependencies = dependencies;
+            self
+        }
+        #[doc = "Sets the value of `recipes`."]
+        pub fn set_recipes(
+            &mut self,
+            recipes: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+        ) -> &mut Self {
+            self.recipes = recipes;
+            self
+        }
+        #[doc = "Sets the value of `recipes`."]
+        pub fn with_recipes(
+            mut self,
+            recipes: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+        ) -> Self {
+            self.recipes = recipes;
+            self
+        }
+        #[doc = "Sets the value of `exclude`."]
+        pub fn set_exclude(
+            &mut self,
+            exclude: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+        ) -> &mut Self {
+            self.exclude = exclude;
+            self
+        }
+        #[doc = "Sets the value of `exclude`."]
+        pub fn with_exclude(
+            mut self,
+            exclude: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+        ) -> Self {
+            self.exclude = exclude;
+            self
+        }
+        #[doc = "Sets the value of `parameters`."]
+        pub fn set_parameters(
+            &mut self,
+            parameters: ::std::option::Option<
+                ::std::collections::HashMap<
+                    ::std::string::String,
+                    ::std::collections::HashMap<
+                        ::std::string::String,
+                        super::recipes::ParameterValue,
+                    >,
+                >,
+            >,
+        ) -> &mut Self {
+            self.parameters = parameters;
+            self
+        }
+        #[doc = "Sets the value of `parameters`."]
+        pub fn with_parameters(
+            mut self,
+            parameters: ::std::option::Option<
+                ::std::collections::HashMap<
+                    ::std::string::String,
+                    ::std::collections::HashMap<
+                        ::std::string::String,
+                        super::recipes::ParameterValue,
+                    >,
+                >,
+            >,
+        ) -> Self {
+            self.parameters = parameters;
+            self
+        }
+    }
+    impl ::std::default::Default for MixinConfig {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+    #[automatically_derived]
+    impl __serde::Serialize for MixinConfig {
+        fn serialize<__S: __serde::Serializer>(
+            &self,
+            __serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            let mut __record =
+                __sidex_serde::ser::RecordSerializer::new(__serializer, "MixinConfig", 6usize)?;
+            __record
+                .serialize_optional_field("name", ::core::option::Option::as_ref(&self.name))?;
+            __record.serialize_optional_field(
+                "description",
+                ::core::option::Option::as_ref(&self.description),
+            )?;
+            __record.serialize_optional_field(
+                "dependencies",
+                ::core::option::Option::as_ref(&self.dependencies),
+            )?;
+            __record.serialize_optional_field(
+                "recipes",
+                ::core::option::Option::as_ref(&self.recipes),
+            )?;
+            __record.serialize_optional_field(
+                "exclude",
+                ::core::option::Option::as_ref(&self.exclude),
+            )?;
+            __record.serialize_optional_field(
+                "parameters",
+                ::core::option::Option::as_ref(&self.parameters),
+            )?;
+            __record.end()
+        }
+    }
+    #[automatically_derived]
+    impl<'de> __serde::Deserialize<'de> for MixinConfig {
+        fn deserialize<__D: __serde::Deserializer<'de>>(
+            __deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            #[doc(hidden)]
+            struct __Visitor {
+                __phantom_vars: ::core::marker::PhantomData<fn(&())>,
+            }
+            impl<'de> __serde::de::Visitor<'de> for __Visitor {
+                type Value = MixinConfig;
+                fn expecting(
+                    &self,
+                    __formatter: &mut ::core::fmt::Formatter,
+                ) -> ::core::fmt::Result {
+                    ::core::fmt::Formatter::write_str(__formatter, "record MixinConfig")
+                }
+                #[inline]
+                fn visit_seq<__A>(
+                    self,
+                    mut __seq: __A,
+                ) -> ::core::result::Result<Self::Value, __A::Error>
+                where
+                    __A: __serde::de::SeqAccess<'de>,
+                {
+                    let __field0 = match __serde::de::SeqAccess::next_element::<
+                        ::std::option::Option<::std::string::String>,
+                    >(&mut __seq)?
+                    {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => {
+                            return ::core::result::Result::Err(
+                                __serde::de::Error::invalid_length(0usize, &"record with 6 fields"),
+                            );
+                        }
+                    };
+                    let __field1 = match __serde::de::SeqAccess::next_element::<
+                        ::std::option::Option<::std::string::String>,
+                    >(&mut __seq)?
+                    {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => {
+                            return ::core::result::Result::Err(
+                                __serde::de::Error::invalid_length(1usize, &"record with 6 fields"),
+                            );
+                        }
+                    };
+                    let __field2 = match __serde::de::SeqAccess::next_element::<
+                        ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+                    >(&mut __seq)?
+                    {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => {
+                            return ::core::result::Result::Err(
+                                __serde::de::Error::invalid_length(2usize, &"record with 6 fields"),
+                            );
+                        }
+                    };
+                    let __field3 = match __serde::de::SeqAccess::next_element::<
+                        ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+                    >(&mut __seq)?
+                    {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => {
+                            return ::core::result::Result::Err(
+                                __serde::de::Error::invalid_length(3usize, &"record with 6 fields"),
+                            );
+                        }
+                    };
+                    let __field4 = match __serde::de::SeqAccess::next_element::<
+                        ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+                    >(&mut __seq)?
+                    {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => {
+                            return ::core::result::Result::Err(
+                                __serde::de::Error::invalid_length(4usize, &"record with 6 fields"),
+                            );
+                        }
+                    };
+                    let __field5 = match __serde::de::SeqAccess::next_element::<
+                        ::std::option::Option<
+                            ::std::collections::HashMap<
+                                ::std::string::String,
+                                ::std::collections::HashMap<
+                                    ::std::string::String,
+                                    super::recipes::ParameterValue,
+                                >,
+                            >,
+                        >,
+                    >(&mut __seq)?
+                    {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => {
+                            return ::core::result::Result::Err(
+                                __serde::de::Error::invalid_length(5usize, &"record with 6 fields"),
+                            );
+                        }
+                    };
+                    ::core::result::Result::Ok(MixinConfig {
+                        name: __field0,
+                        description: __field1,
+                        dependencies: __field2,
+                        recipes: __field3,
+                        exclude: __field4,
+                        parameters: __field5,
+                    })
+                }
+                #[inline]
+                fn visit_map<__A>(
+                    self,
+                    mut __map: __A,
+                ) -> ::core::result::Result<Self::Value, __A::Error>
+                where
+                    __A: __serde::de::MapAccess<'de>,
+                {
+                    #[doc(hidden)]
+                    const __IDENTIFIERS: &'static [&'static str] = &[
+                        "name",
+                        "description",
+                        "dependencies",
+                        "recipes",
+                        "exclude",
+                        "parameters",
+                    ];
+                    #[doc(hidden)]
+                    const __EXPECTING_IDENTIFIERS: &'static str = "an identifier in [\"name\", \"description\", \"dependencies\", \"recipes\", \"exclude\", \"parameters\"]";
+                    #[derive(:: core :: clone :: Clone, :: core :: marker :: Copy)]
+                    #[doc(hidden)]
+                    enum __Identifier {
+                        __Identifier0,
+                        __Identifier1,
+                        __Identifier2,
+                        __Identifier3,
+                        __Identifier4,
+                        __Identifier5,
+                        __Unknown,
+                    }
+                    #[doc(hidden)]
+                    struct __IdentifierVisitor;
+                    impl<'de> __serde::de::Visitor<'de> for __IdentifierVisitor {
+                        type Value = __Identifier;
+                        fn expecting(
+                            &self,
+                            __formatter: &mut ::core::fmt::Formatter,
+                        ) -> ::core::fmt::Result {
+                            ::core::fmt::Formatter::write_str(__formatter, __EXPECTING_IDENTIFIERS)
+                        }
+                        fn visit_u64<__E>(
+                            self,
+                            __value: u64,
+                        ) -> ::core::result::Result<Self::Value, __E>
+                        where
+                            __E: __serde::de::Error,
+                        {
+                            match __value {
+                                0u64 => ::core::result::Result::Ok(__Identifier::__Identifier0),
+                                1u64 => ::core::result::Result::Ok(__Identifier::__Identifier1),
+                                2u64 => ::core::result::Result::Ok(__Identifier::__Identifier2),
+                                3u64 => ::core::result::Result::Ok(__Identifier::__Identifier3),
+                                4u64 => ::core::result::Result::Ok(__Identifier::__Identifier4),
+                                5u64 => ::core::result::Result::Ok(__Identifier::__Identifier5),
+                                _ => ::core::result::Result::Ok(__Identifier::__Unknown),
+                            }
+                        }
+                        fn visit_str<__E>(
+                            self,
+                            __value: &str,
+                        ) -> ::core::result::Result<Self::Value, __E>
+                        where
+                            __E: __serde::de::Error,
+                        {
+                            match __value {
+                                "name" => ::core::result::Result::Ok(__Identifier::__Identifier0),
+                                "description" => {
+                                    ::core::result::Result::Ok(__Identifier::__Identifier1)
+                                }
+                                "dependencies" => {
+                                    ::core::result::Result::Ok(__Identifier::__Identifier2)
+                                }
+                                "recipes" => {
+                                    ::core::result::Result::Ok(__Identifier::__Identifier3)
+                                }
+                                "exclude" => {
+                                    ::core::result::Result::Ok(__Identifier::__Identifier4)
+                                }
+                                "parameters" => {
+                                    ::core::result::Result::Ok(__Identifier::__Identifier5)
+                                }
+                                _ => ::core::result::Result::Ok(__Identifier::__Unknown),
+                            }
+                        }
+                        fn visit_bytes<__E>(
+                            self,
+                            __value: &[u8],
+                        ) -> ::core::result::Result<Self::Value, __E>
+                        where
+                            __E: __serde::de::Error,
+                        {
+                            match __value {
+                                b"name" => ::core::result::Result::Ok(__Identifier::__Identifier0),
+                                b"description" => {
+                                    ::core::result::Result::Ok(__Identifier::__Identifier1)
+                                }
+                                b"dependencies" => {
+                                    ::core::result::Result::Ok(__Identifier::__Identifier2)
+                                }
+                                b"recipes" => {
+                                    ::core::result::Result::Ok(__Identifier::__Identifier3)
+                                }
+                                b"exclude" => {
+                                    ::core::result::Result::Ok(__Identifier::__Identifier4)
+                                }
+                                b"parameters" => {
+                                    ::core::result::Result::Ok(__Identifier::__Identifier5)
+                                }
+                                _ => ::core::result::Result::Ok(__Identifier::__Unknown),
+                            }
+                        }
+                    }
+                    impl<'de> __serde::Deserialize<'de> for __Identifier {
+                        #[inline]
+                        fn deserialize<__D>(
+                            __deserializer: __D,
+                        ) -> ::core::result::Result<Self, __D::Error>
+                        where
+                            __D: __serde::Deserializer<'de>,
+                        {
+                            __serde::Deserializer::deserialize_identifier(
+                                __deserializer,
+                                __IdentifierVisitor,
+                            )
+                        }
+                    }
+                    let mut __field0: ::core::option::Option<
+                        ::std::option::Option<::std::string::String>,
+                    > = ::core::option::Option::None;
+                    let mut __field1: ::core::option::Option<
+                        ::std::option::Option<::std::string::String>,
+                    > = ::core::option::Option::None;
+                    let mut __field2: ::core::option::Option<
+                        ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+                    > = ::core::option::Option::None;
+                    let mut __field3: ::core::option::Option<
+                        ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+                    > = ::core::option::Option::None;
+                    let mut __field4: ::core::option::Option<
+                        ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+                    > = ::core::option::Option::None;
+                    let mut __field5: ::core::option::Option<
+                        ::std::option::Option<
+                            ::std::collections::HashMap<
+                                ::std::string::String,
+                                ::std::collections::HashMap<
+                                    ::std::string::String,
+                                    super::recipes::ParameterValue,
+                                >,
+                            >,
+                        >,
+                    > = ::core::option::Option::None;
+                    while let ::core::option::Option::Some(__key) =
+                        __serde::de::MapAccess::next_key::<__Identifier>(&mut __map)?
+                    {
+                        match __key {
+                            __Identifier::__Identifier0 => {
+                                if ::core::option::Option::is_some(&__field0) {
+                                    return ::core::result::Result::Err(
+                                        <__A::Error as __serde::de::Error>::duplicate_field("name"),
+                                    );
+                                }
+                                __field0 = ::core::option::Option::Some(
+                                    __serde::de::MapAccess::next_value::<
+                                        ::std::option::Option<::std::string::String>,
+                                    >(&mut __map)?,
+                                );
+                            }
+                            __Identifier::__Identifier1 => {
+                                if ::core::option::Option::is_some(&__field1) {
+                                    return ::core::result::Result::Err(
+                                        <__A::Error as __serde::de::Error>::duplicate_field(
+                                            "description",
+                                        ),
+                                    );
+                                }
+                                __field1 = ::core::option::Option::Some(
+                                    __serde::de::MapAccess::next_value::<
+                                        ::std::option::Option<::std::string::String>,
+                                    >(&mut __map)?,
+                                );
+                            }
+                            __Identifier::__Identifier2 => {
+                                if ::core::option::Option::is_some(&__field2) {
+                                    return ::core::result::Result::Err(
+                                        <__A::Error as __serde::de::Error>::duplicate_field(
+                                            "dependencies",
+                                        ),
+                                    );
+                                }
+                                __field2 = ::core::option::Option::Some(
+                                    __serde::de::MapAccess::next_value::<
+                                        ::std::option::Option<
+                                            ::std::vec::Vec<::std::string::String>,
+                                        >,
+                                    >(&mut __map)?,
+                                );
+                            }
+                            __Identifier::__Identifier3 => {
+                                if ::core::option::Option::is_some(&__field3) {
+                                    return ::core::result::Result::Err(
+                                        <__A::Error as __serde::de::Error>::duplicate_field(
+                                            "recipes",
+                                        ),
+                                    );
+                                }
+                                __field3 = ::core::option::Option::Some(
+                                    __serde::de::MapAccess::next_value::<
+                                        ::std::option::Option<
+                                            ::std::vec::Vec<::std::string::String>,
+                                        >,
+                                    >(&mut __map)?,
+                                );
+                            }
+                            __Identifier::__Identifier4 => {
+                                if ::core::option::Option::is_some(&__field4) {
+                                    return ::core::result::Result::Err(
+                                        <__A::Error as __serde::de::Error>::duplicate_field(
+                                            "exclude",
+                                        ),
+                                    );
+                                }
+                                __field4 = ::core::option::Option::Some(
+                                    __serde::de::MapAccess::next_value::<
+                                        ::std::option::Option<
+                                            ::std::vec::Vec<::std::string::String>,
+                                        >,
+                                    >(&mut __map)?,
+                                );
+                            }
+                            __Identifier::__Identifier5 => {
+                                if ::core::option::Option::is_some(&__field5) {
+                                    return ::core::result::Result::Err(
+                                        <__A::Error as __serde::de::Error>::duplicate_field(
+                                            "parameters",
+                                        ),
+                                    );
+                                }
+                                __field5 = ::core::option::Option::Some(
+                                    __serde::de::MapAccess::next_value::<
+                                        ::std::option::Option<
+                                            ::std::collections::HashMap<
+                                                ::std::string::String,
+                                                ::std::collections::HashMap<
+                                                    ::std::string::String,
+                                                    super::recipes::ParameterValue,
+                                                >,
+                                            >,
+                                        >,
+                                    >(&mut __map)?,
+                                );
+                            }
+                            _ => {
+                                __serde::de::MapAccess::next_value::<__serde::de::IgnoredAny>(
+                                    &mut __map,
+                                )?;
+                            }
+                        }
+                    }
+                    let __field0 = match __field0 {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => ::core::option::Option::None,
+                    };
+                    let __field1 = match __field1 {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => ::core::option::Option::None,
+                    };
+                    let __field2 = match __field2 {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => ::core::option::Option::None,
+                    };
+                    let __field3 = match __field3 {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => ::core::option::Option::None,
+                    };
+                    let __field4 = match __field4 {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => ::core::option::Option::None,
+                    };
+                    let __field5 = match __field5 {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => ::core::option::Option::None,
+                    };
+                    ::core::result::Result::Ok(MixinConfig {
+                        name: __field0,
+                        description: __field1,
+                        dependencies: __field2,
+                        recipes: __field3,
+                        exclude: __field4,
+                        parameters: __field5,
+                    })
+                }
+            }
+            #[doc(hidden)]
+            const __FIELDS: &'static [&'static str] = &[
+                "name",
+                "description",
+                "dependencies",
+                "recipes",
+                "exclude",
+                "parameters",
+            ];
+            __serde::Deserializer::deserialize_struct(
+                __deserializer,
+                "MixinConfig",
                 __FIELDS,
                 __Visitor {
                     __phantom_vars: ::core::marker::PhantomData,
@@ -6119,7 +6727,7 @@ pub mod recipes {
                     const __IDENTIFIERS: &'static [&'static str] =
                         &["description", "priority", "dependencies", "parameters"];
                     #[doc(hidden)]
-                    const __EXPECTING_IDENTIFIERS : & 'static str = "an identifier in [\"description\", \"priority\", \"dependencies\", \"parameters\"]" ;
+                    const __EXPECTING_IDENTIFIERS: &'static str = "an identifier in [\"description\", \"priority\", \"dependencies\", \"parameters\"]";
                     #[derive(:: core :: clone :: Clone, :: core :: marker :: Copy)]
                     #[doc(hidden)]
                     enum __Identifier {
@@ -7982,6 +8590,8 @@ pub mod systems {
     pub struct SystemConfig {
         #[doc = "Layer the image is based on.\n"]
         pub layer: ::std::string::String,
+        #[doc = "Mixins enabled by default for the system.\n"]
+        pub mixins: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
         #[doc = "Architecture of the image.\n"]
         pub architecture: Architecture,
         #[doc = "Rugix Bakery target.\n"]
@@ -7997,6 +8607,7 @@ pub mod systems {
             Self {
                 layer,
                 architecture,
+                mixins: ::std::default::Default::default(),
                 target: ::std::default::Default::default(),
                 image: ::std::default::Default::default(),
                 options: ::std::default::Default::default(),
@@ -8010,6 +8621,22 @@ pub mod systems {
         #[doc = "Sets the value of `layer`."]
         pub fn with_layer(mut self, layer: ::std::string::String) -> Self {
             self.layer = layer;
+            self
+        }
+        #[doc = "Sets the value of `mixins`."]
+        pub fn set_mixins(
+            &mut self,
+            mixins: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+        ) -> &mut Self {
+            self.mixins = mixins;
+            self
+        }
+        #[doc = "Sets the value of `mixins`."]
+        pub fn with_mixins(
+            mut self,
+            mixins: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+        ) -> Self {
+            self.mixins = mixins;
             self
         }
         #[doc = "Sets the value of `architecture`."]
@@ -8060,8 +8687,10 @@ pub mod systems {
             __serializer: __S,
         ) -> ::std::result::Result<__S::Ok, __S::Error> {
             let mut __record =
-                __sidex_serde::ser::RecordSerializer::new(__serializer, "SystemConfig", 5usize)?;
+                __sidex_serde::ser::RecordSerializer::new(__serializer, "SystemConfig", 6usize)?;
             __record.serialize_field("layer", &self.layer)?;
+            __record
+                .serialize_optional_field("mixins", ::core::option::Option::as_ref(&self.mixins))?;
             __record.serialize_field("architecture", &self.architecture)?;
             __record
                 .serialize_optional_field("target", ::core::option::Option::as_ref(&self.target))?;
@@ -8106,61 +8735,73 @@ pub mod systems {
                         ::core::option::Option::Some(__value) => __value,
                         ::core::option::Option::None => {
                             return ::core::result::Result::Err(
-                                __serde::de::Error::invalid_length(0usize, &"record with 5 fields"),
+                                __serde::de::Error::invalid_length(0usize, &"record with 6 fields"),
                             );
                         }
                     };
-                    let __field1 =
+                    let __field1 = match __serde::de::SeqAccess::next_element::<
+                        ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+                    >(&mut __seq)?
+                    {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => {
+                            return ::core::result::Result::Err(
+                                __serde::de::Error::invalid_length(1usize, &"record with 6 fields"),
+                            );
+                        }
+                    };
+                    let __field2 =
                         match __serde::de::SeqAccess::next_element::<Architecture>(&mut __seq)? {
                             ::core::option::Option::Some(__value) => __value,
                             ::core::option::Option::None => {
                                 return ::core::result::Result::Err(
                                     __serde::de::Error::invalid_length(
-                                        1usize,
-                                        &"record with 5 fields",
+                                        2usize,
+                                        &"record with 6 fields",
                                     ),
                                 );
                             }
                         };
-                    let __field2 = match __serde::de::SeqAccess::next_element::<
+                    let __field3 = match __serde::de::SeqAccess::next_element::<
                         ::std::option::Option<Target>,
                     >(&mut __seq)?
                     {
                         ::core::option::Option::Some(__value) => __value,
                         ::core::option::Option::None => {
                             return ::core::result::Result::Err(
-                                __serde::de::Error::invalid_length(2usize, &"record with 5 fields"),
+                                __serde::de::Error::invalid_length(3usize, &"record with 6 fields"),
                             );
                         }
                     };
-                    let __field3 = match __serde::de::SeqAccess::next_element::<
+                    let __field4 = match __serde::de::SeqAccess::next_element::<
                         ::std::option::Option<SystemImageConfig>,
                     >(&mut __seq)?
                     {
                         ::core::option::Option::Some(__value) => __value,
                         ::core::option::Option::None => {
                             return ::core::result::Result::Err(
-                                __serde::de::Error::invalid_length(3usize, &"record with 5 fields"),
+                                __serde::de::Error::invalid_length(4usize, &"record with 6 fields"),
                             );
                         }
                     };
-                    let __field4 = match __serde::de::SeqAccess::next_element::<
+                    let __field5 = match __serde::de::SeqAccess::next_element::<
                         ::std::option::Option<SystemOptions>,
                     >(&mut __seq)?
                     {
                         ::core::option::Option::Some(__value) => __value,
                         ::core::option::Option::None => {
                             return ::core::result::Result::Err(
-                                __serde::de::Error::invalid_length(4usize, &"record with 5 fields"),
+                                __serde::de::Error::invalid_length(5usize, &"record with 6 fields"),
                             );
                         }
                     };
                     ::core::result::Result::Ok(SystemConfig {
                         layer: __field0,
-                        architecture: __field1,
-                        target: __field2,
-                        image: __field3,
-                        options: __field4,
+                        mixins: __field1,
+                        architecture: __field2,
+                        target: __field3,
+                        image: __field4,
+                        options: __field5,
                     })
                 }
                 #[inline]
@@ -8172,10 +8813,16 @@ pub mod systems {
                     __A: __serde::de::MapAccess<'de>,
                 {
                     #[doc(hidden)]
-                    const __IDENTIFIERS: &'static [&'static str] =
-                        &["layer", "architecture", "target", "image", "options"];
+                    const __IDENTIFIERS: &'static [&'static str] = &[
+                        "layer",
+                        "mixins",
+                        "architecture",
+                        "target",
+                        "image",
+                        "options",
+                    ];
                     #[doc(hidden)]
-                    const __EXPECTING_IDENTIFIERS : & 'static str = "an identifier in [\"layer\", \"architecture\", \"target\", \"image\", \"options\"]" ;
+                    const __EXPECTING_IDENTIFIERS: &'static str = "an identifier in [\"layer\", \"mixins\", \"architecture\", \"target\", \"image\", \"options\"]";
                     #[derive(:: core :: clone :: Clone, :: core :: marker :: Copy)]
                     #[doc(hidden)]
                     enum __Identifier {
@@ -8184,6 +8831,7 @@ pub mod systems {
                         __Identifier2,
                         __Identifier3,
                         __Identifier4,
+                        __Identifier5,
                         __Unknown,
                     }
                     #[doc(hidden)]
@@ -8209,6 +8857,7 @@ pub mod systems {
                                 2u64 => ::core::result::Result::Ok(__Identifier::__Identifier2),
                                 3u64 => ::core::result::Result::Ok(__Identifier::__Identifier3),
                                 4u64 => ::core::result::Result::Ok(__Identifier::__Identifier4),
+                                5u64 => ::core::result::Result::Ok(__Identifier::__Identifier5),
                                 _ => ::core::result::Result::Ok(__Identifier::__Unknown),
                             }
                         }
@@ -8221,13 +8870,14 @@ pub mod systems {
                         {
                             match __value {
                                 "layer" => ::core::result::Result::Ok(__Identifier::__Identifier0),
+                                "mixins" => ::core::result::Result::Ok(__Identifier::__Identifier1),
                                 "architecture" => {
-                                    ::core::result::Result::Ok(__Identifier::__Identifier1)
+                                    ::core::result::Result::Ok(__Identifier::__Identifier2)
                                 }
-                                "target" => ::core::result::Result::Ok(__Identifier::__Identifier2),
-                                "image" => ::core::result::Result::Ok(__Identifier::__Identifier3),
+                                "target" => ::core::result::Result::Ok(__Identifier::__Identifier3),
+                                "image" => ::core::result::Result::Ok(__Identifier::__Identifier4),
                                 "options" => {
-                                    ::core::result::Result::Ok(__Identifier::__Identifier4)
+                                    ::core::result::Result::Ok(__Identifier::__Identifier5)
                                 }
                                 _ => ::core::result::Result::Ok(__Identifier::__Unknown),
                             }
@@ -8241,15 +8891,18 @@ pub mod systems {
                         {
                             match __value {
                                 b"layer" => ::core::result::Result::Ok(__Identifier::__Identifier0),
-                                b"architecture" => {
+                                b"mixins" => {
                                     ::core::result::Result::Ok(__Identifier::__Identifier1)
                                 }
-                                b"target" => {
+                                b"architecture" => {
                                     ::core::result::Result::Ok(__Identifier::__Identifier2)
                                 }
-                                b"image" => ::core::result::Result::Ok(__Identifier::__Identifier3),
+                                b"target" => {
+                                    ::core::result::Result::Ok(__Identifier::__Identifier3)
+                                }
+                                b"image" => ::core::result::Result::Ok(__Identifier::__Identifier4),
                                 b"options" => {
-                                    ::core::result::Result::Ok(__Identifier::__Identifier4)
+                                    ::core::result::Result::Ok(__Identifier::__Identifier5)
                                 }
                                 _ => ::core::result::Result::Ok(__Identifier::__Unknown),
                             }
@@ -8271,14 +8924,17 @@ pub mod systems {
                     }
                     let mut __field0: ::core::option::Option<::std::string::String> =
                         ::core::option::Option::None;
-                    let mut __field1: ::core::option::Option<Architecture> =
+                    let mut __field1: ::core::option::Option<
+                        ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+                    > = ::core::option::Option::None;
+                    let mut __field2: ::core::option::Option<Architecture> =
                         ::core::option::Option::None;
-                    let mut __field2: ::core::option::Option<::std::option::Option<Target>> =
+                    let mut __field3: ::core::option::Option<::std::option::Option<Target>> =
                         ::core::option::Option::None;
-                    let mut __field3: ::core::option::Option<
+                    let mut __field4: ::core::option::Option<
                         ::std::option::Option<SystemImageConfig>,
                     > = ::core::option::Option::None;
-                    let mut __field4: ::core::option::Option<::std::option::Option<SystemOptions>> =
+                    let mut __field5: ::core::option::Option<::std::option::Option<SystemOptions>> =
                         ::core::option::Option::None;
                     while let ::core::option::Option::Some(__key) =
                         __serde::de::MapAccess::next_key::<__Identifier>(&mut __map)?
@@ -8302,39 +8958,41 @@ pub mod systems {
                                 if ::core::option::Option::is_some(&__field1) {
                                     return ::core::result::Result::Err(
                                         <__A::Error as __serde::de::Error>::duplicate_field(
-                                            "architecture",
+                                            "mixins",
                                         ),
                                     );
                                 }
                                 __field1 = ::core::option::Option::Some(
-                                    __serde::de::MapAccess::next_value::<Architecture>(&mut __map)?,
+                                    __serde::de::MapAccess::next_value::<
+                                        ::std::option::Option<
+                                            ::std::vec::Vec<::std::string::String>,
+                                        >,
+                                    >(&mut __map)?,
                                 );
                             }
                             __Identifier::__Identifier2 => {
                                 if ::core::option::Option::is_some(&__field2) {
                                     return ::core::result::Result::Err(
                                         <__A::Error as __serde::de::Error>::duplicate_field(
-                                            "target",
+                                            "architecture",
                                         ),
                                     );
                                 }
                                 __field2 = ::core::option::Option::Some(
-                                    __serde::de::MapAccess::next_value::<
-                                        ::std::option::Option<Target>,
-                                    >(&mut __map)?,
+                                    __serde::de::MapAccess::next_value::<Architecture>(&mut __map)?,
                                 );
                             }
                             __Identifier::__Identifier3 => {
                                 if ::core::option::Option::is_some(&__field3) {
                                     return ::core::result::Result::Err(
                                         <__A::Error as __serde::de::Error>::duplicate_field(
-                                            "image",
+                                            "target",
                                         ),
                                     );
                                 }
                                 __field3 = ::core::option::Option::Some(
                                     __serde::de::MapAccess::next_value::<
-                                        ::std::option::Option<SystemImageConfig>,
+                                        ::std::option::Option<Target>,
                                     >(&mut __map)?,
                                 );
                             }
@@ -8342,11 +9000,25 @@ pub mod systems {
                                 if ::core::option::Option::is_some(&__field4) {
                                     return ::core::result::Result::Err(
                                         <__A::Error as __serde::de::Error>::duplicate_field(
-                                            "options",
+                                            "image",
                                         ),
                                     );
                                 }
                                 __field4 = ::core::option::Option::Some(
+                                    __serde::de::MapAccess::next_value::<
+                                        ::std::option::Option<SystemImageConfig>,
+                                    >(&mut __map)?,
+                                );
+                            }
+                            __Identifier::__Identifier5 => {
+                                if ::core::option::Option::is_some(&__field5) {
+                                    return ::core::result::Result::Err(
+                                        <__A::Error as __serde::de::Error>::duplicate_field(
+                                            "options",
+                                        ),
+                                    );
+                                }
+                                __field5 = ::core::option::Option::Some(
                                     __serde::de::MapAccess::next_value::<
                                         ::std::option::Option<SystemOptions>,
                                     >(&mut __map)?,
@@ -8369,15 +9041,15 @@ pub mod systems {
                     };
                     let __field1 = match __field1 {
                         ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => ::core::option::Option::None,
+                    };
+                    let __field2 = match __field2 {
+                        ::core::option::Option::Some(__value) => __value,
                         ::core::option::Option::None => {
                             return ::core::result::Result::Err(
                                 <__A::Error as __serde::de::Error>::missing_field("architecture"),
                             );
                         }
-                    };
-                    let __field2 = match __field2 {
-                        ::core::option::Option::Some(__value) => __value,
-                        ::core::option::Option::None => ::core::option::Option::None,
                     };
                     let __field3 = match __field3 {
                         ::core::option::Option::Some(__value) => __value,
@@ -8387,18 +9059,29 @@ pub mod systems {
                         ::core::option::Option::Some(__value) => __value,
                         ::core::option::Option::None => ::core::option::Option::None,
                     };
+                    let __field5 = match __field5 {
+                        ::core::option::Option::Some(__value) => __value,
+                        ::core::option::Option::None => ::core::option::Option::None,
+                    };
                     ::core::result::Result::Ok(SystemConfig {
                         layer: __field0,
-                        architecture: __field1,
-                        target: __field2,
-                        image: __field3,
-                        options: __field4,
+                        mixins: __field1,
+                        architecture: __field2,
+                        target: __field3,
+                        image: __field4,
+                        options: __field5,
                     })
                 }
             }
             #[doc(hidden)]
-            const __FIELDS: &'static [&'static str] =
-                &["layer", "architecture", "target", "image", "options"];
+            const __FIELDS: &'static [&'static str] = &[
+                "layer",
+                "mixins",
+                "architecture",
+                "target",
+                "image",
+                "options",
+            ];
             __serde::Deserializer::deserialize_struct(
                 __deserializer,
                 "SystemConfig",
@@ -8890,7 +9573,7 @@ pub mod systems {
                 "unknown",
             ];
             #[doc(hidden)]
-            const __EXPECTING_IDENTIFIERS : & 'static str = "an identifier in [\"generic-grub-efi\", \"rpi-tryboot\", \"rpi-uboot\", \"bsp\", \"unknown\"]" ;
+            const __EXPECTING_IDENTIFIERS: &'static str = "an identifier in [\"generic-grub-efi\", \"rpi-tryboot\", \"rpi-uboot\", \"bsp\", \"unknown\"]";
             #[derive(:: core :: clone :: Clone, :: core :: marker :: Copy)]
             #[doc(hidden)]
             enum __Identifier {
@@ -10562,7 +11245,7 @@ pub mod tests {
                         "may-fail",
                     ];
                     #[doc(hidden)]
-                    const __EXPECTING_IDENTIFIERS : & 'static str = "an identifier in [\"description\", \"script\", \"stdin-file\", \"may-disconnect\", \"may-fail\"]" ;
+                    const __EXPECTING_IDENTIFIERS: &'static str = "an identifier in [\"description\", \"script\", \"stdin-file\", \"may-disconnect\", \"may-fail\"]";
                     #[derive(:: core :: clone :: Clone, :: core :: marker :: Copy)]
                     #[doc(hidden)]
                     enum __Identifier {

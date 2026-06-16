@@ -15,6 +15,7 @@ use crate::utils::idx_vec::{new_idx_type, IdxVec};
 use crate::BakeryResult;
 
 use super::layers::Layer;
+use super::mixins::Mixin;
 use super::recipes::{Recipe, RecipeLoader};
 use super::repositories::{ProjectRepositories, RepositoryIdx};
 
@@ -23,8 +24,10 @@ pub struct Library {
     pub repositories: Arc<ProjectRepositories>,
     pub recipes: IdxVec<RecipeIdx, Arc<Recipe>>,
     pub layers: IdxVec<LayerIdx, Layer>,
+    pub mixins: IdxVec<MixinIdx, Mixin>,
     pub recipe_tables: IdxVec<RepositoryIdx, HashMap<String, RecipeIdx>>,
     pub layer_tables: IdxVec<RepositoryIdx, HashMap<String, LayerIdx>>,
+    pub mixin_tables: IdxVec<RepositoryIdx, HashMap<String, MixinIdx>>,
 }
 
 impl Library {
@@ -98,12 +101,60 @@ impl Library {
             }
             layer_tables.push(table);
         }
+        let mut mixins = IdxVec::new();
+        let mut mixin_tables = IdxVec::<RepositoryIdx, _>::new();
+        for (idx, repository) in repositories.iter() {
+            let mut table = HashMap::new();
+            let mixins_dir = repository.source.dir.join("mixins");
+            if !mixins_dir.exists() {
+                mixin_tables.push(table);
+                continue;
+            }
+            for entry in
+                fs::read_dir(mixins_dir).whatever("unable to read mixins from directory")?
+            {
+                let entry = entry.whatever("unable to read mixin directory entry")?;
+                let path = entry.path();
+                if !path.is_file() || should_ignore_path(&path) {
+                    continue;
+                }
+                if path.extension() != Some(OsStr::new("toml")) {
+                    continue;
+                }
+                let mut name = path.file_stem().unwrap().to_string_lossy().into_owned();
+                let mut arch = None;
+                if let Some((mixin_name, arch_str)) = name.split_once('.') {
+                    arch = Some(
+                        Architecture::from_str(arch_str)
+                            .whatever("unable to parse architecture")?,
+                    );
+                    name = mixin_name.to_owned();
+                }
+                let modified = mtime(&path).whatever("unable to obtain mixin mtime")?;
+                let mixin_config = load_config(&path)?;
+                let mixin_idx = *table
+                    .entry(name.clone())
+                    .or_insert_with(|| mixins.push(Mixin::new(name, idx, modified)));
+                mixins[mixin_idx].modified = mixins[mixin_idx].modified.max(modified);
+                match arch {
+                    Some(arch) => {
+                        mixins[mixin_idx].arch_configs.insert(arch, mixin_config);
+                    }
+                    None => {
+                        mixins[mixin_idx].default_config = Some(mixin_config);
+                    }
+                }
+            }
+            mixin_tables.push(table);
+        }
         Ok(Self {
             repositories,
             recipes,
             recipe_tables: tables,
             layers,
             layer_tables,
+            mixins,
+            mixin_tables,
         })
     }
 
@@ -139,6 +190,20 @@ impl Library {
             self.layer_tables[repo].get(name).cloned()
         }
     }
+
+    pub fn lookup_mixin(&self, repo: RepositoryIdx, name: &str) -> Option<MixinIdx> {
+        if let Some((dependency_name, mixin_name)) = name.split_once('/') {
+            let dependency_idx = match dependency_name {
+                "core" => self.repositories.core_repository,
+                _ => *self.repositories.repositories[repo]
+                    .repositories
+                    .get(dependency_name)?,
+            };
+            self.mixin_tables[dependency_idx].get(mixin_name).cloned()
+        } else {
+            self.mixin_tables[repo].get(name).cloned()
+        }
+    }
 }
 
 new_idx_type! {
@@ -151,8 +216,13 @@ new_idx_type! {
     pub LayerIdx
 }
 
-/// Indicates whether the given path should be ignored when scanning for recipes and
-/// layers.
+new_idx_type! {
+    /// Uniquely identifies a mixin in [`Library`].
+    pub MixinIdx
+}
+
+/// Indicates whether the given path should be ignored when scanning for recipes,
+/// layers, and mixins.
 fn should_ignore_path(path: &Path) -> bool {
     let Some(file_name) = path.file_name() else {
         return false;

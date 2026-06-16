@@ -190,8 +190,8 @@
     "rugix_bakery.foreign.NumBytes": {
       "$id": "rugix_bakery.foreign.NumBytes",
       "type": [
-        "string",
-        "number"
+        "number",
+        "string"
       ],
       "description": "Number of bytes."
     },
@@ -448,6 +448,48 @@
       "required": [],
       "unevaluatedProperties": false
     },
+    "rugix_bakery.mixins.MixinConfig": {
+      "$id": "rugix_bakery.mixins.MixinConfig",
+      "type": "object",
+      "description": "Mixin configuration.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "recipes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/$defs/rugix_bakery.recipes.ParameterValue"
+            }
+          }
+        }
+      },
+      "required": [],
+      "unevaluatedProperties": false
+    },
     "rugix_bakery.projects.ProjectConfig": {
       "$id": "rugix_bakery.projects.ProjectConfig",
       "type": "object",
@@ -619,6 +661,12 @@
       "properties": {
         "layer": {
           "type": "string"
+        },
+        "mixins": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "architecture": {
           "$ref": "#/$defs/rugix_bakery.systems.Architecture"

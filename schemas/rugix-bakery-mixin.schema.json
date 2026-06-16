@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "rugix_bakery.layers.LayerConfig",
+  "$id": "rugix_bakery.mixins.MixinConfig",
   "type": "object",
-  "description": "Layer configuration.",
+  "description": "Mixin configuration.",
   "properties": {
     "name": {
       "type": "string"
@@ -10,14 +10,11 @@
     "description": {
       "type": "string"
     },
-    "url": {
-      "type": "string"
-    },
-    "parent": {
-      "type": "string"
-    },
-    "root": {
-      "type": "boolean"
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "recipes": {
       "type": "array",
@@ -420,10 +417,10 @@
       ],
       "description": "Timestamp."
     },
-    "rugix_bakery.mixins.MixinConfig": {
-      "$id": "rugix_bakery.mixins.MixinConfig",
+    "rugix_bakery.layers.LayerConfig": {
+      "$id": "rugix_bakery.layers.LayerConfig",
       "type": "object",
-      "description": "Mixin configuration.",
+      "description": "Layer configuration.",
       "properties": {
         "name": {
           "type": "string"
@@ -431,11 +428,14 @@
         "description": {
           "type": "string"
         },
-        "dependencies": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+        "url": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string"
+        },
+        "root": {
+          "type": "boolean"
         },
         "recipes": {
           "type": "array",

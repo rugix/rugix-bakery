@@ -18,6 +18,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
             release,
             source_date,
             params,
+            mixins,
         } => {
             let param_overrides = oven::load_parameter_overrides(&params.param_files)?;
             let system_path = Path::new("build").join(system);
@@ -30,6 +31,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
                 &system_path,
                 source_date_epoch,
                 &param_overrides,
+                &mixins.selection(),
             )?;
             if let Some(output) = output {
                 if let Some(parent) = output.parent() {
@@ -66,6 +68,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
             opts,
             release,
             params,
+            mixins,
         } => {
             let param_overrides = oven::load_parameter_overrides(&params.param_files)?;
             let system_path = Path::new("build").join(system);
@@ -77,6 +80,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
                 &system_path,
                 now,
                 &param_overrides,
+                &mixins.selection(),
             )?;
             let output = output
                 .clone()
