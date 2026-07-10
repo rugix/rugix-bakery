@@ -58,11 +58,9 @@ sidex-serde = { git = "https://github.com/silitics/sidex.git" }
 xscript = { version = "0.4.0", features = ["tokio"] }
 
 # Colocated but not Rugix-specific crates (from core repo).
-byte-calc = { path = "repos/rugix/crates/libs/byte-calc", features = [
-    "serde",
-    "bytes",
-] }
-reportify = "0.2.1"
+anyver = "0.1.0"
+byte-calc = { version = "0.2.0", features = ["serde", "bytes"] }
+reportify = "0.2.2"
 
 # Rugix-specific crates (from core repo).
 rugix-bundle = { path = "repos/rugix/crates/libs/rugix-bundle" }
