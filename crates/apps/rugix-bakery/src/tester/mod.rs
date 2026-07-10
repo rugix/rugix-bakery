@@ -6,7 +6,7 @@ use std::time::Duration;
 use rugix_tasks::block_on;
 use tracing::info;
 
-use reportify::{ErrorExt, ResultExt};
+use reportify::ResultExt;
 
 use rugix_cli::style::{Style, Stylize};
 use rugix_cli::widgets::{Heading, ProgressBar, ProgressSpinner, Text, Widget};
@@ -108,16 +108,16 @@ pub fn main(project: &ProjectRef, test_path: &Path) -> BakeryResult<()> {
                             match report.error() {
                                 qemu::ExecError::Disconnected => {
                                     if !may_disconnect.unwrap_or(false) {
-                                        return Err(report.whatever("script execution failed"));
+                                        return Err(report).whatever("script execution failed");
                                     }
                                 }
                                 qemu::ExecError::Failed { code } => {
                                     if *code != 0 && !may_fail.unwrap_or(false) {
-                                        return Err(report.whatever("script execution failed"));
+                                        return Err(report).whatever("script execution failed");
                                     }
                                 }
                                 qemu::ExecError::Other => {
-                                    return Err(report.whatever("script execution failed"));
+                                    return Err(report).whatever("script execution failed");
                                 }
                             }
                         }

@@ -50,7 +50,7 @@ impl RecipeLoader {
             .into();
         let config_path = path.join("recipe.toml");
         let config =
-            load_config(&config_path).with_info(|_| format!("while loading recipe {name:?}"))?;
+            load_config(&config_path).message(|| format!("while loading recipe {name:?}"))?;
         let mut steps = Vec::new();
         let steps_dir = path.join("steps");
         if steps_dir.exists() {
@@ -136,7 +136,9 @@ impl RecipeStep {
         let (position, kind) = filename
             .split_once('-')
             .ok_or_else(|| whatever!("unable to parse filename of step `{:?}`", path))?;
-        let position = position.parse().whatever("unable to parse step position")?;
+        let position = position
+            .parse::<u16>()
+            .whatever("unable to parse step position")?;
         let kind = match kind.split('.').next().unwrap() {
             "packages" => {
                 let packages = fs::read_to_string(path)

@@ -94,7 +94,7 @@ impl Vm {
             stdin,
         )
         .await
-        .with_info(|_| "run script")
+        .message("run script")
     }
 
     async fn call(
@@ -265,7 +265,7 @@ pub async fn start(
         Some(
             load_secret_key(&ssh_config.private_key, None)
                 .whatever("unable to load private SSH key")
-                .with_info(|_| format!("path: {:?}", ssh_config.private_key))?,
+                .field_debug("path", &ssh_config.private_key)?,
         )
     } else {
         None
@@ -370,8 +370,7 @@ pub async fn start(
     // We give Qemu some time to start before checking it's exit status.
     time::sleep(Duration::from_millis(500)).await;
     if let Ok(Some(status)) = child.try_wait() {
-        Err(whatever!("unable to start qemu")
-            .with_info(format!("status: {}", status.code().unwrap_or(1))))
+        Err(whatever!("unable to start qemu").field("status", status.code().unwrap_or(1)))
     } else {
         Ok(Vm {
             child,

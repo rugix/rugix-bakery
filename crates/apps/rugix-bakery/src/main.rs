@@ -14,7 +14,7 @@ pub mod utils;
 
 reportify::new_whatever_type! {
     /// Error running Rugix Bakery.
-    BakeryError
+    pub BakeryError
 }
 
 /// [`Result`] with [`Report<BakeryError>`] as error type.

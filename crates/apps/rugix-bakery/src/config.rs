@@ -126,7 +126,7 @@ where
         &fs::read_to_string(path)
             .whatever_with(|_| format!("unable to read configuration file {path:?}"))?,
     )
-    .with_info(|_| format!("loading configuration from {path:?}"))
+    .message(|| format!("loading configuration from {path:?}"))
 }
 
 /// Load JSON file of type `T` from the provided path.

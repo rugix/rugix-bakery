@@ -4,7 +4,6 @@ members = [
     "crates/apps/*",
     # Core Rugix apps (from submodule)
     "repos/rugix/crates/apps/rugix-ctrl",
-    "repos/rugix/crates/apps/rugix-admin",
     "repos/rugix/crates/apps/rugix-bundler",
     "repos/rugix/crates/apps/rugix-util",
     "xtask",
@@ -34,7 +33,9 @@ nix = { version = "0.29", features = [
     "ioctl",
     "fs",
     "mount",
+    "poll",
     "process",
+    "term",
     "zerocopy",
 ] }
 pin-project = "1.1.8"
@@ -52,6 +53,7 @@ xz2 = "0.1.7"
 si-observability = { version = "0.1.2", features = ["clap4"] }
 si-crypto-hashes = { version = "0.1.2", features = ["serde", "legacy"] }
 sidex = { git = "https://github.com/silitics/sidex.git" }
+sidex-build-rs = { git = "https://github.com/silitics/sidex.git" }
 sidex-serde = { git = "https://github.com/silitics/sidex.git" }
 xscript = { version = "0.4.0", features = ["tokio"] }
 
@@ -60,13 +62,14 @@ byte-calc = { path = "repos/rugix/crates/libs/byte-calc", features = [
     "serde",
     "bytes",
 ] }
-reportify = { path = "repos/rugix/crates/libs/reportify" }
+reportify = "0.2.1"
 
 # Rugix-specific crates (from core repo).
 rugix-bundle = { path = "repos/rugix/crates/libs/rugix-bundle" }
 rugix-chunker = { path = "repos/rugix/crates/libs/rugix-chunker" }
 rugix-cli = { path = "repos/rugix/crates/libs/rugix-cli" }
 rugix-common = { path = "repos/rugix/crates/libs/rugix-common" }
+rugix-component-set = { path = "repos/rugix/crates/libs/rugix-component-set" }
 rugix-compression = { path = "repos/rugix/crates/libs/rugix-compression" }
 rugix-fs = { path = "repos/rugix/crates/libs/rugix-fs" }
 rugix-hooks = { path = "repos/rugix/crates/libs/rugix-hooks" }

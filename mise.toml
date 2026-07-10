@@ -53,7 +53,7 @@ nix shell \
     --command bash <<'NIXSHELL'
 set -euo pipefail
 
-binaries=(rugix-bakery rugix-isolate rugix-bundler rugix-ctrl rugix-admin rugix-util)
+binaries=(rugix-bakery rugix-isolate rugix-bundler rugix-ctrl rugix-util)
 bin_args=()
 for bin in "${binaries[@]}"; do
     bin_args+=(--bin "${bin}")
