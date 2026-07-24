@@ -568,6 +568,8 @@ fn compute_partition_table(
                     ty: partition_type,
                     name: None,
                     gpt_id: None,
+                    gpt_attrs: None,
+                    bootable: false,
                 });
                 in_extended = true;
                 next_number = 5;
@@ -589,6 +591,8 @@ fn compute_partition_table(
                     ty: partition_type,
                     name: None,
                     gpt_id: None,
+                    gpt_attrs: None,
+                    bootable: false,
                 });
                 next_usable = (start + size).ceil_align_to(ALIGNMENT);
             }

@@ -2,9 +2,44 @@
 
 ## Unreleased
 
-- Unprivileged builds with Podman user namespaces.
-- Consolidate split of Rugix Ctrl and Rugix Bakery.
-- The `rugix-ctrl` recipe no longer installs Rugix Admin.
+- Update the bundled Rugix Core repository.
+- Use the published `anyver`, `byte-calc`, and `reportify` crates instead of
+  vendored copies.
+- Refresh dependencies to resolve advisories in `cmov`, `quinn-proto`, `russh`,
+  and `tar`.
+
+## Version 0.9.3
+
+- Generate CycloneDX SBOMs alongside SPDX SBOMs.
+- Add experimental system mixins for conditional layer fragments.
+- Add an experimental generic BSP target.
+- Allow custom SquashFS options.
+- Make BSP metadata optional.
+- Fix Debian architecture selection for `armhf`.
+- Encode partition UUIDs using lowercase hexadecimal.
+
+## Version 0.9.2
+
+- Add recipe parameter overrides.
+- Support KVM hardware acceleration when running tests.
+- Include Skopeo and the latest Rugix Bundler for creating application bundles.
+- Preserve the required permissions of bundled application files.
+
+## Version 0.9.1
+
+- Store the bundle hash in a separate file.
+- Allow Debian mirror components to be configured.
+
+## Version 0.9.0
+
+- Split Rugix Bakery from Rugix Ctrl and begin versioning it independently.
+- Make rootless Podman the default and support unprivileged builds through user
+  namespaces.
+- Allow Bakery to run from arbitrary working directories.
+- Extract filesystems without elevated privileges.
+- Add custom package mirror support and a Raspberry Pi OS Trixie layer.
+- Rename CLI parameters for consistency, including `source` to `version`.
+- Stop installing Rugix Admin from the `rugix-ctrl` recipe.
 
 ## Version 0.8.17
 
