@@ -3,6 +3,8 @@
 ## Unreleased
 
 - Update the bundled Rugix Core repository.
+- Add an optional core recipe for the privileged Rugix Ctrl daemon.
+- Resolve Rugix Ctrl major-version channels by release publication time.
 - Use the published `anyver`, `byte-calc`, and `reportify` crates instead of
   vendored copies.
 - Refresh dependencies to resolve advisories in `cmov`, `quinn-proto`, `russh`,

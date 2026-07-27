@@ -6,6 +6,7 @@ dependencies = ["pkg-update"]
 # Use MUSL builds by default.
 use_musl = { default = true }
 # Where to get binaries: "container" uses pre-built container binaries,
-# a major version (e.g., "v1") resolves the latest matching GitHub release,
+# a major version (e.g., "v1") resolves the most recently published matching
+# GitHub release, including prereleases,
 # an exact tag (e.g., "v1.0.0-rc.1") downloads that specific release.
 version = { default = "v1" }

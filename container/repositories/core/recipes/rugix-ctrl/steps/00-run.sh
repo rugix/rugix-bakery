@@ -97,13 +97,12 @@ resolve_version() {
     if echo "${version}" | grep -qE '^v[0-9]+$'; then
         echo "Resolving latest release for ${version}..." >&2
         local resolved
-        resolved=$(curl -fSs "https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=100" \
-            | jq -r --arg prefix "${version}." \
-                '[.[] | select(.tag_name | startswith($prefix))]
-                 | map(.tag_name | ltrimstr("v"))
-                 | sort_by([(split("-")[0] | split(".") | map(tonumber))[], (if test("-") then 0 else 1 end)])
+        resolved=$(curl -fSs "https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=100" |
+            jq -r --arg prefix "${version}." \
+                '[.[] | select((.draft | not) and (.tag_name | startswith($prefix)))]
+                 | sort_by(.published_at)
                  | last
-                 | if . then "v" + . else null end')
+                 | .tag_name')
         if [ -z "${resolved}" ] || [ "${resolved}" = "null" ]; then
             echo "No release found matching '${version}.*'." >&2
             exit 1

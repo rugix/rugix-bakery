@@ -1,0 +1,10 @@
+description = "install and configure the privileged Rugix Ctrl daemon"
+priority = 100_000
+dependencies = ["rugix-ctrl"]
+
+[parameters]
+dangerously_insecure = { default = false }
+factory_reset = { default = false }
+system_commit = { default = false }
+system_reboot = { default = false }
+app_lifecycle = { default = false }
