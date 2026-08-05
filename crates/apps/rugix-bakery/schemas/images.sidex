@@ -68,6 +68,8 @@ record ImagePartition {
     /// Type of the partition (GUID or MBR hex value).
     #[json(name = "type")]
     ty?: PartitionType,
+	/// Mark the partition bootable.
+	bootable?: bool
 }
 
 /// Filesystem.

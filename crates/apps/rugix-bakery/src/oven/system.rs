@@ -473,6 +473,7 @@ fn bsp_to_image_layout(bsp: &BspConfig) -> BakeryResult<ImageLayout> {
             filesystem: p.filesystem.clone(),
             root: p.root.clone(),
             ty: p.ty,
+            bootable: p.bootable,
         })
         .collect();
 
@@ -569,7 +570,7 @@ fn compute_partition_table(
                     name: None,
                     gpt_id: None,
                     gpt_attrs: None,
-                    bootable: false,
+                    bootable: partition.bootable.unwrap_or(false),
                 });
                 in_extended = true;
                 next_number = 5;
@@ -592,7 +593,7 @@ fn compute_partition_table(
                     name: None,
                     gpt_id: None,
                     gpt_attrs: None,
-                    bootable: false,
+                    bootable: partition.bootable.unwrap_or(false),
                 });
                 next_usable = (start + size).ceil_align_to(ALIGNMENT);
             }
