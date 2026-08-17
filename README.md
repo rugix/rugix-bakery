@@ -12,9 +12,6 @@
   <a href="https://github.com/rugix/rugix-bakery/actions"><img alt="Pipeline Status Badge" src="https://img.shields.io/github/actions/workflow/status/rugix/rugix-bakery/check-and-lint.yml"></a>
 </p>
 
-> [!NOTE]
-> **Support:** This repository is covered by [Tier 1: Core](https://rugix.org/support-commitment/#tier-core) of the Rugix Support Commitment.
-
 Rugix Bakery is an open-source build system for custom, OTA-ready Linux system
 images. It is developed by the [Rugix](https://rugix.org) project.
 
@@ -42,6 +39,12 @@ Choose Rugix Bakery when you want to build on Debian, Alpine Linux, or Raspberry
 Pi OS without maintaining a full source-based distribution build. If your
 product already uses Yocto, integrate Rugix Ctrl directly with the official
 [open-source Yocto layers](https://github.com/rugix/meta-rugix).
+
+## Support
+
+This repository is covered by
+[Tier 1: Core](https://rugix.org/support-commitment/#tier-core) of the Rugix
+Support Commitment.
 
 ## Licensing
 
