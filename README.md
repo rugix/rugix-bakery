@@ -12,9 +12,15 @@
   <a href="https://github.com/rugix/rugix-bakery/actions"><img alt="Pipeline Status Badge" src="https://img.shields.io/github/actions/workflow/status/rugix/rugix-bakery/check-and-lint.yml"></a>
 </p>
 
-Rugix Bakery is part of [Rugix](https://rugix.org), an open-source tool suite for building robust, Linux-powered products.
+> [!NOTE]
+> **Support:** This repository is covered by [Tier 1: Core](https://rugix.org/support-commitment/#tier-core) of the Rugix Support Commitment.
 
-Rugix Bakery makes building OTA-ready system images (almost) **as easy as writing a Dockerfile**. Spend your time on what provides value to your users, not system-level details and build pipeline complexity.
+Rugix Bakery is an open-source build system for custom, OTA-ready Linux system
+images. It is developed by the [Rugix](https://rugix.org) project.
+
+Rugix Bakery makes building a system image (almost) **as easy as writing a
+Dockerfile**. It provides a structured workflow for image customization, system
+variants, testing, and release artifacts.
 
 - **Supported Distributions**: Debian, Alpine Linux, and Raspberry Pi OS.
 - **OTA Updates**: Over-the-air update capabilities powered by [Rugix Ctrl](https://github.com/rugix/rugix) out of the box.
@@ -23,7 +29,8 @@ Rugix Bakery makes building OTA-ready system images (almost) **as easy as writin
 - **Integrated Testing**: Built-in system testing framework based on VMs.
 - **SBOM Generation**: Built-in SBOM generation for regulatory compliance.
 
-With Rugix, you get a **comprehensive tool suite to build, test, and run your system** similar to what you will find with modern software development tooling, like [Cargo](https://doc.rust-lang.org/cargo/) (Rust) or [uv](https://docs.astral.sh/uv/) (Python).
+Rugix Bakery includes Rugix Ctrl update support out of the box and builds the
+corresponding update bundles.
 
 [**Get started today! Build your first system and deploy an update, all in under 30 minutes!**](https://rugix.org/docs/getting-started) 🚀
 
@@ -31,9 +38,12 @@ With Rugix, you get a **comprehensive tool suite to build, test, and run your sy
 
 ## Using Rugix Ctrl with Other Build Systems
 
-If you have no prior experience with Linux and embedded devices, Rugix Bakery is the easiest way to get started. If you are already using Yocto, you can integrate Rugix Ctrl directly using our [open-source Yocto layers](https://github.com/rugix/meta-rugix), which are equally well supported.
+Choose Rugix Bakery when you want to build on Debian, Alpine Linux, or Raspberry
+Pi OS without maintaining a full source-based distribution build. If your
+product already uses Yocto, integrate Rugix Ctrl directly with the official
+[open-source Yocto layers](https://github.com/rugix/meta-rugix).
 
-## ⚖️ Licensing
+## Licensing
 
 This project is licensed under either [MIT](https://github.com/rugix/rugix-bakery/blob/main/LICENSE-MIT) or [Apache 2.0](https://github.com/rugix/rugix-bakery/blob/main/LICENSE-APACHE) at your option.
 
