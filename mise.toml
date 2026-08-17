@@ -15,7 +15,7 @@
 # `targets` extends what `rust-toolchain.toml` lists so we can also build
 # x86_64-unknown-linux-musl (the host arch for the bakery container we
 # bake locally) alongside the aarch64 / armv7 targets the project ships.
-rust = { version = "1.95.0", profile = "default", targets = "aarch64-unknown-linux-musl x86_64-unknown-linux-musl arm-unknown-linux-musleabihf" }
+rust = { version = "1.95.0", profile = "default", targets = ["aarch64-unknown-linux-musl", "x86_64-unknown-linux-musl", "arm-unknown-linux-musleabihf"] }
 
 # We can't pull `pkgsCross.musl64.stdenv.cc` and the matching aarch64 cross
 # compiler through the `nix:` mise plugin (it only resolves flat nixhub
