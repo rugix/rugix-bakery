@@ -67,8 +67,8 @@ record BspPartition {
     ty?: PartitionType,
     /// Root directory name in the layer.
     root?: string,
-	/// Mark the partition bootable.
-	bootable?: bool,
+    /// Mark the partition bootable.
+    bootable?: bool,
 }
 
 /// Bundle payload mapping.
