@@ -230,13 +230,15 @@ jobs:
           export RUGIX_BAKERY_IMAGE="${{ env.IMAGE_NAME }}@sha256:$DIGEST"
           echo "RUGIX_BAKERY_IMAGE=$RUGIX_BAKERY_IMAGE"
           podman pull $RUGIX_BAKERY_IMAGE
-          ./run-all-tests.sh
-      - name: Upload Test Logs
+          mise install python uv
+          ./generate-test-keys.sh
+          ./scripts/run-pytest.sh
+      - name: Upload Test Outputs
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: test-logs
-          path: tests/.rugix/test.log
+          name: test-outputs
+          path: tests/test-outputs/
           if-no-files-found: ignore
 
   build_bakery_image:
