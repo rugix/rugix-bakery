@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Update e2fsprogs to version 1.47.4.
+- Preserve set-user-ID, set-group-ID, and sticky permission bits when extracting
+  ext filesystems.
+
 ## Version 0.9.4
 
 - Update the bundled Rugix Core repository.

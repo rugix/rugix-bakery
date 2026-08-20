@@ -64,15 +64,19 @@ RUN apt-get -y update \
     && apt-get -y clean \
     && rm -rf /var/lib/apt/lists/*
 
+COPY container/patches/e2fsprogs-preserve-special-mode-bits.patch /tmp/
+
 RUN cd /tmp \
-    && wget https://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git/snapshot/e2fsprogs-1.47.2.tar.gz \
-    && tar -xf e2fsprogs-1.47.2.tar.gz \
-    && cd e2fsprogs-1.47.2 \
+    && wget https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.4/e2fsprogs-1.47.4.tar.xz \
+    && echo "fd5bf388cbdbe006a3d3b318d983b2948382440acc85a87f1e7d108653e8db0b  e2fsprogs-1.47.4.tar.xz" | sha256sum --check - \
+    && tar -xf e2fsprogs-1.47.4.tar.xz \
+    && cd e2fsprogs-1.47.4 \
+    && git apply /tmp/e2fsprogs-preserve-special-mode-bits.patch \
     && ./configure \
     && make \
     && make install \
     && cd .. \
-    && rm -rf e2fsprogs-1.47.2*
+    && rm -rf e2fsprogs-1.47.4* e2fsprogs-preserve-special-mode-bits.patch
 
 RUN curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
