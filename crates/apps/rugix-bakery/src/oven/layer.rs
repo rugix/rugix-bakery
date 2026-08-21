@@ -1,11 +1,14 @@
+//! Frozen and extracted representations of Bakery layers.
+//!
+//! [`FrozenLayer::unfreeze`] restores an archived layer as a temporary [`Layer`].
+
 use std::path::{Path, PathBuf};
 
+use reportify::ResultExt;
 use tempfile::TempDir;
 use tracing::info;
-use xscript::{run, Run};
 
-use reportify::ResultExt;
-
+use crate::oven::archive;
 use crate::project::ProjectRef;
 use crate::utils::caching::{mtime, ModificationTime};
 use crate::BakeryResult;
@@ -41,8 +44,8 @@ impl FrozenLayer {
     pub fn unfreeze(&self) -> BakeryResult<Layer> {
         let tempdir = TempDir::new().whatever("unable to create temporary directory")?;
         info!("Extracting layer.");
-        run!(["tar", "-xf", &self.path, "-C", tempdir.path()])
-            .whatever_with(|_| format!("unable to extract layer {}", self.name))?;
+        archive::extract(&self.path, tempdir.path())
+            .whatever_with(|_| format!("failed to extract layer {}", self.name))?;
         Ok(Layer {
             name: self.name.clone(),
             tempdir,

@@ -1,0 +1,486 @@
+--- a/debugfs/debugfs.h
++++ b/debugfs/debugfs.h
+@@ -25,0 +26 @@
++extern int debugfs_cmd_status;
+--- a/debugfs/debugfs.c
++++ b/debugfs/debugfs.c
+@@ -62,0 +63 @@
++int		debugfs_cmd_status;
+@@ -2521,0 +2523 @@
++		debugfs_cmd_status = 0;
+@@ -2523 +2525 @@
+-		if (retval) {
++		if (retval || debugfs_cmd_status) {
+@@ -2667,0 +2670 @@
++		debugfs_cmd_status = 0;
+@@ -2669 +2672 @@
+-		if (retval) {
++		if (retval || debugfs_cmd_status) {
+--- a/debugfs/dump.c
++++ b/debugfs/dump.c
+@@ -23,0 +24,5 @@
++#if defined HAVE_SYS_XATTR_H
++#include <sys/xattr.h>
++#elif defined HAVE_ATTR_XATTR_H
++#include <attr/xattr.h>
++#endif
+@@ -25,0 +31 @@
++#include <sys/sysmacros.h>
+@@ -54,0 +61,3 @@
++	{ LINUX_S_ISUID, S_ISUID },
++	{ LINUX_S_ISGID, S_ISGID },
++	{ LINUX_S_ISVTX, S_ISVTX },
+@@ -76,7 +84,0 @@
+-	if (fd != -1)
+-		i = fchmod(fd, mode_xlate(inode->i_mode));
+-	else
+-		i = chmod(name, mode_xlate(inode->i_mode));
+-	if (i == -1)
+-		com_err(cmd, errno, "while setting permissions of %s", name);
+-
+@@ -91 +93 @@
+-	if (i == -1)
++	if (i == -1) {
+@@ -92,0 +95,11 @@
++		debugfs_cmd_status = 1;
++	}
++
++	if (fd != -1)
++		i = fchmod(fd, mode_xlate(inode->i_mode));
++	else
++		i = chmod(name, mode_xlate(inode->i_mode));
++	if (i == -1) {
++		com_err(cmd, errno, "while setting permissions of %s", name);
++		debugfs_cmd_status = 1;
++	}
+@@ -96 +109 @@
+-	if (utime(name, &ut) == -1)
++	if (utime(name, &ut) == -1) {
+@@ -97,0 +111,96 @@
++		debugfs_cmd_status = 1;
++	}
++}
++
++#if defined(HAVE_SYS_XATTR_H) || defined(HAVE_ATTR_XATTR_H)
++struct rdump_xattr_context {
++	const char *cmd;
++	const char *name;
++	struct ext2_xattr_handle *handle;
++	int fd;
++	int failed;
++};
++
++static int set_rdump_xattr(char *xattr_name, char *value EXT2FS_ATTR((unused)),
++			   size_t value_len EXT2FS_ATTR((unused)),
++			   void *data)
++{
++	struct rdump_xattr_context *ctx = data;
++	void *converted_value = NULL;
++	size_t converted_value_len;
++	errcode_t err;
++	int retval;
++
++	err = ext2fs_xattr_get(ctx->handle, xattr_name, &converted_value,
++			       &converted_value_len);
++	if (err) {
++		com_err(ctx->cmd, err,
++			"while reading extended attribute %s from %s",
++			xattr_name, ctx->name);
++		ctx->failed = 1;
++		return XATTR_ABORT;
++	}
++
++	if (ctx->fd == -1)
++		retval = lsetxattr(ctx->name, xattr_name, converted_value,
++				   converted_value_len, 0);
++	else
++		retval = fsetxattr(ctx->fd, xattr_name, converted_value,
++				   converted_value_len, 0);
++	ext2fs_free_mem(&converted_value);
++	if (retval == -1) {
++		com_err(ctx->cmd, errno,
++			"while setting extended attribute %s on %s",
++			xattr_name, ctx->name);
++		ctx->failed = 1;
++		return XATTR_ABORT;
++	}
++	return 0;
++}
++
++static void fix_xattrs(const char *cmd, ext2_ino_t ino, int fd,
++		       const char *name)
++{
++	struct ext2_xattr_handle *handle;
++	struct rdump_xattr_context ctx = {
++		.cmd = cmd,
++		.name = name,
++		.fd = fd,
++	};
++	errcode_t retval;
++
++	retval = ext2fs_xattrs_open(current_fs, ino, &handle);
++	if (retval == EXT2_ET_MISSING_EA_FEATURE)
++		return;
++	if (retval) {
++		com_err(cmd, retval, "while opening extended attributes for %s",
++			name);
++		debugfs_cmd_status = 1;
++		return;
++	}
++
++	retval = ext2fs_xattrs_read(handle);
++	if (retval) {
++		com_err(cmd, retval, "while reading extended attributes for %s",
++			name);
++		debugfs_cmd_status = 1;
++		goto out;
++	}
++
++	ctx.handle = handle;
++	retval = ext2fs_xattrs_iterate(handle, set_rdump_xattr, &ctx);
++	if (retval) {
++		com_err(cmd, retval, "while iterating extended attributes for %s",
++			name);
++		debugfs_cmd_status = 1;
++	}
++	if (ctx.failed)
++		debugfs_cmd_status = 1;
++
++out:
++	retval = ext2fs_xattrs_close(&handle);
++	if (retval) {
++		com_err(cmd, retval, "while closing extended attributes for %s",
++			name);
++		debugfs_cmd_status = 1;
++	}
+@@ -98,0 +208,8 @@
++#else
++static void fix_xattrs(const char *cmd EXT2FS_ATTR((unused)),
++		       ext2_ino_t ino EXT2FS_ATTR((unused)),
++		       int fd EXT2FS_ATTR((unused)),
++		       const char *name EXT2FS_ATTR((unused)))
++{
++}
++#endif
+@@ -110 +227,2 @@
+-	if (debugfs_read_inode(ino, &inode, cmdname))
++	if (debugfs_read_inode(ino, &inode, cmdname)) {
++		debugfs_cmd_status = 1;
+@@ -111,0 +230 @@
++	}
+@@ -115,0 +235 @@
++		debugfs_cmd_status = 1;
+@@ -120,0 +241 @@
++		debugfs_cmd_status = 1;
+@@ -123,0 +245,4 @@
++		unsigned int i;
++		int all_zero = 1;
++		char *out = buf;
++
+@@ -126,0 +252 @@
++			debugfs_cmd_status = 1;
+@@ -131,3 +257,29 @@
+-		nbytes = write(fd, buf, got);
+-		if ((unsigned) nbytes != got)
+-			com_err(cmdname, errno, "while writing file");
++		for (i = 0; i < got; i++) {
++			if (buf[i]) {
++				all_zero = 0;
++				break;
++			}
++		}
++		if (all_zero) {
++			if (lseek(fd, got, SEEK_CUR) == -1) {
++				com_err(cmdname, errno, "while creating sparse file");
++				debugfs_cmd_status = 1;
++				return;
++			}
++			continue;
++		}
++		while (got) {
++			nbytes = write(fd, out, got);
++			if (nbytes <= 0) {
++				com_err(cmdname, errno, "while writing file");
++				debugfs_cmd_status = 1;
++				return;
++			}
++			got -= nbytes;
++			out += nbytes;
++		}
++	}
++	if (ftruncate(fd, EXT2_I_SIZE(&inode)) == -1) {
++		com_err(cmdname, errno, "while setting file size");
++		debugfs_cmd_status = 1;
++		return;
+@@ -139,0 +292 @@
++		debugfs_cmd_status = 1;
+@@ -143 +296 @@
+-	if (preserve)
++	if (preserve) {
+@@ -144,0 +298,2 @@
++		fix_xattrs("dump_file", ino, fd, outname);
++	}
+@@ -201,2 +356,58 @@
+-static void rdump_symlink(ext2_ino_t ino, struct ext2_inode *inode,
+-			  const char *fullname)
++#define RDUMP_UNSUPPORTED_FLAGS (EXT2_SECRM_FL | EXT2_UNRM_FL | \
++	EXT2_COMPR_FL | EXT2_SYNC_FL | EXT2_IMMUTABLE_FL | EXT2_APPEND_FL | \
++	EXT2_NODUMP_FL | EXT2_NOATIME_FL | EXT2_COMPRBLK_FL | \
++	EXT2_NOCOMPR_FL | EXT2_IMAGIC_FL | EXT3_JOURNAL_DATA_FL | \
++	EXT2_NOTAIL_FL | EXT2_DIRSYNC_FL | EXT2_TOPDIR_FL | FS_NOCOW_FL | \
++	FS_DAX_FL | \
++	EXT4_PROJINHERIT_FL | EXT4_CASEFOLD_FL | EXT4_ENCRYPT_FL | \
++	EXT4_VERITY_FL)
++
++struct rdump_link {
++	ext2_ino_t ino;
++	char *path;
++	struct rdump_link *next;
++};
++
++static struct rdump_link *rdump_links;
++
++static const char *rdump_link_path(ext2_ino_t ino)
++{
++	struct rdump_link *entry;
++
++	for (entry = rdump_links; entry; entry = entry->next) {
++		if (entry->ino == ino)
++			return entry->path;
++	}
++	return NULL;
++}
++
++static int remember_rdump_link(ext2_ino_t ino, const char *path)
++{
++	struct rdump_link *entry = calloc(1, sizeof(*entry));
++
++	if (!entry)
++		return ENOMEM;
++	entry->path = strdup(path);
++	if (!entry->path) {
++		free(entry);
++		return ENOMEM;
++	}
++	entry->ino = ino;
++	entry->next = rdump_links;
++	rdump_links = entry;
++	return 0;
++}
++
++static void free_rdump_links(void)
++{
++	struct rdump_link *entry;
++
++	while ((entry = rdump_links)) {
++		rdump_links = entry->next;
++		free(entry->path);
++		free(entry);
++	}
++}
++
++static int rdump_symlink(ext2_ino_t ino, struct ext2_inode *inode,
++			 const char *fullname)
+@@ -204,0 +416,4 @@
++	struct timespec times[2] = {
++		{ .tv_sec = inode->i_atime },
++		{ .tv_sec = inode->i_mtime },
++	};
+@@ -206,0 +422 @@
++	int status = -1;
+@@ -210,0 +427 @@
++		debugfs_cmd_status = 1;
+@@ -221,0 +439 @@
++			debugfs_cmd_status = 1;
+@@ -228,0 +447 @@
++				debugfs_cmd_status = 1;
+@@ -238 +457 @@
+-		if (retval)
++		if (retval) {
+@@ -239,0 +459,3 @@
++			debugfs_cmd_status = 1;
++			goto errout;
++		}
+@@ -243,0 +466,11 @@
++		debugfs_cmd_status = 1;
++		goto errout;
++	}
++	if (lchown(fullname, inode_uid(*inode), inode_gid(*inode)) == -1) {
++		com_err("rdump", errno, "while changing ownership of %s", fullname);
++		debugfs_cmd_status = 1;
++		goto errout;
++	}
++	if (utimensat(AT_FDCWD, fullname, times, AT_SYMLINK_NOFOLLOW) == -1) {
++		com_err("rdump", errno, "while setting times of %s", fullname);
++		debugfs_cmd_status = 1;
+@@ -245,0 +479,3 @@
++	fix_xattrs("rdump", ino, -1, fullname);
++	if (!debugfs_cmd_status)
++		status = 0;
+@@ -248,0 +485,41 @@
++	return status;
++}
++
++static int rdump_special(ext2_ino_t ino, struct ext2_inode *inode,
++			 const char *fullname)
++{
++	mode_t mode = mode_xlate(inode->i_mode);
++	dev_t device = 0;
++	int major, minor;
++
++	if (LINUX_S_ISCHR(inode->i_mode) || LINUX_S_ISBLK(inode->i_mode)) {
++		if (inode->i_block[0]) {
++			major = (inode->i_block[0] >> 8) & 255;
++			minor = inode->i_block[0] & 255;
++		} else {
++			major = (inode->i_block[1] & 0xfff00) >> 8;
++			minor = ((inode->i_block[1] & 0xff) |
++				 ((inode->i_block[1] >> 12) & 0xfff00));
++		}
++		device = makedev(major, minor);
++		mode |= LINUX_S_ISCHR(inode->i_mode) ? S_IFCHR : S_IFBLK;
++		if (mknod(fullname, mode, device) == -1)
++			goto error;
++	} else if (LINUX_S_ISFIFO(inode->i_mode)) {
++		if (mkfifo(fullname, mode) == -1)
++			goto error;
++	} else {
++		com_err("rdump", EOPNOTSUPP,
++			"while exporting unsupported socket %s", fullname);
++		debugfs_cmd_status = 1;
++		return -1;
++	}
++
++	fix_perms("rdump", inode, -1, fullname);
++	fix_xattrs("rdump", ino, -1, fullname);
++	return debugfs_cmd_status ? -1 : 0;
++
++error:
++	com_err("rdump", errno, "while creating special file %s", fullname);
++	debugfs_cmd_status = 1;
++	return -1;
+@@ -255,0 +533 @@
++	struct ext2_inode_large *large_inode = (struct ext2_inode_large *) inode;
+@@ -256,0 +535,4 @@
++	const char *link_path;
++	int created = 0;
++	int retval;
++	int status_before = debugfs_cmd_status;
+@@ -262,0 +545 @@
++		debugfs_cmd_status = 1;
+@@ -265,0 +549,28 @@
++	if (!strcmp(name, ".") || !strcmp(name, ".."))
++		goto errout;
++
++	if (inode->i_flags & RDUMP_UNSUPPORTED_FLAGS) {
++		com_err("rdump", EOPNOTSUPP,
++			"while exporting inode flags 0x%x on %s",
++			inode->i_flags & RDUMP_UNSUPPORTED_FLAGS, fullname);
++		debugfs_cmd_status = 1;
++		goto errout;
++	}
++	if (ext2fs_inode_includes(ext2fs_inode_actual_size(large_inode),
++				  i_projid) && large_inode->i_projid) {
++		com_err("rdump", EOPNOTSUPP,
++			"while exporting project ID %u on %s",
++			large_inode->i_projid, fullname);
++		debugfs_cmd_status = 1;
++		goto errout;
++	}
++
++	if (!LINUX_S_ISDIR(inode->i_mode) && inode->i_links_count > 1 &&
++	    (link_path = rdump_link_path(ino))) {
++		if (link(link_path, fullname) == -1) {
++			com_err("rdump", errno, "while linking %s to %s",
++				fullname, link_path);
++			debugfs_cmd_status = 1;
++		}
++		goto errout;
++	}
+@@ -268 +579 @@
+-		rdump_symlink(ino, inode, fullname);
++		created = rdump_symlink(ino, inode, fullname) == 0;
+@@ -273,0 +585 @@
++			debugfs_cmd_status = 1;
+@@ -278,0 +591 @@
++			debugfs_cmd_status = 1;
+@@ -280,0 +594 @@
++		created = debugfs_cmd_status == status_before;
+@@ -289,0 +604 @@
++			debugfs_cmd_status = 1;
+@@ -295 +610 @@
+-		if (retval)
++		if (retval) {
+@@ -296,0 +612,2 @@
++			debugfs_cmd_status = 1;
++		}
+@@ -298,0 +616,19 @@
++		fix_xattrs("rdump", ino, -1, fullname);
++	}
++	else if (LINUX_S_ISCHR(inode->i_mode) ||
++		 LINUX_S_ISBLK(inode->i_mode) ||
++		 LINUX_S_ISFIFO(inode->i_mode) ||
++		 LINUX_S_ISSOCK(inode->i_mode))
++		created = rdump_special(ino, inode, fullname) == 0;
++	else {
++		com_err("rdump", EOPNOTSUPP, "while exporting %s", fullname);
++		debugfs_cmd_status = 1;
++	}
++
++	if (created && inode->i_links_count > 1) {
++		retval = remember_rdump_link(ino, fullname);
++		if (retval) {
++			com_err("rdump", retval, "while remembering hardlink %s",
++				fullname);
++			debugfs_cmd_status = 1;
++		}
+@@ -300 +635,0 @@
+-	/* else do nothing (don't dump device files, sockets, fifos, etc.) */
+@@ -314 +649 @@
+-	struct ext2_inode inode;
++	struct ext2_inode_large inode;
+@@ -320 +655,3 @@
+-	if (debugfs_read_inode(dirent->inode, &inode, name))
++	if (debugfs_read_inode2(dirent->inode, (struct ext2_inode *) &inode,
++				name, sizeof(inode), 0)) {
++		debugfs_cmd_status = 1;
+@@ -321,0 +659 @@
++	}
+@@ -323 +661 @@
+-	rdump_inode(dirent->inode, &inode, name, dumproot);
++	rdump_inode(dirent->inode, (struct ext2_inode *) &inode, name, dumproot);
+@@ -334,0 +673 @@
++	free_rdump_links();
+@@ -336 +675,2 @@
+-				"<directory>... <native directory>", 0))
++				"<directory>... <native directory>", 0)) {
++		debugfs_cmd_status = 1;
+@@ -337,0 +678 @@
++	}
+@@ -345,0 +687 @@
++		debugfs_cmd_status = 1;
+@@ -349,0 +692 @@
++		debugfs_cmd_status = 1;
+@@ -355 +698 @@
+-		struct ext2_inode inode;
++		struct ext2_inode_large inode;
+@@ -357 +700,2 @@
+-		if (!ino)
++		if (!ino) {
++			debugfs_cmd_status = 1;
+@@ -358,0 +703 @@
++		}
+@@ -360 +705,3 @@
+-		if (debugfs_read_inode(ino, &inode, arg))
++		if (debugfs_read_inode2(ino, (struct ext2_inode *) &inode,
++					arg, sizeof(inode), 0)) {
++			debugfs_cmd_status = 1;
+@@ -361,0 +709 @@
++		}
+@@ -369 +717 @@
+-		rdump_inode(ino, &inode, basename, dest_dir);
++		rdump_inode(ino, (struct ext2_inode *) &inode, basename, dest_dir);
+@@ -370,0 +719 @@
++	free_rdump_links();
+@@ -387 +735,0 @@
+-

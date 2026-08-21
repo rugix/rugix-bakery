@@ -4,6 +4,8 @@ ARG TARGETPLATFORM
 
 RUN apt-get -y update \
     && apt-get -y install \
+        acl \
+        attr \
         btrfs-progs \
         curl \
         dosfstools \
@@ -12,6 +14,7 @@ RUN apt-get -y update \
         git \
         gpg \
         jq \
+        libcap2-bin \
         mmdebstrap \
         mtools \
         proot \
@@ -64,19 +67,22 @@ RUN apt-get -y update \
     && apt-get -y clean \
     && rm -rf /var/lib/apt/lists/*
 
-COPY container/patches/e2fsprogs-preserve-special-mode-bits.patch /tmp/
+COPY container/patches/e2fsprogs-preserve-rdump-metadata.patch /tmp/
+COPY container/tests/test-filesystem-metadata.sh /tmp/
 
 RUN cd /tmp \
     && wget https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.4/e2fsprogs-1.47.4.tar.xz \
     && echo "fd5bf388cbdbe006a3d3b318d983b2948382440acc85a87f1e7d108653e8db0b  e2fsprogs-1.47.4.tar.xz" | sha256sum --check - \
     && tar -xf e2fsprogs-1.47.4.tar.xz \
     && cd e2fsprogs-1.47.4 \
-    && git apply /tmp/e2fsprogs-preserve-special-mode-bits.patch \
+    && git apply /tmp/e2fsprogs-preserve-rdump-metadata.patch \
     && ./configure \
     && make \
     && make install \
+    && bash /tmp/test-filesystem-metadata.sh \
     && cd .. \
-    && rm -rf e2fsprogs-1.47.4* e2fsprogs-preserve-special-mode-bits.patch
+    && rm -rf e2fsprogs-1.47.4 e2fsprogs-1.47.4.tar.xz \
+        e2fsprogs-preserve-rdump-metadata.patch test-filesystem-metadata.sh
 
 RUN curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 

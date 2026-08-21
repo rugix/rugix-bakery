@@ -28,6 +28,8 @@ pub mod layer;
 pub mod system;
 pub mod targets;
 
+mod archive;
+
 /// Parameter overrides loaded from parameter files.
 ///
 /// Maps recipe names to their parameter key-value pairs.
@@ -421,10 +423,10 @@ fn extract(project: &ProjectRef, image_url: &str, layer_path: &Path) -> BakeryRe
     std::fs::create_dir_all(&boot_dir).whatever("unable to create boot directory")?;
     if image_path.extension() == Some("tar".as_ref()) {
         info!("Copying root filesystem {image_path:?}");
-        run!(["tar", "-x", "-f", &image_path, "-C", system_dir])
-            .whatever("unable to extract root file system")?;
-        run!(["tar", "-c", "-f", &layer_path, "-C", temp_dir_path, "."])
-            .whatever("unable to create layer tar file")?;
+        archive::extract(&image_path, &system_dir)
+            .whatever("failed to extract root file system")?;
+        archive::create(temp_dir_path, layer_path, None)
+            .whatever("failed to create layer tar file")?;
     } else {
         info!("extracting partitions from disk image");
         extract_image_partitions(
@@ -433,8 +435,8 @@ fn extract(project: &ProjectRef, image_url: &str, layer_path: &Path) -> BakeryRe
             temp_dir_path,
         )
         .whatever("unable to extract partitions from disk image")?;
-        run!(["tar", "-c", "-f", &layer_path, "-C", temp_dir_path, "."])
-            .whatever("unable to create layer tar file")?;
+        archive::create(temp_dir_path, layer_path, None)
+            .whatever("failed to create layer tar file")?;
     }
     Ok(())
 }

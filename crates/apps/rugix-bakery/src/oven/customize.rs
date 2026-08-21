@@ -14,13 +14,14 @@ use rugix_cli::{cli_msg, StatusSegmentRef};
 use rugix_common::mount::{MountStack, Mounted};
 use tempfile::tempdir;
 use tracing::{error, info};
-use xscript::{cmd, run, vars, Cmd, ParentEnv, Run};
+use xscript::{cmd, vars, Cmd, ParentEnv, Run};
 
 use crate::cli::status::CliLog;
 use crate::config::layers::LayerConfig;
 use crate::config::mixins::MixinConfig;
 use crate::config::recipes::ParameterValue;
 use crate::config::systems::Architecture;
+use crate::oven::archive;
 use crate::oven::layer::LayerContext;
 use crate::project::layers::Layer;
 use crate::project::library::Library;
@@ -193,7 +194,7 @@ fn customize_recipes(
     let bundle_dir = bundle_dir.path();
     if let Some(src) = src {
         info!("Extracting layer.");
-        run!(["tar", "-x", "-f", &src, "-C", bundle_dir]).whatever("unable to extract layer")?;
+        archive::extract(src, bundle_dir).whatever("failed to extract layer")?;
     } else {
         info!("Creating empty layer.");
         std::fs::create_dir_all(&bundle_dir).whatever("unable ot create layer directory")?;
@@ -244,20 +245,8 @@ fn customize_recipes(
     }
 
     info!("packing system files");
-    run!([
-        "tar",
-        "--sort=name",
-        "--pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime",
-        "--clamp-mtime",
-        format!("--mtime=@{source_date_epoch}"),
-        "-c",
-        "-f",
-        &target,
-        "-C",
-        bundle_dir,
-        "."
-    ])
-    .whatever("unable to package system files")?;
+    archive::create(bundle_dir, target, Some(source_date_epoch as i64))
+        .whatever("failed to package system files")?;
     Ok(true)
 }
 

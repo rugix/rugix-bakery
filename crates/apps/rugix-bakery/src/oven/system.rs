@@ -1,3 +1,7 @@
+//! Construction of partition filesystems and complete system images.
+//!
+//! [`make_system`] materializes a baked layer according to its image layout.
+
 use std::fmt::Debug;
 use std::fs::{self, File};
 use std::io::Seek;
@@ -31,6 +35,7 @@ use crate::oven::targets::rpi_uboot::initialize_uboot;
 use crate::utils::caching::mtime;
 use crate::BakeryResult;
 
+use super::archive;
 use super::layer::FrozenLayer;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -298,33 +303,29 @@ pub fn make_system(
                     if let Some(path) = &layout_partition.root {
                         let tar_archive =
                             filesystems_dir.join(format!("partition-{}.tar", partition + 1));
-                        std::fs::remove_file(&tar_archive).ok();
                         let clamp_mtime = options
                             .clamp_mtime
                             .map(|t| t.as_second())
                             .unwrap_or(source_date_epoch as i64);
-                        run!([
-                            "tar",
-                            "--sort=name",
-                            "--pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime",
-                            "--clamp-mtime",
-                            format!("--mtime=@{clamp_mtime}"),
-                            "-cf",
-                            &tar_archive,
-                            "-C",
-                            layer_path.join("roots").join(path),
-                            "."
-                        ])
-                        .whatever("unable to create root filesystem tar")?;
-                        let mut cmd = cmd_os!("mkfs.ext4", "-F", "-d", &tar_archive, &fs_image);
-                        if let Some(additional_options) = &options.additional_options {
-                            cmd.extend_args(additional_options);
-                        }
-                        ParentEnv.run(cmd)
-                    } else {
-                        run!(["mkfs.ext4", &fs_image])
+                        let root_dir = layer_path.join("roots").join(path);
+                        archive::create(&root_dir, &tar_archive, Some(clamp_mtime))
+                            .whatever("failed to create root filesystem tar")?;
                     }
-                    .whatever("unable to create EXT4 filesystem")?;
+                    let mut cmd = cmd_os!("mkfs.ext4", "-F");
+                    if let Some(path) = &layout_partition.root {
+                        cmd.add_arg("-d");
+                        cmd.add_arg(layer_path.join("roots").join(path));
+                    }
+                    if let Some(additional_options) = &options.additional_options {
+                        cmd.extend_args(additional_options);
+                    }
+                    cmd.add_arg(&fs_image);
+                    ParentEnv
+                        .run(cmd.with_vars(vars! {
+                            LC_ALL = "C",
+                            SOURCE_DATE_EPOCH = source_date_epoch.to_string(),
+                        }))
+                        .whatever("failed to create ext4 filesystem")?;
                     let mut src =
                         File::open(&fs_image).whatever("unable to open filesystem image file")?;
                     let mut dst = File::options()

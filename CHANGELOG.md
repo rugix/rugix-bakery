@@ -3,8 +3,13 @@
 ## Unreleased
 
 - Update e2fsprogs to version 1.47.4.
-- Preserve set-user-ID, set-group-ID, and sticky permission bits when extracting
-  ext filesystems.
+- Preserve hardlinks, sparse files, device nodes, FIFOs, permission and special
+  mode bits, ACLs, and extended attributes when importing ext filesystems and
+  serializing layers. When importing ext filesystems, reject sockets, project
+  quota IDs, and non-representable inode flags instead of silently dropping
+  them.
+- Construct ext4 filesystems directly from the normalized layer directory and
+  pass the configured source date to e2fsprogs for reproducible output.
 
 ## Version 0.9.4
 
