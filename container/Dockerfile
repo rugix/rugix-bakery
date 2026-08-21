@@ -75,7 +75,7 @@ RUN cd /tmp \
     && echo "fd5bf388cbdbe006a3d3b318d983b2948382440acc85a87f1e7d108653e8db0b  e2fsprogs-1.47.4.tar.xz" | sha256sum --check - \
     && tar -xf e2fsprogs-1.47.4.tar.xz \
     && cd e2fsprogs-1.47.4 \
-    && git apply /tmp/e2fsprogs-preserve-rdump-metadata.patch \
+    && git apply --unidiff-zero /tmp/e2fsprogs-preserve-rdump-metadata.patch \
     && ./configure \
     && make \
     && make install \
