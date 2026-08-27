@@ -15,7 +15,14 @@ fixture_dir="${test_dir}/fixture"
 extracted_dir="${test_dir}/extracted"
 roundtrip_dir="${test_dir}/roundtrip"
 final_dir="${test_dir}/final"
-mkdir -p "${fixture_dir}/sticky" "${extracted_dir}" "${roundtrip_dir}" "${final_dir}"
+restricted_dir="${test_dir}/restricted"
+mkdir -p \
+    "${fixture_dir}/dev" \
+    "${fixture_dir}/sticky" \
+    "${extracted_dir}" \
+    "${restricted_dir}" \
+    "${roundtrip_dir}" \
+    "${final_dir}"
 
 cp /bin/true "${fixture_dir}/cap-file"
 cp /bin/true "${fixture_dir}/setuid-file"
@@ -62,9 +69,20 @@ LC_ALL=C SOURCE_DATE_EPOCH=${source_date_epoch} mkfs.ext4 \
     -q -F -O '^has_journal' \
     -U "${filesystem_uuid}" -E "hash_seed=${hash_seed}" \
     -d "${fixture_dir}" "${source_image}"
+debugfs -w -R 'mknod /dev/console c 5 1' "${source_image}"
 
 (cd "${extracted_dir}" && debugfs -R 'rdump / .' "${source_image}")
 assert_metadata "${extracted_dir}"
+
+# Extraction without CAP_MKNOD must skip device nodes while preserving the
+# remaining filesystem, as it does inside Bakery's user namespace.
+(cd "${restricted_dir}" && \
+    capsh --drop=cap_mknod -- -c "debugfs -R 'rdump / .' '${source_image}'") \
+    2>"${test_dir}/restricted.log"
+grep -q 'Operation not permitted.*creating special file.*dev/console; skipping' \
+    "${test_dir}/restricted.log"
+test ! -e "${restricted_dir}/dev/console"
+test -p "${restricted_dir}/fifo"
 
 create_archive() {
     local archive=$1

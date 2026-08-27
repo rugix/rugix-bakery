@@ -317,7 +317,7 @@
 +	fix_xattrs("rdump", ino, -1, fullname);
 +	if (!debugfs_cmd_status)
 +		status = 0;
-@@ -248,0 +485,41 @@
+@@ -248,0 +485,48 @@
 +	return status;
 +}
 +
@@ -339,8 +339,15 @@
 +		}
 +		device = makedev(major, minor);
 +		mode |= LINUX_S_ISCHR(inode->i_mode) ? S_IFCHR : S_IFBLK;
-+		if (mknod(fullname, mode, device) == -1)
++		if (mknod(fullname, mode, device) == -1) {
++			if (errno == EPERM || errno == EACCES) {
++				com_err("rdump", errno,
++					"while creating special file %s; skipping",
++					fullname);
++				return 1;
++			}
 +			goto error;
++		}
 +	} else if (LINUX_S_ISFIFO(inode->i_mode)) {
 +		if (mkfifo(fullname, mode) == -1)
 +			goto error;
@@ -359,16 +366,16 @@
 +	com_err("rdump", errno, "while creating special file %s", fullname);
 +	debugfs_cmd_status = 1;
 +	return -1;
-@@ -255,0 +533 @@
+@@ -255,0 +540 @@
 +	struct ext2_inode_large *large_inode = (struct ext2_inode_large *) inode;
-@@ -256,0 +535,4 @@
+@@ -256,0 +542,4 @@
 +	const char *link_path;
 +	int created = 0;
 +	int retval;
 +	int status_before = debugfs_cmd_status;
-@@ -262,0 +545 @@
+@@ -262,0 +552 @@
 +		debugfs_cmd_status = 1;
-@@ -265,0 +549,28 @@
+@@ -265,0 +556,28 @@
 +	if (!strcmp(name, ".") || !strcmp(name, ".."))
 +		goto errout;
 +
@@ -397,24 +404,24 @@
 +		}
 +		goto errout;
 +	}
-@@ -268 +579 @@
+@@ -268 +586 @@
 -		rdump_symlink(ino, inode, fullname);
 +		created = rdump_symlink(ino, inode, fullname) == 0;
-@@ -273,0 +585 @@
+@@ -273,0 +592 @@
 +			debugfs_cmd_status = 1;
-@@ -278,0 +591 @@
+@@ -278,0 +598 @@
 +			debugfs_cmd_status = 1;
-@@ -280,0 +594 @@
+@@ -280,0 +601 @@
 +		created = debugfs_cmd_status == status_before;
-@@ -289,0 +604 @@
+@@ -289,0 +611 @@
 +			debugfs_cmd_status = 1;
-@@ -295 +610 @@
+@@ -295 +617 @@
 -		if (retval)
 +		if (retval) {
-@@ -296,0 +612,2 @@
+@@ -296,0 +619,2 @@
 +			debugfs_cmd_status = 1;
 +		}
-@@ -298,0 +616,19 @@
+@@ -298,0 +623,19 @@
 +		fix_xattrs("rdump", ino, -1, fullname);
 +	}
 +	else if (LINUX_S_ISCHR(inode->i_mode) ||
@@ -434,53 +441,53 @@
 +				fullname);
 +			debugfs_cmd_status = 1;
 +		}
-@@ -300 +635,0 @@
+@@ -300 +642,0 @@
 -	/* else do nothing (don't dump device files, sockets, fifos, etc.) */
-@@ -314 +649 @@
+@@ -314 +656 @@
 -	struct ext2_inode inode;
 +	struct ext2_inode_large inode;
-@@ -320 +655,3 @@
+@@ -320 +662,3 @@
 -	if (debugfs_read_inode(dirent->inode, &inode, name))
 +	if (debugfs_read_inode2(dirent->inode, (struct ext2_inode *) &inode,
 +				name, sizeof(inode), 0)) {
 +		debugfs_cmd_status = 1;
-@@ -321,0 +659 @@
+@@ -321,0 +666 @@
 +	}
-@@ -323 +661 @@
+@@ -323 +668 @@
 -	rdump_inode(dirent->inode, &inode, name, dumproot);
 +	rdump_inode(dirent->inode, (struct ext2_inode *) &inode, name, dumproot);
-@@ -334,0 +673 @@
+@@ -334,0 +680 @@
 +	free_rdump_links();
-@@ -336 +675,2 @@
+@@ -336 +682,2 @@
 -				"<directory>... <native directory>", 0))
 +				"<directory>... <native directory>", 0)) {
 +		debugfs_cmd_status = 1;
-@@ -337,0 +678 @@
+@@ -337,0 +685 @@
 +	}
-@@ -345,0 +687 @@
+@@ -345,0 +694 @@
 +		debugfs_cmd_status = 1;
-@@ -349,0 +692 @@
+@@ -349,0 +699 @@
 +		debugfs_cmd_status = 1;
-@@ -355 +698 @@
+@@ -355 +705 @@
 -		struct ext2_inode inode;
 +		struct ext2_inode_large inode;
-@@ -357 +700,2 @@
+@@ -357 +707,2 @@
 -		if (!ino)
 +		if (!ino) {
 +			debugfs_cmd_status = 1;
-@@ -358,0 +703 @@
+@@ -358,0 +710 @@
 +		}
-@@ -360 +705,3 @@
+@@ -360 +712,3 @@
 -		if (debugfs_read_inode(ino, &inode, arg))
 +		if (debugfs_read_inode2(ino, (struct ext2_inode *) &inode,
 +					arg, sizeof(inode), 0)) {
 +			debugfs_cmd_status = 1;
-@@ -361,0 +709 @@
+@@ -361,0 +716 @@
 +		}
-@@ -369 +717 @@
+@@ -369 +724 @@
 -		rdump_inode(ino, &inode, basename, dest_dir);
 +		rdump_inode(ino, (struct ext2_inode *) &inode, basename, dest_dir);
-@@ -370,0 +719 @@
+@@ -370,0 +726 @@
 +	free_rdump_links();
-@@ -387 +735,0 @@
+@@ -387 +742,0 @@
 -
