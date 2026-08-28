@@ -510,6 +510,9 @@ fn apply_recipes(
                             cmd.with_vars(vars! {
                                 DEBIAN_FRONTEND = "noninteractive",
                                 SOURCE_DATE_EPOCH = source_date_epoch.to_string(),
+                                LC_ALL = "C.UTF-8",
+                                LANG = "C.UTF-8",
+                                LANGUAGE = "C",
                             }),
                         )
                         .whatever("unable to install packages")?;
@@ -549,6 +552,9 @@ fn apply_recipes(
                         RECIPE_DIR = "/run/rugix/bakery/recipe",
                         RECIPE_STEP_PATH = &script,
                         SOURCE_DATE_EPOCH = source_date_epoch.to_string(),
+                        LC_ALL = "C.UTF-8",
+                        LANG = "C.UTF-8",
+                        LANGUAGE = "C",
                     };
                     for (name, value) in &job.parameters {
                         vars.set(format!("RECIPE_PARAM_{}", name.to_uppercase()), value);
