@@ -14,7 +14,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: "ghcr.io/rugix/rugix-bakery"
 
 jobs:
   build_binaries_linux:
@@ -44,7 +43,16 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
-          submodules: recursive
+          submodules: ${{ github.repository_owner == 'rugix' && 'recursive' || false }}
+      - name: Configure Git URL Rewrites
+        if: github.repository_owner != 'rugix'
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          git config --global url.https://github.com/rugix/rugix.git.insteadOf "https://github.com/${OWNER}/rugix"
+          git config --global url.https://github.com/rugix/rugix-tests.git.insteadOf "https://github.com/${OWNER}/rugix-tests"
+      - name: Checkout Submodules
+        if: github.repository_owner != 'rugix'
+        run: git submodule sync --recursive && git submodule update --init --recursive
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
@@ -89,12 +97,18 @@ jobs:
       labels: ${{ steps.meta.outputs.labels }}
       json: ${{ steps.meta.outputs.json }}
       version: ${{ steps.meta.outputs.version }}
+      image: ${{ steps.image_name.outputs.image }}
     steps:
+      - name: Set Image Name
+        id: image_name
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "image=ghcr.io/${OWNER}/rugix-bakery" >> $GITHUB_OUTPUT
       - name: Docker Meta
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.IMAGE_NAME }}
+          images: ${{ steps.image_name.outputs.image }}
           # Include this once we released version 1.0.0.
           # type=semver,pattern=v{{major}}
           tags: |
@@ -127,7 +141,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          submodules: recursive
+          submodules: ${{ github.repository_owner == 'rugix' && 'recursive' || false }}
+      - name: Configure Git URL Rewrites
+        if: github.repository_owner != 'rugix'
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          git config --global url.https://github.com/rugix/rugix.git.insteadOf "https://github.com/${OWNER}/rugix"
+          git config --global url.https://github.com/rugix/rugix-tests.git.insteadOf "https://github.com/${OWNER}/rugix-tests"
+      - name: Checkout Submodules
+        if: github.repository_owner != 'rugix'
+        run: git submodule sync --recursive && git submodule update --init --recursive
       - name: Download Binaries
         uses: actions/download-artifact@v8
         with:
@@ -168,10 +191,10 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           labels: ${{ needs.bakery_metadata.outputs.labels }}
           push: true
-          tags: ${{ env.IMAGE_NAME }}
+          tags: ${{ needs.bakery_metadata.outputs.image }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=image,name=${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ needs.bakery_metadata.outputs.image }},push-by-digest=true,name-canonical=true,push=true
           build-args: |
             BUILDTIME=${{ fromJSON(needs.bakery_metadata.outputs.json).labels['org.opencontainers.image.created'] }}
             VERSION=${{ fromJSON(needs.bakery_metadata.outputs.json).labels['org.opencontainers.image.version'] }}
@@ -202,7 +225,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          submodules: recursive
+          submodules: ${{ github.repository_owner == 'rugix' && 'recursive' || false }}
+      - name: Configure Git URL Rewrites
+        if: github.repository_owner != 'rugix'
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          git config --global url.https://github.com/rugix/rugix.git.insteadOf "https://github.com/${OWNER}/rugix"
+          git config --global url.https://github.com/rugix/rugix-tests.git.insteadOf "https://github.com/${OWNER}/rugix-tests"
+      - name: Checkout Submodules
+        if: github.repository_owner != 'rugix'
+        run: git submodule sync --recursive && git submodule update --init --recursive
       - name: Download AMD64 Digest
         uses: actions/download-artifact@v8
         with:
@@ -227,7 +259,7 @@ jobs:
           cd tests
 
           ./generate-test-keys.sh
-          export RUGIX_BAKERY_IMAGE="${{ env.IMAGE_NAME }}@sha256:$DIGEST"
+          export RUGIX_BAKERY_IMAGE="${{ needs.bakery_metadata.outputs.image }}@sha256:$DIGEST"
           echo "RUGIX_BAKERY_IMAGE=$RUGIX_BAKERY_IMAGE"
           podman pull $RUGIX_BAKERY_IMAGE
           mise install python uv
@@ -282,14 +314,14 @@ jobs:
             $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$METADATA_JSON") \
             --annotation "index:org.opencontainers.image.title=Rugix Bakery" \
             --annotation "index:org.opencontainers.image.vendor=Silitics GmbH" \
-            $(printf '${{ env.IMAGE_NAME }}@sha256:%s ' *)
+            $(printf '${{ needs.bakery_metadata.outputs.image }}@sha256:%s ' *)
       - name: Inspect Image
         run: |
-          docker buildx imagetools inspect ${{ env.IMAGE_NAME }}:${{ needs.bakery_metadata.outputs.version }}
+          docker buildx imagetools inspect ${{ needs.bakery_metadata.outputs.image }}:${{ needs.bakery_metadata.outputs.version }}
       - name: Extract Digest
         id: digest
         run: |
-          docker buildx imagetools inspect ${{ env.IMAGE_NAME }}:${{ needs.bakery_metadata.outputs.version }} \
+          docker buildx imagetools inspect ${{ needs.bakery_metadata.outputs.image }}:${{ needs.bakery_metadata.outputs.version }} \
             --format "{{json .Manifest}}" \
             | jq '.digest' > digest.txt
           DIGEST=$(cat digest.txt)

@@ -12,7 +12,18 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: recursive
+          submodules: ${{ github.repository_owner == 'rugix' && 'recursive' || false }}
+
+      - name: Configure Git URL Rewrites
+        if: github.repository_owner != 'rugix'
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          git config --global url.https://github.com/rugix/rugix.git.insteadOf "https://github.com/${OWNER}/rugix"
+          git config --global url.https://github.com/rugix/rugix-tests.git.insteadOf "https://github.com/${OWNER}/rugix-tests"
+
+      - name: Checkout Submodules
+        if: github.repository_owner != 'rugix'
+        run: git submodule sync --recursive && git submodule update --init --recursive
 
       - name: Cargo Deny
         uses: EmbarkStudios/cargo-deny-action@v2
