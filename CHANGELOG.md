@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Capture package installation output in layer build logs.
+- Use a stable UTF-8 locale for package installation and recipe steps running
+  inside the target system.
 - Update e2fsprogs to version 1.47.4.
 - Preserve hardlinks, sparse files, device nodes, FIFOs, permission and special
   mode bits, ACLs, and extended attributes when importing ext filesystems and
