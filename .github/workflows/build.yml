@@ -102,8 +102,8 @@ jobs:
       - name: Set Image Name
         id: image_name
         run: |
-          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          echo "image=ghcr.io/${OWNER}/rugix-bakery" >> $GITHUB_OUTPUT
+          owner="$(printf '%s' "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
+          printf 'image=ghcr.io/%s/rugix-bakery\n' "$owner" >> "$GITHUB_OUTPUT"
       - name: Docker Meta
         id: meta
         uses: docker/metadata-action@v6
@@ -125,6 +125,7 @@ jobs:
 
   build_bakery_images:
     name: "Build Bakery Image (${{ matrix.arch }})"
+    if: github.event_name != 'pull_request'
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
@@ -214,6 +215,7 @@ jobs:
 
   test_bakery_image:
     name: Test Bakery Image
+    if: github.event_name != 'pull_request' && github.repository_owner == 'rugix'
     runs-on: [self-hosted, nixos]
     permissions:
       contents: read
@@ -275,6 +277,17 @@ jobs:
 
   build_bakery_image:
     name: Build and Push Bakery Image
+    if: >-
+      always()
+      && github.event_name != 'pull_request'
+      && needs.build_bakery_images.result == 'success'
+      && (
+        needs.test_bakery_image.result == 'success'
+        || (
+          github.repository_owner != 'rugix'
+          && needs.test_bakery_image.result == 'skipped'
+        )
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: read
