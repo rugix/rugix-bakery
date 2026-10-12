@@ -237,6 +237,13 @@ jobs:
       - name: Checkout Submodules
         if: github.repository_owner != 'rugix'
         run: git submodule sync --recursive && git submodule update --init --recursive
+      - name: Download Host Binaries
+        uses: actions/download-artifact@v8
+        with:
+          name: binaries-x86_64-unknown-linux-musl
+          path: build/host-binaries
+      - name: Extract Host Binaries
+        run: tar -xf build/host-binaries/x86_64-unknown-linux-musl.tar -C build/host-binaries
       - name: Download AMD64 Digest
         uses: actions/download-artifact@v8
         with:
@@ -258,15 +265,18 @@ jobs:
             exit 1
           fi
 
+          RUGIX_BUNDLER="$(pwd)/build/host-binaries/rugix-bundler"
+          export RUGIX_BUNDLER
+          nixpkgs_source="$(pwd)/repos/rugix"
           cd tests
 
-          ./generate-test-keys.sh
           export RUGIX_BAKERY_IMAGE="${{ needs.bakery_metadata.outputs.image }}@sha256:$DIGEST"
           echo "RUGIX_BAKERY_IMAGE=$RUGIX_BAKERY_IMAGE"
           podman pull $RUGIX_BAKERY_IMAGE
           mise install python uv
           ./generate-test-keys.sh
-          ./scripts/run-pytest.sh
+          nix shell --inputs-from "$nixpkgs_source" nixpkgs#skopeo nixpkgs#xdelta \
+            --command ./scripts/run-pytest.sh
       - name: Upload Test Outputs
         if: always()
         uses: actions/upload-artifact@v7

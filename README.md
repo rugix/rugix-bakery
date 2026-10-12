@@ -40,6 +40,14 @@ Pi OS without maintaining a full source-based distribution build. If your
 product already uses Yocto, integrate Rugix Ctrl directly with the official
 [open-source Yocto layers](https://github.com/rugix/meta-rugix).
 
+## System Tests
+
+The [shared system tests](https://github.com/rugix/rugix-tests#running-the-tests)
+bake OS images in the Bakery container and run QEMU and Bundler on the host.
+Bakery CI selects Bundler from the matching build artifact with `RUGIX_BUNDLER`,
+while the OS images use the Ctrl embedded in the Bakery image. Skopeo and xdelta3
+come from the Nixpkgs revision pinned in the Rugix submodule.
+
 ## Support
 
 This repository is covered by
