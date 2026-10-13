@@ -40,31 +40,6 @@ Pi OS without maintaining a full source-based distribution build. If your
 product already uses Yocto, integrate Rugix Ctrl directly with the official
 [open-source Yocto layers](https://github.com/rugix/meta-rugix).
 
-## Development
-
-The Cargo workspace builds Rugix Ctrl, Bundler, and Util from the
-`repos/rugix` submodule and uses its libraries. Initialize the submodules before
-building:
-
-```sh
-git submodule update --init --recursive
-mise install
-mise run codegen
-```
-
-The runtime and generator use Sidex 0.4.0. `mise run codegen` regenerates the
-tracked Rust configuration bindings and JSON schemas. Byte-size configurations
-continue to accept strings such as `"4GiB"`.
-
-CI checks use the dated nightly in `.github/workflows/check-and-lint.yml`:
-
-```sh
-cargo +nightly-2026-08-14 fmt --check
-cargo +nightly-2026-08-14 clippy --all-targets --all-features
-cargo +nightly-2026-08-14 test --all-features
-cargo deny check
-```
-
 ## Support
 
 This repository is covered by
