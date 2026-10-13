@@ -8,7 +8,7 @@ inputs:
       nixpkgs:
         follows: nixpkgs
   sidex:
-    url: github:silitics/sidex
+    url: github:silitics/sidex/v0.4.0
     inputs:
       nixpkgs:
         follows: nixpkgs

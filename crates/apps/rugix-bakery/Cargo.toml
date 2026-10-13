@@ -29,7 +29,6 @@ tokio.workspace = true
 tracing.workspace = true
 xscript.workspace = true
 
-sidex-serde.workspace = true
 sidex.workspace = true
 
 byte-calc.workspace = true

@@ -285,7 +285,7 @@ pub async fn start(
         ".rugix/vm-image.img",
         config
             .disk_size
-            .unwrap_or(NumBytes::gibibytes(40))
+            .unwrap_or(NumBytes::gibibytes(40).into())
             .raw
             .to_string(),
     ])

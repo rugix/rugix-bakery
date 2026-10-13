@@ -11,6 +11,7 @@
 # the `docker pull` it normally does for released versions.
 
 [tools]
+"github:silitics/sidex" = { version = "0.4.0", exe = "sidex" }
 # We pin the same Rust version mise installs in the sibling rugix repo.
 # `targets` extends what `rust-toolchain.toml` lists so we can also build
 # x86_64-unknown-linux-musl (the host arch for the bakery container we
@@ -36,6 +37,10 @@ CXX_aarch64_unknown_linux_musl = "aarch64-unknown-linux-musl-g++"
 AR_aarch64_unknown_linux_musl = "aarch64-unknown-linux-musl-ar"
 CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER = "aarch64-unknown-linux-musl-gcc"
 CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_STRIP = "aarch64-unknown-linux-musl-strip"
+
+[tasks.codegen]
+description = "Regenerate the Sidex Rust bindings and JSON schemas."
+run = "bash xtask/codegen.sh"
 
 [tasks.build-binaries]
 description = "Build rugix-* binaries for aarch64 + x86_64 musl and stage them under build/binaries/"

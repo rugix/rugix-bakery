@@ -1,5 +1,6 @@
 //! Applies a set of recipes to a system.
 
+use sidex::types::{Map, Str};
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 use std::fs;
@@ -257,9 +258,9 @@ struct RecipeJob {
 
 #[derive(Clone, Copy)]
 struct RecipeFragment<'a> {
-    recipes: Option<&'a [String]>,
-    exclude: Option<&'a [String]>,
-    parameters: Option<&'a HashMap<String, HashMap<String, ParameterValue>>>,
+    recipes: Option<&'a [Str]>,
+    exclude: Option<&'a [Str]>,
+    parameters: Option<&'a Map<Str, Map<Str, ParameterValue>>>,
 }
 
 impl<'a> RecipeFragment<'a> {
@@ -348,17 +349,17 @@ fn recipe_schedule(
             if let Some(p) = &recipe.config.parameters {
                 for (name, def) in p {
                     if let Some(value) = override_params.and_then(|p| p.get(name.as_str())) {
-                        parameters.insert(name.to_owned(), value.to_string());
+                        parameters.insert(name.to_string(), value.to_string());
                         continue;
                     }
                     if let Some(params) = recipe_params {
                         if let Some(value) = params.get(name) {
-                            parameters.insert(name.to_owned(), value.to_string());
+                            parameters.insert(name.to_string(), value.to_string());
                             continue;
                         }
                     }
                     if let Some(default) = &def.default {
-                        parameters.insert(name.to_owned(), default.to_string());
+                        parameters.insert(name.to_string(), default.to_string());
                         continue;
                     }
                     bail!("unable to find value for parameter `{name}`");

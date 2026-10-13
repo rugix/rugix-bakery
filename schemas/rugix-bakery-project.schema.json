@@ -21,15 +21,13 @@
   "unevaluatedProperties": false,
   "$defs": {
     "rugix_bakery.foreign.NumBytes": {
-      "$id": "rugix_bakery.foreign.NumBytes",
       "type": [
-        "number",
-        "string"
+        "string",
+        "number"
       ],
       "description": "Number of bytes."
     },
     "rugix_bakery.images.Filesystem": {
-      "$id": "rugix_bakery.images.Filesystem",
       "description": "Filesystem.",
       "oneOf": [
         {
@@ -86,7 +84,6 @@
       ]
     },
     "rugix_bakery.images.ImageLayout": {
-      "$id": "rugix_bakery.images.ImageLayout",
       "type": "object",
       "description": "Layout of an image.",
       "properties": {
@@ -110,7 +107,6 @@
       "unevaluatedProperties": false
     },
     "rugix_bakery.images.ImagePartition": {
-      "$id": "rugix_bakery.images.ImagePartition",
       "type": "object",
       "description": "Partition of an image.",
       "properties": {
@@ -134,7 +130,6 @@
       "unevaluatedProperties": false
     },
     "rugix_bakery.images.PartitionTableType": {
-      "$id": "rugix_bakery.images.PartitionTableType",
       "enum": [
         "mbr",
         "gpt"
@@ -142,14 +137,10 @@
       "description": "Partition table type."
     },
     "rugix_bakery.images.PartitionType": {
-      "$id": "rugix_bakery.images.PartitionType",
-      "type": [
-        "string"
-      ],
+      "type": "string",
       "description": "Partition type."
     },
     "rugix_bakery.images.RawBlob": {
-      "$id": "rugix_bakery.images.RawBlob",
       "type": "object",
       "description": "Raw firmware blob written at a fixed offset on the disk.",
       "properties": {
@@ -170,7 +161,6 @@
       "unevaluatedProperties": false
     },
     "rugix_bakery.images.SquashfsOptions": {
-      "$id": "rugix_bakery.images.SquashfsOptions",
       "type": "object",
       "properties": {
         "additional-options": {
@@ -187,14 +177,11 @@
       "unevaluatedProperties": false
     },
     "rugix_bakery.images.Timestamp": {
-      "$id": "rugix_bakery.images.Timestamp",
-      "type": [
-        "string"
-      ],
+      "type": "string",
+      "format": "date-time",
       "description": "Timestamp."
     },
     "rugix_bakery.repositories.SourceConfig": {
-      "$id": "rugix_bakery.repositories.SourceConfig",
       "description": "Repository source.",
       "anyOf": [
         {
@@ -234,7 +221,6 @@
       ]
     },
     "rugix_bakery.systems.Architecture": {
-      "$id": "rugix_bakery.systems.Architecture",
       "enum": [
         "amd64",
         "arm64",
@@ -245,7 +231,6 @@
       "description": "Architecture."
     },
     "rugix_bakery.systems.SystemConfig": {
-      "$id": "rugix_bakery.systems.SystemConfig",
       "type": "object",
       "properties": {
         "layer": {
@@ -277,7 +262,6 @@
       "unevaluatedProperties": false
     },
     "rugix_bakery.systems.SystemImageConfig": {
-      "$id": "rugix_bakery.systems.SystemImageConfig",
       "type": "object",
       "properties": {
         "size": {
@@ -291,7 +275,6 @@
       "unevaluatedProperties": false
     },
     "rugix_bakery.systems.SystemOptions": {
-      "$id": "rugix_bakery.systems.SystemOptions",
       "type": "object",
       "properties": {
         "use-squashfs": {
@@ -302,7 +285,6 @@
       "unevaluatedProperties": false
     },
     "rugix_bakery.systems.Target": {
-      "$id": "rugix_bakery.systems.Target",
       "enum": [
         "generic-grub-efi",
         "rpi-tryboot",

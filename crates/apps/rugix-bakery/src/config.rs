@@ -141,3 +141,64 @@ where
     )
     .whatever_with(|_| format!("loading JSON file {path:?}"))
 }
+
+#[cfg(test)]
+mod configuration_tests {
+    use super::images::ImageConfig;
+    use super::parse_config;
+
+    /// Image configurations retain byte-size strings and timestamp semantics.
+    #[test]
+    fn image_sizes_and_timestamps_remain_compatible() {
+        let toml = r#"
+layer = "test"
+architecture = "amd64"
+size = "4GiB"
+
+[layout]
+type = "gpt"
+
+[[layout.partitions]]
+size = 1073741824
+type = "83"
+filesystem = { type = "ext4", clamp-mtime = "2025-01-02T03:04:05+01:00" }
+"#;
+        let json = r#"{
+            "layer": "test",
+            "architecture": "amd64",
+            "size": "4GiB",
+            "layout": {
+                "type": "gpt",
+                "partitions": [{
+                    "size": 1073741824,
+                    "type": "83",
+                    "filesystem": {
+                        "type": "ext4",
+                        "clamp-mtime": "2025-01-02T03:04:05+01:00"
+                    }
+                }]
+            }
+        }"#;
+        let configs = [
+            parse_config::<ImageConfig>(toml).unwrap(),
+            serde_json::from_str::<ImageConfig>(json).unwrap(),
+            sidex::formats::json::from_str::<ImageConfig>(json).unwrap(),
+        ];
+        for config in configs {
+            assert_eq!(config.size.unwrap().0, byte_calc::NumBytes::new(4 << 30));
+            let partition = &config.layout.unwrap().partitions.unwrap()[0];
+            assert_eq!(
+                partition.size.as_ref().unwrap().0,
+                byte_calc::NumBytes::new(1 << 30)
+            );
+            let super::images::Filesystem::Ext4(options) = partition.filesystem.as_ref().unwrap()
+            else {
+                panic!("expected ext4");
+            };
+            assert_eq!(
+                options.clamp_mtime.as_ref().unwrap().to_string(),
+                "2025-01-02T02:04:05Z"
+            );
+        }
+    }
+}

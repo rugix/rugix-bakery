@@ -42,7 +42,6 @@
   "unevaluatedProperties": false,
   "$defs": {
     "rugix_bakery.recipes.ParameterValue": {
-      "$id": "rugix_bakery.recipes.ParameterValue",
       "description": "Value of a parameter.",
       "anyOf": [
         {
@@ -52,11 +51,19 @@
           "type": "boolean"
         },
         {
-          "type": "integer",
-          "format": "int64"
+          "type": [
+            "integer",
+            "string"
+          ],
+          "format": "int64",
+          "pattern": "^-?[0-9]+$"
         },
         {
-          "type": "number"
+          "type": [
+            "number",
+            "string"
+          ],
+          "pattern": "^(NaN|[+-]?Infinity)$"
         }
       ]
     }

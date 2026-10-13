@@ -305,7 +305,7 @@ pub fn make_system(
                             filesystems_dir.join(format!("partition-{}.tar", partition + 1));
                         let clamp_mtime = options
                             .clamp_mtime
-                            .map(|t| t.as_second())
+                            .map(|t| t.unix_seconds())
                             .unwrap_or(source_date_epoch as i64);
                         let root_dir = layer_path.join("roots").join(path);
                         archive::create(&root_dir, &tar_archive, Some(clamp_mtime))
@@ -460,8 +460,8 @@ fn bsp_to_image_layout(bsp: &BspConfig) -> BakeryResult<ImageLayout> {
         .flatten()
         .map(|b| RawBlob {
             file: b.file.clone(),
-            offset: b.offset.clone(),
-            size: b.size.clone(),
+            offset: b.offset,
+            size: b.size,
         })
         .collect();
 
@@ -470,7 +470,7 @@ fn bsp_to_image_layout(bsp: &BspConfig) -> BakeryResult<ImageLayout> {
         .iter()
         .flatten()
         .map(|p| ImagePartition {
-            size: p.size.clone(),
+            size: p.size,
             filesystem: p.filesystem.clone(),
             root: p.root.clone(),
             ty: p.ty,
@@ -480,8 +480,8 @@ fn bsp_to_image_layout(bsp: &BspConfig) -> BakeryResult<ImageLayout> {
 
     Ok(ImageLayout {
         ty: Some(dl.ty),
-        raw_blobs: Some(raw_blobs),
-        partitions: Some(partitions),
+        raw_blobs: Some(raw_blobs.into()),
+        partitions: Some(partitions.into()),
     })
 }
 
@@ -550,8 +550,8 @@ fn compute_partition_table(
             }
             // By default, we create `LINUX` partitions.
             let partition_type = partition.ty.unwrap_or(match table_type {
-                PartitionTableType::Mbr => mbr_types::LINUX,
-                PartitionTableType::Gpt => gpt_types::LINUX,
+                PartitionTableType::Mbr => mbr_types::LINUX.into(),
+                PartitionTableType::Gpt => gpt_types::LINUX.into(),
             });
             if layout.ty.unwrap() != partition_type.table_type() {
                 bail!("partition type `{partition_type}` does not match table type `{table_type}`",)
@@ -567,7 +567,7 @@ fn compute_partition_table(
                     start,
                     // We fix this later once we know the size of the extended part.
                     size: 0.into(),
-                    ty: partition_type,
+                    ty: partition_type.0,
                     name: None,
                     gpt_id: None,
                     gpt_attrs: None,
@@ -590,7 +590,7 @@ fn compute_partition_table(
                     number,
                     start,
                     size,
-                    ty: partition_type,
+                    ty: partition_type.0,
                     name: None,
                     gpt_id: None,
                     gpt_attrs: None,

@@ -21,7 +21,6 @@
   "unevaluatedProperties": false,
   "$defs": {
     "rugix_bakery.repositories.SourceConfig": {
-      "$id": "rugix_bakery.repositories.SourceConfig",
       "description": "Repository source.",
       "anyOf": [
         {

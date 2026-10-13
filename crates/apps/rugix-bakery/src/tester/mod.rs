@@ -85,7 +85,7 @@ pub fn main(project: &ProjectRef, test_path: &Path) -> BakeryResult<()> {
                             info!("running script");
                         }
                         ctx.status
-                            .set_description(description.clone().unwrap_or_default());
+                            .set_description(description.clone().unwrap_or_default().into());
                         {
                             let mut state = ctx.status.state.lock().unwrap();
                             state.step_progress = Some(StepProgress {
@@ -133,14 +133,18 @@ pub fn main(project: &ProjectRef, test_path: &Path) -> BakeryResult<()> {
                         } else {
                             info!("waiting for {duration:.1} seconds");
                         }
-                        ctx.status
-                            .set_description(description.clone().unwrap_or_else(|| {
-                                if *duration == 1.0 {
-                                    "wait for 1 second".to_owned()
-                                } else {
-                                    format!("wait for {duration:.1} seconds")
-                                }
-                            }));
+                        ctx.status.set_description(
+                            description
+                                .clone()
+                                .unwrap_or_else(|| {
+                                    if *duration == 1.0 {
+                                        "wait for 1 second".to_owned().into()
+                                    } else {
+                                        format!("wait for {duration:.1} seconds").into()
+                                    }
+                                })
+                                .into(),
+                        );
                         tokio::time::sleep(Duration::from_secs_f64(*duration)).await;
                     }
                 }

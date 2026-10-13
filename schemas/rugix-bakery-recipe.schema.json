@@ -8,8 +8,12 @@
       "type": "string"
     },
     "priority": {
-      "type": "integer",
-      "format": "int64"
+      "type": [
+        "integer",
+        "string"
+      ],
+      "format": "int64",
+      "pattern": "^-?[0-9]+$"
     },
     "dependencies": {
       "type": "array",
@@ -28,7 +32,6 @@
   "unevaluatedProperties": false,
   "$defs": {
     "rugix_bakery.recipes.ParameterDef": {
-      "$id": "rugix_bakery.recipes.ParameterDef",
       "type": "object",
       "description": "Recipe parameter definition.",
       "properties": {
@@ -40,7 +43,6 @@
       "unevaluatedProperties": false
     },
     "rugix_bakery.recipes.ParameterValue": {
-      "$id": "rugix_bakery.recipes.ParameterValue",
       "description": "Value of a parameter.",
       "anyOf": [
         {
@@ -50,11 +52,19 @@
           "type": "boolean"
         },
         {
-          "type": "integer",
-          "format": "int64"
+          "type": [
+            "integer",
+            "string"
+          ],
+          "format": "int64",
+          "pattern": "^-?[0-9]+$"
         },
         {
-          "type": "number"
+          "type": [
+            "number",
+            "string"
+          ],
+          "pattern": "^(NaN|[+-]?Infinity)$"
         }
       ]
     }

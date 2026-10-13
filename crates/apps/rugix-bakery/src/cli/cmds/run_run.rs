@@ -45,7 +45,7 @@ pub fn run(args: &args::Args, cmd: &args::RunCommand) -> BakeryResult<()> {
 
     let image_config = project.config().resolve_system_config(&cmd.system)?;
     let system = SystemConfig {
-        system: cmd.system.clone(),
+        system: cmd.system.clone().into(),
         disk_size: None,
         ssh: None,
     };

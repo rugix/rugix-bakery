@@ -516,10 +516,10 @@ fn rpi_bundle_config(opts: &BundleOpts, is_gpt: bool) -> BundleManifest {
     };
     manifest::BundleManifest::new(
         manifest::UpdateType::Full,
-        vec![
+        (vec![
             manifest::Payload::new(
                 manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig {
-                    slot: "boot".to_owned(),
+                    slot: "boot".to_owned().into(),
                 }),
                 "partition-2.img".to_owned(),
             )
@@ -530,7 +530,7 @@ fn rpi_bundle_config(opts: &BundleOpts, is_gpt: bool) -> BundleManifest {
             )),
             manifest::Payload::new(
                 manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig {
-                    slot: "system".to_owned(),
+                    slot: "system".to_owned().into(),
                 }),
                 if is_gpt {
                     "partition-4.img".to_owned()
@@ -543,7 +543,8 @@ fn rpi_bundle_config(opts: &BundleOpts, is_gpt: bool) -> BundleManifest {
                     .with_deduplicate(Some(true))
                     .with_compression(compression.clone()),
             )),
-        ],
+        ])
+        .into(),
     )
 }
 
@@ -555,10 +556,10 @@ fn efi_bundle_config(opts: &BundleOpts) -> BundleManifest {
     };
     manifest::BundleManifest::new(
         manifest::UpdateType::Full,
-        vec![
+        (vec![
             manifest::Payload::new(
                 manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig {
-                    slot: "boot".to_owned(),
+                    slot: "boot".to_owned().into(),
                 }),
                 "partition-2.img".to_owned(),
             )
@@ -569,7 +570,7 @@ fn efi_bundle_config(opts: &BundleOpts) -> BundleManifest {
             )),
             manifest::Payload::new(
                 manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig {
-                    slot: "system".to_owned(),
+                    slot: "system".to_owned().into(),
                 }),
                 "partition-4.img".to_owned(),
             )
@@ -578,7 +579,8 @@ fn efi_bundle_config(opts: &BundleOpts) -> BundleManifest {
                     .with_deduplicate(Some(true))
                     .with_compression(compression),
             )),
-        ],
+        ])
+        .into(),
     )
 }
 
@@ -608,7 +610,7 @@ fn bsp_bundle_config(system_path: &Path, opts: &BundleOpts) -> BakeryResult<Bund
             let filename = if let Some(partition) = p.partition {
                 format!("partition-{partition}.img")
             } else if let Some(file) = &p.file {
-                file.clone()
+                file.to_string()
             } else {
                 panic!(
                     "bundle payload for slot {:?} must have either `partition` or `file`",

@@ -24,15 +24,13 @@
   "unevaluatedProperties": false,
   "$defs": {
     "rugix_bakery.foreign.NumBytes": {
-      "$id": "rugix_bakery.foreign.NumBytes",
       "type": [
-        "number",
-        "string"
+        "string",
+        "number"
       ],
       "description": "Number of bytes."
     },
     "rugix_bakery.tests.SshConfig": {
-      "$id": "rugix_bakery.tests.SshConfig",
       "type": "object",
       "description": "SSH configuration.",
       "properties": {
@@ -46,7 +44,6 @@
       "unevaluatedProperties": false
     },
     "rugix_bakery.tests.SystemConfig": {
-      "$id": "rugix_bakery.tests.SystemConfig",
       "type": "object",
       "description": "System configuration for testing.",
       "properties": {
@@ -66,7 +63,6 @@
       "unevaluatedProperties": false
     },
     "rugix_bakery.tests.TestStep": {
-      "$id": "rugix_bakery.tests.TestStep",
       "description": "Test step.",
       "oneOf": [
         {
@@ -106,7 +102,11 @@
               "type": "string"
             },
             "duration": {
-              "type": "number"
+              "type": [
+                "number",
+                "string"
+              ],
+              "pattern": "^(NaN|[+-]?Infinity)$"
             }
           },
           "required": [

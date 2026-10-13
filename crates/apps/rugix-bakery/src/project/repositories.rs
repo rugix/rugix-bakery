@@ -31,15 +31,23 @@ impl ProjectRepositories {
         let mut repositories = RepositoriesLoader::new(project.dir());
         let core = repositories.load_source(
             SourceConfig::Path(PathSourceConfig {
-                path: paths::repositories_dir()
+                path: (paths::repositories_dir()
                     .join("core")
                     .to_string_lossy()
-                    .into_owned(),
+                    .into_owned())
+                .into(),
             }),
             false,
         )?;
         let root = repositories.load_root(
-            project.config().repositories.clone().unwrap_or_default(),
+            project
+                .config()
+                .repositories
+                .clone()
+                .unwrap_or_default()
+                .into_iter()
+                .map(|(key, value)| (key.into(), value))
+                .collect::<::std::collections::HashMap<_, _>>(),
             true,
         )?;
         Ok(Self {
@@ -100,9 +108,14 @@ impl RepositoriesLoader {
                 update,
             )?,
             RepositoryConfig {
-                name: Some("root".to_owned()),
+                name: Some("root".to_owned().into()),
                 description: None,
-                repositories: Some(repositories),
+                repositories: Some(
+                    repositories
+                        .into_iter()
+                        .map(|(key, value)| (key.into(), value))
+                        .collect::<::sidex::types::Map<_, _>>(),
+                ),
             },
             update,
         )
@@ -168,7 +181,10 @@ impl RepositoriesLoader {
             idx,
             source,
             config,
-            repositories,
+            repositories: repositories
+                .into_iter()
+                .map(|(key, value)| (key.into(), value))
+                .collect::<::std::collections::HashMap<_, _>>(),
         };
         self.repositories[idx] = Some(repository);
         Ok(idx)

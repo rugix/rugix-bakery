@@ -5,9 +5,7 @@ import systems::Architecture
 import systems::Target
 
 /// Timestamp.
-#[rust(type = "::jiff::Timestamp")]
-#[json(type = "string")]
-opaque Timestamp
+alias Timestamp: timestamp
 
 /// Image configuration.
 record ImageConfig {
@@ -96,6 +94,6 @@ record SquashfsOptions {
 }
 
 /// Partition type.
-#[rust(type = "::rugix_common::disk::PartitionType")]
+#[rust(type = "::sidex::serde::Serde<::rugix_common::disk::PartitionType>")]
 #[json(type = "string")]
 opaque PartitionType
