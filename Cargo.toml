@@ -53,8 +53,8 @@ xz2 = "0.1.7"
 # In-house crates.
 si-observability = { version = "0.1.2", features = ["clap4"] }
 si-crypto-hashes = { version = "0.1.2", features = ["serde", "legacy"] }
-sidex = { git = "https://github.com/silitics/sidex.git", tag = "v0.4.0", features = ["serde-1", "jiff-02"] }
-sidex-build-rs = { git = "https://github.com/silitics/sidex.git", tag = "v0.4.0" }
+sidex = { git = "https://github.com/silitics/sidex.git", tag = "v0.4.1", features = ["serde-1", "jiff-02"] }
+sidex-build-rs = { git = "https://github.com/silitics/sidex.git", tag = "v0.4.1" }
 xscript = { version = "0.4.0", features = ["tokio"] }
 
 # Colocated but not Rugix-specific crates (from core repo).
