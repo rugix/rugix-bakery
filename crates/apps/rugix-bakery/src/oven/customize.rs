@@ -323,6 +323,16 @@ fn recipe_schedule(
         })
         .transpose()?
         .unwrap_or_default();
+    // Parameter files belong to the project, even when the fragment comes from a dependency.
+    let mut overrides = HashMap::new();
+    for (name, params) in param_overrides {
+        let Some(recipe) = library.lookup(library.repositories.root_repository, name) else {
+            continue;
+        };
+        if overrides.insert(recipe, params).is_some() {
+            bail!("multiple parameter override names resolve to recipe `{name}`");
+        }
+    }
     let mut recipes = enabled
         .into_iter()
         .map(|idx| {
@@ -344,7 +354,7 @@ fn recipe_schedule(
                     }
                 }
             }
-            let override_params = param_overrides.get(&*recipe.name);
+            let override_params = overrides.get(&idx);
             let mut parameters = HashMap::new();
             if let Some(p) = &recipe.config.parameters {
                 for (name, def) in p {
@@ -595,4 +605,215 @@ fn apply_recipes(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use std::fs;
+    use std::sync::Arc;
+
+    use tempfile::{tempdir, TempDir};
+
+    use crate::config::layers::LayerConfig;
+    use crate::config::mixins::MixinConfig;
+    use crate::config::parse_config;
+    use crate::config::repositories::{PathSourceConfig, SourceConfig};
+    use crate::oven::{load_parameter_overrides, push_parameter_overrides, ParameterOverrides};
+    use crate::project::library::Library;
+    use crate::project::repositories::{ProjectRepositories, Repository, RepositoryIdx, Source};
+    use crate::utils::caching::Hasher;
+    use crate::utils::idx_vec::{Idx, IdxVec};
+
+    use super::{recipe_schedule, RecipeFragment};
+
+    /// Qualified overrides isolate namesakes and retain precedence in imported layers and
+    /// mixins.
+    #[test]
+    fn parameter_files_resolve_from_project_repository() {
+        let (directory, library) = recipe_library();
+        let first = directory.path().join("first.toml");
+        fs::write(
+            &first,
+            r#"
+["core/ssh"]
+value = "first"
+[ssh]
+value = "project"
+["extra/ssh"]
+value = "extra"
+["unused/ssh"]
+value = "unused"
+"#,
+        )
+        .unwrap();
+        let second = directory.path().join("second.toml");
+        fs::write(&second, "[\"core/ssh\"]\nvalue = \"core\"").unwrap();
+        let overrides = load_parameter_overrides(&[first, second]).unwrap();
+        let config = r#"
+recipes = ["ssh", "core/ssh", "local/ssh"]
+[parameters."core/ssh"]
+value = "layer"
+layer_only = "layer"
+"#;
+        let layer: LayerConfig = parse_config(config).unwrap();
+        let mixin: MixinConfig = parse_config(config).unwrap();
+        let root = library.repositories.root_repository;
+        let extra = library.repositories[root].repositories["extra"];
+        for fragment in [
+            RecipeFragment::from_layer(&layer),
+            RecipeFragment::from_mixin(&mixin),
+        ] {
+            let jobs = recipe_schedule(extra, fragment, &library, &overrides).unwrap();
+            assert_eq!(jobs.len(), 3);
+            for (name, expected) in [
+                ("ssh", "project"),
+                ("core/ssh", "core"),
+                ("extra/ssh", "extra"),
+            ] {
+                let recipe = library.lookup(root, name).unwrap();
+                let job = jobs
+                    .iter()
+                    .find(|job| Arc::ptr_eq(&job.recipe, &library.recipes[recipe]))
+                    .unwrap();
+                assert_eq!(job.parameters["value"], expected);
+                assert_eq!(job.parameters["untouched"], "default");
+                assert_eq!(
+                    job.parameters["layer_only"],
+                    if name == "core/ssh" {
+                        "layer"
+                    } else {
+                        "default"
+                    }
+                );
+            }
+        }
+    }
+
+    /// A bare override targets a project recipe without affecting namesakes in
+    /// dependencies.
+    #[test]
+    fn bare_parameter_overrides_only_select_project_recipes() {
+        let (_directory, library) = recipe_library();
+        let overrides: ParameterOverrides = toml::from_str("[ssh]\nvalue = \"project\"").unwrap();
+        let layer: LayerConfig =
+            parse_config("recipes = [\"ssh\", \"core/ssh\", \"extra/ssh\"]").unwrap();
+        let root = library.repositories.root_repository;
+        let jobs = recipe_schedule(
+            root,
+            RecipeFragment::from_layer(&layer),
+            &library,
+            &overrides,
+        )
+        .unwrap();
+        for job in jobs {
+            assert_eq!(
+                job.parameters["value"],
+                if job.recipe.repository == root {
+                    "project"
+                } else {
+                    "default"
+                }
+            );
+        }
+    }
+
+    /// Multiple aliases for one overridden recipe fail instead of choosing a value at
+    /// random.
+    #[test]
+    fn parameter_override_aliases_are_rejected() {
+        let (_directory, mut library) = recipe_library();
+        let root = library.repositories.root_repository;
+        let extra = library.repositories[root].repositories["extra"];
+        Arc::get_mut(&mut library.repositories)
+            .unwrap()
+            .repositories[root]
+            .repositories
+            .insert("alias".to_owned(), extra);
+        let overrides: ParameterOverrides = toml::from_str(
+            "[\"extra/ssh\"]\nvalue = \"first\"\n[\"alias/ssh\"]\nvalue = \"second\"",
+        )
+        .unwrap();
+        let layer: LayerConfig = parse_config("recipes = [\"extra/ssh\"]").unwrap();
+        let error = recipe_schedule(
+            root,
+            RecipeFragment::from_layer(&layer),
+            &library,
+            &overrides,
+        )
+        .err()
+        .unwrap();
+        assert!(error
+            .to_string()
+            .contains("multiple parameter override names"));
+    }
+
+    /// Changing a project alias invalidates cached layers even when override text is
+    /// unchanged.
+    #[test]
+    fn parameter_override_cache_tracks_resolved_repository() {
+        let (_directory, mut library) = recipe_library();
+        let overrides: ParameterOverrides =
+            toml::from_str("[\"extra/ssh\"]\nvalue = \"override\"").unwrap();
+        let mut original = Hasher::new();
+        push_parameter_overrides(&mut original, &overrides, &library);
+
+        let root = library.repositories.root_repository;
+        let core = library.repositories.core_repository;
+        Arc::get_mut(&mut library.repositories)
+            .unwrap()
+            .repositories[root]
+            .repositories
+            .insert("extra".to_owned(), core);
+        let mut remapped = Hasher::new();
+        push_parameter_overrides(&mut remapped, &overrides, &library);
+        assert_ne!(original.finalize(), remapped.finalize());
+    }
+
+    /// Load three repositories containing recipes with the same name from temporary
+    /// files.
+    fn recipe_library() -> (TempDir, Library) {
+        let directory = tempdir().unwrap();
+        let mut repositories = IdxVec::new();
+        for name in ["root", "core", "extra"] {
+            let path = directory.path().join(name);
+            let recipe_dir = path.join("recipes/ssh");
+            fs::create_dir_all(&recipe_dir).unwrap();
+            fs::write(
+                recipe_dir.join("recipe.toml"),
+                "[parameters]\nvalue = { default = \"default\" }\nlayer_only = { default = \"default\" }\nuntouched = { default = \"default\" }",
+            )
+            .unwrap();
+            let source = Source::materialize(
+                SourceConfig::Path(PathSourceConfig {
+                    path: path.to_str().unwrap().into(),
+                }),
+                directory.path(),
+                false,
+            )
+            .unwrap();
+            repositories.push(Repository {
+                idx: repositories.next_idx(),
+                source,
+                config: parse_config("").unwrap(),
+                repositories: HashMap::new(),
+            });
+        }
+        let root = RepositoryIdx::from_usize(0);
+        let core = RepositoryIdx::from_usize(1);
+        let extra = RepositoryIdx::from_usize(2);
+        repositories[root]
+            .repositories
+            .insert("extra".to_owned(), extra);
+        repositories[extra]
+            .repositories
+            .insert("local".to_owned(), root);
+        let library = Library::load(Arc::new(ProjectRepositories {
+            repositories,
+            root_repository: root,
+            core_repository: core,
+        }))
+        .unwrap();
+        (directory, library)
+    }
 }

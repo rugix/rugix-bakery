@@ -18,7 +18,7 @@ use xscript::{run, Run};
 use crate::config::images::PartitionTableType;
 use crate::config::recipes::ParameterValue;
 use crate::config::systems::{Architecture, SystemConfig, Target};
-use crate::project::library::{LayerIdx, MixinIdx};
+use crate::project::library::{LayerIdx, Library, MixinIdx};
 use crate::project::ProjectRef;
 use crate::utils::caching::{download, Hasher};
 use crate::BakeryResult;
@@ -32,7 +32,9 @@ mod archive;
 
 /// Parameter overrides loaded from parameter files.
 ///
-/// Maps recipe names to their parameter key-value pairs.
+/// Maps recipe references, resolved from the project repository, to their parameter
+/// key-value pairs. For example, `core/ssh` selects the core recipe and `ssh` selects
+/// a project recipe.
 pub type ParameterOverrides = HashMap<String, HashMap<String, ParameterValue>>;
 
 /// Build-time mixin selection.
@@ -161,7 +163,7 @@ impl<'p> LayerBakery<'p> {
         layer_id.push("layer", &layer.name);
         layer_id.push("repository", repositories[layer.repo].source.id.as_str());
         layer_id.push("arch", self.arch.as_str());
-        push_parameter_overrides(&mut layer_id, self.param_overrides);
+        push_parameter_overrides(&mut layer_id, self.param_overrides, &library);
         if let Some(url) = &config.url {
             layer_id.push("url", url);
             let layer_id = layer_id.finalize();
@@ -234,7 +236,7 @@ impl<'p> LayerBakery<'p> {
         layer_id.push("repository", repositories[mixin.repo].source.id.as_str());
         layer_id.push("arch", self.arch.as_str());
         layer_id.push("source", src.to_string_lossy().as_ref());
-        push_parameter_overrides(&mut layer_id, self.param_overrides);
+        push_parameter_overrides(&mut layer_id, self.param_overrides, &library);
         let layer_id = layer_id.finalize();
         let layer_path = PathBuf::from(format!(".rugix/layers/{layer_id}"));
         let target = self.project.dir().join(&layer_path).join("system.tar");
@@ -359,13 +361,26 @@ enum VisitState {
     Done,
 }
 
-fn push_parameter_overrides(layer_id: &mut Hasher, param_overrides: &ParameterOverrides) {
+fn push_parameter_overrides(
+    layer_id: &mut Hasher,
+    param_overrides: &ParameterOverrides,
+    library: &Library,
+) {
     if param_overrides.is_empty() {
         return;
     }
+    // Invalidate layers built when overrides were matched by bare recipe name.
+    layer_id.push("parameter-override-resolution", "project-repository");
     let mut sorted_overrides: Vec<_> = param_overrides.iter().collect();
     sorted_overrides.sort_by_key(|(k, _)| k.as_str());
     for (recipe, params) in &sorted_overrides {
+        if let Some(idx) = library.lookup(library.repositories.root_repository, recipe) {
+            let repository = library.recipes[idx].repository;
+            layer_id.push(
+                &format!("override-repository:{recipe}"),
+                library.repositories[repository].source.id.as_str(),
+            );
+        }
         let mut sorted_params: Vec<_> = params.iter().collect();
         sorted_params.sort_by_key(|(k, _)| k.as_str());
         for (param, value) in &sorted_params {

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Resolve parameter-file recipe references from the project repository, so
+  `core/ssh` overrides only the core recipe and `ssh` selects a project recipe.
 - Capture package installation output in layer build logs.
 - Use a stable UTF-8 locale for package installation and recipe steps running
   inside the target system.
