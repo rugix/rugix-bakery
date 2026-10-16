@@ -1,12 +1,53 @@
 [[systems]]
-system = "workflow"
+system = "efi"
 ssh = { private-key = ".rugix-testkit/id_rsa" }
 
 [[steps]]
 action = "run"
-description = "check that Rugix Ctrl runs and booted group A"
+description = "check the booted group and record the boot"
 script = """
 #!/bin/bash
 set -euo pipefail
 rugix-ctrl system info --json | grep -q '"activeGroup":"a"'
+cat /proc/sys/kernel/random/boot_id >/run/rugix/state/first-boot-id
+"""
+
+[[steps]]
+action = "run"
+description = "read a project file from stdin"
+stdin-file = "rugix-bakery.toml"
+script = """
+#!/bin/bash
+grep -q '^\\[systems.efi\\]$'
+"""
+
+[[steps]]
+action = "run"
+description = "continue after a failing script"
+may-fail = true
+script = """
+#!/bin/bash
+exit 1
+"""
+
+[[steps]]
+action = "run"
+description = "reboot"
+may-disconnect = true
+script = """
+#!/bin/bash
+reboot
+"""
+
+[[steps]]
+action = "wait"
+duration = 10
+
+[[steps]]
+action = "run"
+description = "check that the system rebooted"
+script = """
+#!/bin/bash
+set -euo pipefail
+test "$(cat /proc/sys/kernel/random/boot_id)" != "$(cat /run/rugix/state/first-boot-id)"
 """

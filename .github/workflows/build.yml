@@ -248,7 +248,8 @@ jobs:
           export RUGIX_BAKERY_IMAGE="${{ needs.bakery_metadata.outputs.image }}@sha256:$DIGEST"
           echo "RUGIX_BAKERY_IMAGE=$RUGIX_BAKERY_IMAGE"
           podman pull "$RUGIX_BAKERY_IMAGE"
-          if [ "${{ github.event_name }}" = "schedule" ]; then
+          # Nightly and release builds also run the slow, network-dependent tests.
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.ref_type }}" = "tag" ]; then
             export RUGIX_TESTS_EXTENDED=1
           fi
           mise install python uv

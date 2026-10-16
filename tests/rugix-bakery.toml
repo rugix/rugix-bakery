@@ -12,11 +12,6 @@ architecture = "amd64"
 target = "generic-grub-efi"
 options = { use-squashfs = {} }
 
-[systems.workflow]
-layer = "workflow"
-architecture = "amd64"
-target = "generic-grub-efi"
-
 [systems.debian-package-musl]
 layer = "debian-package-musl"
 architecture = "amd64"

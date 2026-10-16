@@ -1,11 +1,11 @@
 [[systems]]
-system = "workflow"
+system = "efi"
 ssh = { private-key = ".rugix-testkit/id_rsa" }
 
 [[steps]]
 action = "run"
-description = "fail on purpose"
+description = "fail with a distinctive exit code"
 script = """
 #!/bin/bash
-exit 1
+exit 42
 """

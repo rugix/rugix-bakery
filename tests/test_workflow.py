@@ -1,4 +1,8 @@
-"""``rugix-bakery test`` runs workflows against systems booted in a VM."""
+"""``rugix-bakery test`` runs workflows against systems booted in a VM.
+
+The workflows in ``tests/`` use the testkit's SSH key, which the parameter
+overrides passed with ``--param-file`` authorize on the system.
+"""
 
 from __future__ import annotations
 
@@ -10,15 +14,16 @@ from rugix_testkit import BakeryBuilder
 
 @pytest.mark.usefixtures("ssh_key")
 def test_workflow_passes(bakery: BakeryBuilder) -> None:
-    """A workflow whose steps succeed passes."""
-    bakery.run(["test", "boot"])
+    """Steps run over SSH, read stdin from a file, tolerate allowed failures
+    and disconnects, and reconnect after a reboot."""
+    bakery.test("boot")
 
 
 @pytest.mark.usefixtures("ssh_key")
 def test_workflow_fails_with_failing_step(
     bakery: BakeryBuilder, capfd: pytest.CaptureFixture[str]
 ) -> None:
-    """A workflow with a failing step fails because of that step."""
+    """A workflow fails when a step exits with a non-zero code."""
     with pytest.raises(subprocess.CalledProcessError):
-        bakery.run(["test", "failing-step"])
-    assert "script execution failed" in capfd.readouterr().err
+        bakery.test("failing-step")
+    assert "non-zero return code 42" in capfd.readouterr().err

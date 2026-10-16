@@ -10,7 +10,8 @@ available fixtures.
 The tests cover:
 
 - Booting and updating `generic-grub-efi` systems with ext4 and SquashFS system
-  partitions.
+  partitions, including file metadata such as capabilities, ACLs, and extended
+  attributes, and the generated SBOMs.
 - The boot configuration of images for the Raspberry Pi tryboot and U-Boot
   targets. These systems use a minimal layer without binaries, so baking them
   works on any host without emulating the target architecture.
@@ -24,7 +25,8 @@ The tests cover:
 Prerequisites:
 
 - A container runtime (Podman or Docker).
-- `qemu-system-x86_64` with OVMF firmware.
+- `qemu-system-x86_64` with OVMF firmware. VMs use KVM when `/dev/kvm` is
+  accessible.
 - mtools for inspecting the FAT partitions of Raspberry Pi images.
 
 The tests use the Bakery image named by `RUGIX_BAKERY_IMAGE`, which defaults

@@ -27,10 +27,14 @@ def clean_bakes(
     rugix_project: Path, tmp_path_factory: pytest.TempPathFactory
 ) -> tuple[Path, Path]:
     """Filesystem directories of two bakes without shared caches."""
-    return (
+    bakes = (
         _bake_clean_copy(rugix_project, tmp_path_factory.mktemp("first")),
         _bake_clean_copy(rugix_project, tmp_path_factory.mktemp("second")),
     )
+    for bake in bakes:
+        for name in ("partition-2.tar", "partition-4.tar", "partition-4.img"):
+            assert (bake / name).is_file(), f"bake is missing {name}"
+    return bakes
 
 
 def test_system_partition_is_reproducible(clean_bakes: tuple[Path, Path]) -> None:

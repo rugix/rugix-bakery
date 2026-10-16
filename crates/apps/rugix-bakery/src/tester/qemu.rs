@@ -94,7 +94,6 @@ impl Vm {
             stdin,
         )
         .await
-        .message("run script")
     }
 
     async fn call(

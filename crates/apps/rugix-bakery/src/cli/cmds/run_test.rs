@@ -6,11 +6,12 @@ use std::fs;
 use reportify::ResultExt;
 
 use crate::cli::{args, load_project};
-use crate::{tester, BakeryResult};
+use crate::{oven, tester, BakeryResult};
 
 /// Run the `test` command.
 pub fn run(args: &args::Args, cmd: &args::TestCommand) -> BakeryResult<()> {
     let project = load_project(args)?;
+    let param_overrides = oven::load_parameter_overrides(&cmd.params.param_files)?;
     let mut workflows = Vec::new();
     if cmd.workflows.is_empty() {
         let mut read_dir = fs::read_dir(project.dir().join("tests"))
@@ -34,7 +35,7 @@ pub fn run(args: &args::Args, cmd: &args::TestCommand) -> BakeryResult<()> {
         }
     };
     for workflow in &workflows {
-        tester::main(&project, &workflow)?;
+        tester::main(&project, &workflow, &param_overrides)?;
         rugix_cli::force_redraw();
     }
     Ok(())

@@ -92,7 +92,7 @@ description = "Build rugix-* binaries and the rugix-bakery :dev container image 
 depends = ["build-binaries", "build-image"]
 
 [tasks."test:system"]
-description = "Run the system tests against the :dev image (requires QEMU, OVMF, swtpm, and mtools)"
+description = "Run the system tests against the :dev image (requires QEMU, OVMF, and mtools)"
 dir = "tests"
 run = 'uv run pytest "$@"'
 

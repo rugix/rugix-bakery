@@ -1,0 +1,2 @@
+description = "create files with special metadata"
+dependencies = ["core/pkg-update"]

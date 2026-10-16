@@ -15,12 +15,17 @@ use rugix_cli::{StatusSegment, StatusSegmentRef, VisualHeight};
 use crate::config::load_config;
 use crate::config::tests::{RunStep, TestConfig, WaitStep};
 use crate::oven::system::ReleaseInfo;
+use crate::oven::ParameterOverrides;
 use crate::project::ProjectRef;
 use crate::{oven, BakeryResult};
 
 pub mod qemu;
 
-pub fn main(project: &ProjectRef, test_path: &Path) -> BakeryResult<()> {
+pub fn main(
+    project: &ProjectRef,
+    test_path: &Path,
+    param_overrides: &ParameterOverrides,
+) -> BakeryResult<()> {
     let test_config = load_config::<TestConfig>(test_path)?;
 
     let test_name = test_path
@@ -37,7 +42,7 @@ pub fn main(project: &ProjectRef, test_path: &Path) -> BakeryResult<()> {
             &system.system,
             &system_out,
             source_date_epoch,
-            &Default::default(),
+            param_overrides,
             &Default::default(),
         )
         .whatever("error baking system")?;

@@ -152,6 +152,8 @@ pub enum BakeCommand {
 #[derive(Debug, Parser)]
 pub struct TestCommand {
     pub workflows: Vec<String>,
+    #[clap(flatten)]
+    pub params: ParamFileArgs,
 }
 
 /// The `cache` command.
