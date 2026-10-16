@@ -46,7 +46,8 @@ def test_bake_writes_sboms(bakery: BakeryBuilder) -> None:
     """Baking a system writes SPDX and CycloneDX SBOMs of its packages."""
     output = bakery.bake_image("efi").parent
     for sbom in ("sbom.spdx.json", "sbom.cdx.json"):
-        content = json.dumps(json.loads((output / sbom).read_text()))
+        content = (output / sbom).read_text()
+        json.loads(content)
         assert "openssh-server" in content, sbom
 
 

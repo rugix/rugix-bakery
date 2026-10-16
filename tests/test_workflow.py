@@ -12,14 +12,12 @@ import pytest
 from rugix_testkit import BakeryBuilder
 
 
-@pytest.mark.usefixtures("ssh_key")
 def test_workflow_passes(bakery: BakeryBuilder) -> None:
     """Steps run over SSH, read stdin from a file, tolerate allowed failures
     and disconnects, and reconnect after a reboot."""
     bakery.test("boot")
 
 
-@pytest.mark.usefixtures("ssh_key")
 def test_workflow_fails_with_failing_step(
     bakery: BakeryBuilder, capfd: pytest.CaptureFixture[str]
 ) -> None:
