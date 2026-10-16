@@ -5,6 +5,10 @@
 - Accept `--param-file` in the `test` command, for example, to authorize an SSH
   key for test workflows without a separate layer.
 - Report the exit code of a failing `run` step of a test workflow.
+- Use KVM in test workflows only if `/dev/kvm` is accessible and report Qemu's
+  error output if Qemu fails to start.
+- Keep the user's groups when `run-bakery` runs Podman with a `/dev/kvm` that
+  only group members may access, so that test workflows use KVM.
 - Allow `core/rugix-ctrl` to run again in a layer whose parent already ran it,
   for example, when a layer adds `core/rugix-ctrl-daemon`.
 - Resolve parameter-file recipe references from the project repository, so

@@ -290,7 +290,13 @@ pub async fn start(
     ])
     .await
     .whatever("unable to create VM image")?;
-    let kvm_available = Path::new("/dev/kvm").exists()
+    // Opening the device also checks that we may use it, which group-based
+    // permissions may deny within a container.
+    let kvm_available = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open("/dev/kvm")
+        .is_ok()
         && match arch {
             Architecture::Amd64 => std::env::consts::ARCH == "x86_64",
             Architecture::Arm64 => std::env::consts::ARCH == "aarch64",
@@ -359,17 +365,21 @@ pub async fn start(
             // io::copy(&mut stdout, &mut stdout_log).await
         });
     }
-    if let Some(stderr) = Some(".rugix/vm-stderr.log") {
-        let mut stderr_log = fs::File::create(stderr)
-            .await
-            .whatever("unable to create stderr log file")?;
-        let mut stderr = child.stderr.take().expect("we used Stdio::piped");
-        tokio::spawn(async move { io::copy(&mut stderr, &mut stderr_log).await });
-    }
+    let stderr_path = ".rugix/vm-stderr.log";
+    let mut stderr_log = fs::File::create(stderr_path)
+        .await
+        .whatever("unable to create stderr log file")?;
+    let mut stderr = child.stderr.take().expect("we used Stdio::piped");
+    let stderr_copy = tokio::spawn(async move { io::copy(&mut stderr, &mut stderr_log).await });
     // We give Qemu some time to start before checking it's exit status.
     time::sleep(Duration::from_millis(500)).await;
     if let Ok(Some(status)) = child.try_wait() {
-        Err(whatever!("unable to start qemu").field("status", status.code().unwrap_or(1)))
+        // Qemu has exited, so copying its stderr finishes.
+        let _ = stderr_copy.await;
+        let stderr = fs::read_to_string(stderr_path).await.unwrap_or_default();
+        Err(whatever!("unable to start qemu")
+            .field("status", status.code().unwrap_or(1))
+            .field("stderr", stderr.trim().to_owned()))
     } else {
         Ok(Vm {
             child,
