@@ -1,0 +1,53 @@
+[repositories]
+rugix-testkit = { git = "https://github.com/rugix/rugix-testkit.git", branch = "work/agents/per-repo-system-tests", dir = "bakery" }
+
+[systems.efi]
+layer = "efi"
+architecture = "amd64"
+target = "generic-grub-efi"
+
+[systems.efi-squashfs]
+layer = "efi"
+architecture = "amd64"
+target = "generic-grub-efi"
+options = { use-squashfs = {} }
+
+[systems.workflow]
+layer = "workflow"
+architecture = "amd64"
+target = "generic-grub-efi"
+
+[systems.debian-package-musl]
+layer = "debian-package-musl"
+architecture = "amd64"
+target = "generic-grub-efi"
+
+[systems.debian-package-gnu]
+layer = "debian-package-gnu"
+architecture = "amd64"
+target = "generic-grub-efi"
+
+[systems.tryboot]
+layer = "pi-tryboot"
+architecture = "arm64"
+target = "rpi-tryboot"
+
+[systems.tryboot-pi4]
+layer = "pi4-tryboot"
+architecture = "arm64"
+target = "rpi-tryboot"
+
+[systems.uboot-arm64]
+layer = "pi-uboot"
+architecture = "arm64"
+target = "rpi-uboot"
+
+[systems.uboot-armhf]
+layer = "pi-uboot"
+architecture = "armhf"
+target = "rpi-uboot"
+
+[systems.old-debian-snapshot]
+layer = "old-debian-snapshot"
+architecture = "amd64"
+target = "generic-grub-efi"

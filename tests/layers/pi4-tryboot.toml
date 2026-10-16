@@ -1,0 +1,5 @@
+parent = "pi-tryboot"
+recipes = ["core/rpi-include-firmware"]
+
+[parameters."core/rpi-include-firmware"]
+model = "pi4"

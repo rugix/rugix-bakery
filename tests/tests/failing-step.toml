@@ -1,0 +1,11 @@
+[[systems]]
+system = "workflow"
+ssh = { private-key = ".rugix-testkit/id_rsa" }
+
+[[steps]]
+action = "run"
+description = "fail on purpose"
+script = """
+#!/bin/bash
+exit 1
+"""

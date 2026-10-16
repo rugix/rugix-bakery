@@ -17,6 +17,9 @@
 # x86_64-unknown-linux-musl (the host arch for the bakery container we
 # bake locally) alongside the aarch64 / armv7 targets the project ships.
 rust = { version = "1.95.0", profile = "default", targets = ["aarch64-unknown-linux-musl", "x86_64-unknown-linux-musl", "arm-unknown-linux-musleabihf"] }
+# For the system tests.
+python = "3.11"
+uv = "latest"
 
 # We can't pull `pkgsCross.musl64.stdenv.cc` and the matching aarch64 cross
 # compiler through the `nix:` mise plugin (it only resolves flat nixhub
@@ -87,3 +90,17 @@ run = "podman build -t ghcr.io/rugix/rugix-bakery:dev -f container/Dockerfile ."
 [tasks.build]
 description = "Build rugix-* binaries and the rugix-bakery :dev container image (Podman)"
 depends = ["build-binaries", "build-image"]
+
+[tasks."test:system"]
+description = "Run the system tests against the :dev image (requires QEMU, OVMF, swtpm, and mtools)"
+dir = "tests"
+run = 'uv run pytest "$@"'
+
+[tasks."check:tests"]
+description = "Lint, format-check, and type-check the system tests."
+dir = "tests"
+run = '''
+uv run --group dev ruff check .
+uv run --group dev ruff format --check .
+uv run --group dev mypy .
+'''

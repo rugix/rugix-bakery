@@ -1,0 +1,12 @@
+parent = "core/debian-trixie"
+
+recipes = [
+    "core/debian-grub-setup",
+    "core/ssh",
+    "rugix-testkit/network",
+]
+
+# Install the latest Rugix Ctrl 1.x release from its Debian package.
+[parameters."core/rugix-ctrl"]
+version = "v1"
+use_musl = false

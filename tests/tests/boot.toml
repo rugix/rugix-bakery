@@ -1,0 +1,12 @@
+[[systems]]
+system = "workflow"
+ssh = { private-key = ".rugix-testkit/id_rsa" }
+
+[[steps]]
+action = "run"
+description = "check that Rugix Ctrl runs and booted group A"
+script = """
+#!/bin/bash
+set -euo pipefail
+rugix-ctrl system info --json | grep -q '"activeGroup":"a"'
+"""

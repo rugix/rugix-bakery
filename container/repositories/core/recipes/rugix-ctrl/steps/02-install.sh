@@ -67,4 +67,4 @@ if [ ! -x /usr/sbin/sfdisk ]; then
 fi
 
 # Compatibility for updates from versions prior to v0.8.
-ln -s /usr/bin/rugix-ctrl /usr/bin/rugpi-ctrl
+ln -sf /usr/bin/rugix-ctrl /usr/bin/rugpi-ctrl

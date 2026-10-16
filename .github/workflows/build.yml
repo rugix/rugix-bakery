@@ -49,7 +49,6 @@ jobs:
         run: |
           OWNER="${{ github.repository_owner }}"
           git config --global url.https://github.com/rugix/rugix.git.insteadOf "https://github.com/${OWNER}/rugix"
-          git config --global url.https://github.com/rugix/rugix-tests.git.insteadOf "https://github.com/${OWNER}/rugix-tests"
       - name: Checkout Submodules
         if: github.repository_owner != 'rugix'
         run: git submodule sync --recursive && git submodule update --init --recursive
@@ -148,7 +147,6 @@ jobs:
         run: |
           OWNER="${{ github.repository_owner }}"
           git config --global url.https://github.com/rugix/rugix.git.insteadOf "https://github.com/${OWNER}/rugix"
-          git config --global url.https://github.com/rugix/rugix-tests.git.insteadOf "https://github.com/${OWNER}/rugix-tests"
       - name: Checkout Submodules
         if: github.repository_owner != 'rugix'
         run: git submodule sync --recursive && git submodule update --init --recursive
@@ -226,17 +224,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-        with:
-          submodules: ${{ github.repository_owner == 'rugix' && 'recursive' || false }}
-      - name: Configure Git URL Rewrites
-        if: github.repository_owner != 'rugix'
-        run: |
-          OWNER="${{ github.repository_owner }}"
-          git config --global url.https://github.com/rugix/rugix.git.insteadOf "https://github.com/${OWNER}/rugix"
-          git config --global url.https://github.com/rugix/rugix-tests.git.insteadOf "https://github.com/${OWNER}/rugix-tests"
-      - name: Checkout Submodules
-        if: github.repository_owner != 'rugix'
-        run: git submodule sync --recursive && git submodule update --init --recursive
       - name: Download AMD64 Digest
         uses: actions/download-artifact@v8
         with:
@@ -258,15 +245,14 @@ jobs:
             exit 1
           fi
 
-          cd tests
-
-          ./generate-test-keys.sh
           export RUGIX_BAKERY_IMAGE="${{ needs.bakery_metadata.outputs.image }}@sha256:$DIGEST"
           echo "RUGIX_BAKERY_IMAGE=$RUGIX_BAKERY_IMAGE"
-          podman pull $RUGIX_BAKERY_IMAGE
+          podman pull "$RUGIX_BAKERY_IMAGE"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            export RUGIX_TESTS_EXTENDED=1
+          fi
           mise install python uv
-          ./generate-test-keys.sh
-          ./scripts/run-pytest.sh
+          nix shell nixpkgs#mtools --command mise run --skip-tools test:system -n 4
       - name: Upload Test Outputs
         if: always()
         uses: actions/upload-artifact@v7

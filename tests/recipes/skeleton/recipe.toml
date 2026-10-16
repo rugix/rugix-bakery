@@ -1,0 +1,2 @@
+description = "create a minimal root filesystem and boot partition"
+priority = 1_000_000

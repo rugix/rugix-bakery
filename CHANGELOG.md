@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Allow `core/rugix-ctrl` to run again in a layer whose parent already ran it,
+  for example, when a layer adds `core/rugix-ctrl-daemon`.
 - Resolve parameter-file recipe references from the project repository, so
   `core/ssh` overrides only the core recipe and `ssh` selects a project recipe.
 - Capture package installation output in layer build logs.

@@ -1,0 +1,5 @@
+parent = "rugix-testkit/debian-efi"
+
+# `rugix-bakery test` bakes without parameter overrides, so the testkit's key
+# needs to be installed from the project directory.
+recipes = ["authorized-key"]

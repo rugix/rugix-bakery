@@ -1,0 +1,9 @@
+parent = "rugix-testkit/debian-efi"
+
+recipes = [
+    # Applies `core/rugix-ctrl` again on top of the parent layer.
+    "core/rugix-ctrl-daemon",
+]
+
+[parameters."core/rugix-ctrl"]
+version = "container"

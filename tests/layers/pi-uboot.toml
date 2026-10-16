@@ -1,0 +1,2 @@
+root = true
+recipes = ["skeleton", "core/rpi-uboot-setup"]
