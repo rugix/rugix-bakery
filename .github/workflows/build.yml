@@ -213,23 +213,60 @@ jobs:
 
   test_bakery_image:
     name: Test Bakery Image
-    if: github.event_name != 'pull_request' && github.repository_owner == 'rugix'
+    # Pull requests must not push images, so they test an image built on the
+    # runner. Other events test the image that `build_bakery_image` publishes.
+    if: >-
+      !cancelled()
+      && github.repository_owner == 'rugix'
+      && needs.build_binaries_linux.result == 'success'
+      && (
+        github.event_name == 'pull_request'
+        || needs.build_bakery_images.result == 'success'
+      )
     runs-on: [self-hosted, nixos]
     permissions:
       contents: read
       packages: write
     needs:
       - bakery_metadata
+      - build_binaries_linux
       - build_bakery_images
+    env:
+      LOCAL_IMAGE: localhost/rugix-bakery:ci-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Download Binaries
+        if: github.event_name == 'pull_request'
+        uses: actions/download-artifact@v8
+        with:
+          pattern: binaries-*
+          path: build/binaries
+          merge-multiple: true
+      - name: Build Image
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd build/binaries
+            for tar_file in *.tar; do
+              target_name="${tar_file%.tar}"
+              mkdir "$target_name"
+              tar -xf "$tar_file" -C "$target_name"
+              rm -f "$tar_file"
+            done
+          )
+          podman build --platform linux/amd64 -t "$LOCAL_IMAGE" -f container/Dockerfile .
+          echo "RUGIX_BAKERY_IMAGE=$LOCAL_IMAGE" >> "$GITHUB_ENV"
       - name: Download AMD64 Digest
+        if: github.event_name != 'pull_request'
         uses: actions/download-artifact@v8
         with:
           name: bakery-digest-amd64
           path: build/digests
-      - name: Run Tests
+      - name: Pull Image
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
@@ -245,9 +282,14 @@ jobs:
             exit 1
           fi
 
-          export RUGIX_BAKERY_IMAGE="${{ needs.bakery_metadata.outputs.image }}@sha256:$DIGEST"
+          RUGIX_BAKERY_IMAGE="${{ needs.bakery_metadata.outputs.image }}@sha256:$DIGEST"
           echo "RUGIX_BAKERY_IMAGE=$RUGIX_BAKERY_IMAGE"
           podman pull "$RUGIX_BAKERY_IMAGE"
+          echo "RUGIX_BAKERY_IMAGE=$RUGIX_BAKERY_IMAGE" >> "$GITHUB_ENV"
+      - name: Run Tests
+        shell: bash
+        run: |
+          set -euo pipefail
           # Nightly and release builds also run the slow, network-dependent tests.
           if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.ref_type }}" = "tag" ]; then
             export RUGIX_TESTS_EXTENDED=1
@@ -261,6 +303,9 @@ jobs:
           name: test-outputs
           path: tests/test-outputs/
           if-no-files-found: ignore
+      - name: Remove Image
+        if: always() && github.event_name == 'pull_request'
+        run: podman rmi --ignore "$LOCAL_IMAGE"
 
   build_bakery_image:
     name: Build and Push Bakery Image
