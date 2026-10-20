@@ -223,7 +223,7 @@ jobs:
         github.event_name == 'pull_request'
         || needs.build_bakery_images.result == 'success'
       )
-    runs-on: [self-hosted, nixos]
+    runs-on: [self-hosted, si-large]
     permissions:
       contents: read
       packages: write
