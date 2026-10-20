@@ -191,7 +191,7 @@ jobs:
 
   test_bakery_image:
     name: Test Bakery Image
-    runs-on: [self-hosted, nixos]
+    runs-on: [self-hosted, si-large]
     permissions:
       contents: read
       packages: write
