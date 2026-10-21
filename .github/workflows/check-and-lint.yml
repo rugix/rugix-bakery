@@ -56,6 +56,8 @@ jobs:
           install: false
           cache: true
       - name: Install Tools
+        env:
+          MISE_GITHUB_TOKEN: ${{ github.token }}
         run: mise install python uv
       - name: Check System Tests
         run: mise run --skip-tools check:tests
