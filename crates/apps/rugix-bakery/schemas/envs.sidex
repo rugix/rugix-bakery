@@ -1,0 +1,33 @@
+//! Inspection results and storage selection for tooling environments.
+
+/// Storage backend for tooling environment images.
+#[json(tagged = externally, rename_all = "kebab-case")]
+#[rust(derive(Copy, PartialEq, Eq, clap::ValueEnum))]
+variant EnvStorage {
+    /// Use native overlay when supported, otherwise directory copies.
+    Auto,
+    /// Use kernel OverlayFS.
+    Native,
+    /// Use fuse-overlayfs (requires /dev/fuse).
+    Fuse,
+    /// Use directory copies.
+    Vfs,
+}
+
+/// A discovered environment definition.
+record EnvInfo {
+    /// Environment reference relative to the project.
+    name: string,
+    /// Absolute path to the Dockerfile.
+    dockerfile: string,
+    /// Absolute path to the build context.
+    context: string,
+}
+
+/// Result of building an environment.
+record EnvBuildInfo {
+    /// Resolved local OCI image identity.
+    image_id: string,
+    /// Storage backend containing the image.
+    storage: EnvStorage,
+}

@@ -1258,6 +1258,453 @@ pub mod bsp {
         }
     }
 }
+pub mod envs {
+    #![doc = "Inspection results and storage selection for tooling environments.\n"]
+    #![allow(
+        clippy::all,
+        clippy::pedantic,
+        clippy::nursery,
+        clippy::cargo,
+        dead_code
+    )]
+    #[doc = "Storage backend for tooling environment images.\n"]
+    #[derive(Clone, Debug, Copy, PartialEq, Eq, clap :: ValueEnum)]
+    pub enum EnvStorage {
+        #[doc = "Use native overlay when supported, otherwise directory copies.\n"]
+        Auto,
+        #[doc = "Use kernel OverlayFS.\n"]
+        Native,
+        #[doc = "Use fuse-overlayfs (requires /dev/fuse).\n"]
+        Fuse,
+        #[doc = "Use directory copies.\n"]
+        Vfs,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for EnvStorage {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::envs::EnvStorage",
+            ::sidex::shape::ShapeKind::Variant(
+                ::sidex::shape::VariantShape::new(&[
+                    ::sidex::shape::CaseShape::new("Auto", ::std::option::Option::None)
+                        .with_docs(
+                            "Use native overlay when supported, otherwise directory copies.\n",
+                        )
+                        .json_name("auto"),
+                    ::sidex::shape::CaseShape::new("Native", ::std::option::Option::None)
+                        .with_docs("Use kernel OverlayFS.\n")
+                        .json_name("native"),
+                    ::sidex::shape::CaseShape::new("Fuse", ::std::option::Option::None)
+                        .with_docs("Use fuse-overlayfs (requires /dev/fuse).\n")
+                        .json_name("fuse"),
+                    ::sidex::shape::CaseShape::new("Vfs", ::std::option::Option::None)
+                        .with_docs("Use directory copies.\n")
+                        .json_name("vfs"),
+                ])
+                .json_tagging(::sidex::formats::json::Tagging::External),
+            ),
+        )
+        .with_docs("Storage backend for tooling environment images.\n")
+        .with_attrs(&[
+            ::sidex::shape::Attr::List {
+                path: "json",
+                args: &[
+                    ::sidex::shape::Attr::Assign {
+                        path: "tagged",
+                        value: ::sidex::shape::AttrValue::Path("externally"),
+                    },
+                    ::sidex::shape::Attr::Assign {
+                        path: "rename_all",
+                        value: ::sidex::shape::AttrValue::String("kebab-case"),
+                    },
+                ],
+            },
+            ::sidex::shape::Attr::List {
+                path: "rust",
+                args: &[::sidex::shape::Attr::List {
+                    path: "derive",
+                    args: &[
+                        ::sidex::shape::Attr::Path("Copy"),
+                        ::sidex::shape::Attr::Path("PartialEq"),
+                        ::sidex::shape::Attr::Path("Eq"),
+                        ::sidex::shape::Attr::Path("clap::ValueEnum"),
+                    ],
+                }],
+            },
+        ]);
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for EnvStorage {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Variant(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::VariantView for EnvStorage {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn case(&self) -> usize {
+            match *self {
+                Self::Auto => 0usize,
+                Self::Native => 1usize,
+                Self::Fuse => 2usize,
+                Self::Vfs => 3usize,
+            }
+        }
+        fn payload(&self) -> ::std::option::Option<::sidex::View<'_>> {
+            match self {
+                Self::Auto => ::std::option::Option::None,
+                Self::Native => ::std::option::Option::None,
+                Self::Fuse => ::std::option::Option::None,
+                Self::Vfs => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for EnvStorage {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut out = ::std::option::Option::<Self>::None;
+            decoder.variant(<Self as ::sidex::Shaped>::SHAPE, &mut |case, decoder| {
+                out = ::std::option::Option::Some(match case {
+                    0usize => Self::Auto,
+                    1usize => Self::Native,
+                    2usize => Self::Fuse,
+                    3usize => Self::Vfs,
+                    _ => {
+                        return ::std::result::Result::Err(::sidex::DecodeError::new(
+                            "unknown case",
+                        ));
+                    }
+                });
+                ::std::result::Result::Ok(())
+            })?;
+            out.ok_or_else(|| ::sidex::DecodeError::new("missing case"))
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for EnvStorage {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for EnvStorage {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "A discovered environment definition.\n"]
+    #[derive(Clone, Debug)]
+    pub struct EnvInfo {
+        #[doc = "Environment reference relative to the project.\n"]
+        pub name: ::sidex::types::Str,
+        #[doc = "Absolute path to the Dockerfile.\n"]
+        pub dockerfile: ::sidex::types::Str,
+        #[doc = "Absolute path to the build context.\n"]
+        pub context: ::sidex::types::Str,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for EnvInfo {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::envs::EnvInfo",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "name",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .with_docs("Environment reference relative to the project.\n"),
+                ::sidex::shape::FieldShape::new(
+                    "dockerfile",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .with_docs("Absolute path to the Dockerfile.\n"),
+                ::sidex::shape::FieldShape::new(
+                    "context",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .with_docs("Absolute path to the build context.\n"),
+            ])),
+        )
+        .with_docs("A discovered environment definition.\n");
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for EnvInfo {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for EnvInfo {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.name)),
+                1usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.dockerfile)),
+                2usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.context)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for EnvInfo {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_2 = ::std::option::Option::<::sidex::types::Str>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    2usize => {
+                        __field_2 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                name: __field_0.ok_or_else(|| ::sidex::DecodeError::new("missing field `name`"))?,
+                dockerfile: __field_1
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `dockerfile`"))?,
+                context: __field_2
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `context`"))?,
+            })
+        }
+    }
+    impl EnvInfo {
+        #[doc = "Creates a new [`EnvInfo`]."]
+        pub fn new(
+            name: impl ::std::convert::Into<::sidex::types::Str>,
+            dockerfile: impl ::std::convert::Into<::sidex::types::Str>,
+            context: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> Self {
+            Self {
+                name: name.into(),
+                dockerfile: dockerfile.into(),
+                context: context.into(),
+            }
+        }
+        #[doc = "Sets the value of `name`."]
+        pub fn set_name(
+            &mut self,
+            name: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.name = name.into();
+            self
+        }
+        #[doc = "Sets the value of `name`."]
+        pub fn with_name(mut self, name: impl ::std::convert::Into<::sidex::types::Str>) -> Self {
+            self.name = name.into();
+            self
+        }
+        #[doc = "Sets the value of `dockerfile`."]
+        pub fn set_dockerfile(
+            &mut self,
+            dockerfile: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.dockerfile = dockerfile.into();
+            self
+        }
+        #[doc = "Sets the value of `dockerfile`."]
+        pub fn with_dockerfile(
+            mut self,
+            dockerfile: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> Self {
+            self.dockerfile = dockerfile.into();
+            self
+        }
+        #[doc = "Sets the value of `context`."]
+        pub fn set_context(
+            &mut self,
+            context: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.context = context.into();
+            self
+        }
+        #[doc = "Sets the value of `context`."]
+        pub fn with_context(
+            mut self,
+            context: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> Self {
+            self.context = context.into();
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for EnvInfo {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for EnvInfo {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "Result of building an environment.\n"]
+    #[derive(Clone, Debug)]
+    pub struct EnvBuildInfo {
+        #[doc = "Resolved local OCI image identity.\n"]
+        pub image_id: ::sidex::types::Str,
+        #[doc = "Storage backend containing the image.\n"]
+        pub storage: EnvStorage,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for EnvBuildInfo {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::envs::EnvBuildInfo",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "image_id",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .with_docs("Resolved local OCI image identity.\n")
+                .json_name("imageId"),
+                ::sidex::shape::FieldShape::new("storage", ::sidex::shape::shape_of::<EnvStorage>)
+                    .with_docs("Storage backend containing the image.\n"),
+            ])),
+        )
+        .with_docs("Result of building an environment.\n");
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for EnvBuildInfo {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for EnvBuildInfo {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.image_id)),
+                1usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.storage)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for EnvBuildInfo {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 = ::std::option::Option::<EnvStorage>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
+                            <EnvStorage as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                image_id: __field_0
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `imageId`"))?,
+                storage: __field_1
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `storage`"))?,
+            })
+        }
+    }
+    impl EnvBuildInfo {
+        #[doc = "Creates a new [`EnvBuildInfo`]."]
+        pub fn new(
+            image_id: impl ::std::convert::Into<::sidex::types::Str>,
+            storage: EnvStorage,
+        ) -> Self {
+            Self {
+                image_id: image_id.into(),
+                storage: storage,
+            }
+        }
+        #[doc = "Sets the value of `image_id`."]
+        pub fn set_image_id(
+            &mut self,
+            image_id: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.image_id = image_id.into();
+            self
+        }
+        #[doc = "Sets the value of `image_id`."]
+        pub fn with_image_id(
+            mut self,
+            image_id: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> Self {
+            self.image_id = image_id.into();
+            self
+        }
+        #[doc = "Sets the value of `storage`."]
+        pub fn set_storage(&mut self, storage: EnvStorage) -> &mut Self {
+            self.storage = storage;
+            self
+        }
+        #[doc = "Sets the value of `storage`."]
+        pub fn with_storage(mut self, storage: EnvStorage) -> Self {
+            self.storage = storage;
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for EnvBuildInfo {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for EnvBuildInfo {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+}
 pub mod foreign {
     #![doc = "Foreign types.\n"]
     #![allow(

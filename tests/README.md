@@ -17,6 +17,9 @@ The tests cover:
   works on any host without emulating the target architecture.
 - `rugix-bakery test` workflows, which live in `tests/` as this directory is
   also a Bakery project.
+- Independent tooling environments: repository discovery, Dockerfile caching,
+  context exclusions, fresh shell containers, image defaults, and command failures.
+  These tests use temporary env-only projects and do not need QEMU.
 - Installing released Rugix Ctrl Debian packages (extended).
 - Reproducible builds of a pinned Debian snapshot (extended).
 
