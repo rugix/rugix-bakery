@@ -238,7 +238,8 @@ impl BuiltEnv {
             .args(arguments)
             .stdin(Stdio::inherit());
         let status = execute_with_terminal(&mut command, terminal)?.status;
-        // Removal must finish before a caller publishes outputs or exits with the command's status.
+        // Removal must finish before a caller publishes outputs or exits with the command's
+        // status.
         container.remove()?;
         Ok(status)
     }
@@ -270,7 +271,8 @@ impl WorkingContainer {
         Ok(())
     }
 
-    /// Cleanup also runs while a cancelled task unwinds, so it must not check cancellation.
+    /// Cleanup also runs while a cancelled task unwinds, so it must not check
+    /// cancellation.
     fn remove_command(&self) -> Command {
         let mut command = self.store.command();
         command
@@ -315,7 +317,8 @@ fn execute(command: &mut Command) -> BakeryResult<Output> {
     execute_with_terminal(command, false)
 }
 
-/// Interactive Buildah must stay in the foreground group to access the controlling terminal.
+/// Interactive Buildah must stay in the foreground group to access the controlling
+/// terminal.
 fn execute_with_terminal(command: &mut Command, terminal: bool) -> BakeryResult<Output> {
     rugix_tasks::check_canceled();
     if !terminal {
