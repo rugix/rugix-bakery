@@ -13,6 +13,7 @@ use crate::config::load_config;
 use crate::config::projects::ProjectConfig;
 use crate::BakeryResult;
 
+pub mod envs;
 pub mod layers;
 pub mod library;
 pub mod mixins;

@@ -24,7 +24,7 @@ toml = "0.8.8"
 url = { version = "2.4.0", features = ["serde"] }
 uuid = { version = "1.8.0", features = ["v4"] }
 
-nix.workspace = true
+nix = { workspace = true, features = ["signal"] }
 tokio.workspace = true
 tracing.workspace = true
 xscript.workspace = true

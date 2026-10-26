@@ -7,10 +7,12 @@ RUN apt-get -y update \
         acl \
         attr \
         btrfs-progs \
+        buildah \
         curl \
         dosfstools \
         fdisk \
         file \
+        fuse-overlayfs \
         git \
         gpg \
         jq \

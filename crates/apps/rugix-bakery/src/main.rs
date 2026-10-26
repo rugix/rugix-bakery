@@ -6,6 +6,7 @@ use reportify::Report;
 
 pub mod cli;
 pub mod config;
+pub mod envs;
 pub mod oven;
 pub mod paths;
 pub mod project;

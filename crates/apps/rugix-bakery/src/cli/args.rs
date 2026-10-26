@@ -26,6 +26,9 @@ pub enum Command {
     /// Build an image, layer, or update bundle.
     #[clap(subcommand)]
     Bake(BakeCommand),
+    /// Inspect, build, and enter tooling environments.
+    #[clap(subcommand)]
+    Envs(EnvsCommand),
     /// Run system tests.
     Test(TestCommand),
     /// Run a system in a VM.
@@ -68,6 +71,43 @@ impl ReleaseInfoArgs {
 pub enum ListCommand {
     /// List available images.
     Systems,
+}
+
+/// Commands for independent tooling environments.
+#[derive(Debug, Parser)]
+pub enum EnvsCommand {
+    /// List envs in the project and its direct repositories.
+    List,
+    /// Show an env definition without building it.
+    Inspect {
+        env: String,
+        /// Print the inspection result as JSON.
+        #[clap(long)]
+        json: bool,
+    },
+    /// Build an env and print its resolved image ID.
+    Build(EnvBuildArgs),
+    /// Build an env and start a fresh shell, or run a command after --.
+    Shell {
+        #[clap(flatten)]
+        build: EnvBuildArgs,
+        /// Command to execute instead of /bin/sh.
+        #[clap(last = true)]
+        command: Vec<std::ffi::OsString>,
+    },
+}
+
+/// Arguments shared by env construction and shell entry.
+#[derive(Debug, clap::Args)]
+pub struct EnvBuildArgs {
+    /// Local or repository-qualified env name.
+    pub env: String,
+    /// Image storage backend.
+    #[clap(long, value_enum, default_value = "auto")]
+    pub storage: crate::config::envs::EnvStorage,
+    /// Rebuild Dockerfile instructions without using cached layers.
+    #[clap(long)]
+    pub no_cache: bool,
 }
 
 /// Parameter file arguments for overriding recipe parameters.
