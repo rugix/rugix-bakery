@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Update `crypto-bigint`, `ctutils`, and `tokio` to resolve security advisories.
 - Accept `--param-file` in the `test` command, for example, to authorize an SSH
   key for test workflows without a separate layer.
 - Report the exit code of a failing `run` step of a test workflow.
