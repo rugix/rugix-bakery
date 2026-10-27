@@ -19,6 +19,7 @@ jobs:
         run: |
           OWNER="${{ github.repository_owner }}"
           git config --global url.https://github.com/rugix/rugix.git.insteadOf "https://github.com/${OWNER}/rugix"
+          git config --global url.https://github.com/rugix/rugix-tests.git.insteadOf "https://github.com/${OWNER}/rugix-tests"
 
       - name: Checkout Submodules
         if: github.repository_owner != 'rugix'
