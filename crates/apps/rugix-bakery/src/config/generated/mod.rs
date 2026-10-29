@@ -5473,6 +5473,10 @@ pub mod projects {
         pub repositories: ::std::option::Option<
             ::sidex::types::Map<::sidex::types::Str, super::repositories::SourceConfig>,
         >,
+        #[doc = "Patch Git-sourced dependencies: maps the Git URL of any repository\n(root or transitive) to a replacement source. The original `dir` is\npreserved unless the replacement specifies its own.\n"]
+        pub patch: ::std::option::Option<
+            ::sidex::types::Map<::sidex::types::Str, super::repositories::SourceConfig>,
+        >,
         #[doc = "System declarations.\n"]
         pub systems: ::std::option::Option<
             ::sidex::types::Map<::sidex::types::Str, super::systems::SystemConfig>,
@@ -5490,6 +5494,14 @@ pub mod projects {
                     >,
                 )
                 .with_docs("Repositories imported into the project.\n")
+                .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "patch",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<::sidex::types::Str, super::repositories::SourceConfig>,
+                    >,
+                )
+                .with_docs("Patch Git-sourced dependencies: maps the Git URL of any repository\n(root or transitive) to a replacement source. The original `dir` is\npreserved unless the replacement specifies its own.\n")
                 .optional(),
                 ::sidex::shape::FieldShape::new(
                     "systems",
@@ -5522,6 +5534,10 @@ pub mod projects {
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 1usize => self
+                    .patch
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                2usize => self
                     .systems
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
@@ -5539,6 +5555,9 @@ pub mod projects {
                 ::sidex::types::Map<::sidex::types::Str, super::repositories::SourceConfig>,
             >::None;
             let mut __field_1 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, super::repositories::SourceConfig>,
+            >::None;
+            let mut __field_2 = ::std::option::Option::<
                 ::sidex::types::Map<::sidex::types::Str, super::systems::SystemConfig>,
             >::None;
             decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
@@ -5554,6 +5573,14 @@ pub mod projects {
                     1usize => {
                         __field_1 = ::std::option::Option::Some(<::sidex::types::Map<
                             ::sidex::types::Str,
+                            super::repositories::SourceConfig,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    2usize => {
+                        __field_2 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
                             super::systems::SystemConfig,
                         > as ::sidex::Decode>::decode(
                             decoder
@@ -5565,7 +5592,8 @@ pub mod projects {
             })?;
             ::std::result::Result::Ok(Self {
                 repositories: __field_0,
-                systems: __field_1,
+                patch: __field_1,
+                systems: __field_2,
             })
         }
     }
@@ -5574,6 +5602,7 @@ pub mod projects {
         pub fn new() -> Self {
             Self {
                 repositories: ::std::default::Default::default(),
+                patch: ::std::default::Default::default(),
                 systems: ::std::default::Default::default(),
             }
         }
@@ -5595,6 +5624,26 @@ pub mod projects {
             >,
         ) -> Self {
             self.repositories = repositories;
+            self
+        }
+        #[doc = "Sets the value of `patch`."]
+        pub fn set_patch(
+            &mut self,
+            patch: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::repositories::SourceConfig>,
+            >,
+        ) -> &mut Self {
+            self.patch = patch;
+            self
+        }
+        #[doc = "Sets the value of `patch`."]
+        pub fn with_patch(
+            mut self,
+            patch: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::repositories::SourceConfig>,
+            >,
+        ) -> Self {
+            self.patch = patch;
             self
         }
         #[doc = "Sets the value of `systems`."]
