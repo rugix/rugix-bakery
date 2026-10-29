@@ -87,6 +87,16 @@ impl ProjectConfig {
     }
 }
 
+impl rules::ArtifactInput {
+    /// Artifact kind accepted by either input notation.
+    pub fn kind(&self) -> rules::ArtifactKind {
+        match self {
+            Self::Kind(kind) => *kind,
+            Self::Definition(definition) => definition.kind,
+        }
+    }
+}
+
 impl Filesystem {
     /// Name of the filesystem.
     pub fn name(&self) -> &'static str {
@@ -127,6 +137,16 @@ where
             .whatever_with(|_| format!("unable to read configuration file {path:?}"))?,
     )
     .message(|| format!("loading configuration from {path:?}"))
+}
+
+/// Load an existing Rugix schema from either JSON or TOML.
+pub fn load_config_or_json<T: DeserializeOwned>(path: &Path) -> BakeryResult<T> {
+    let content = fs::read_to_string(path).whatever("unable to read configuration")?;
+    if content.trim_start().starts_with('{') {
+        serde_json::from_str(&content).whatever("unable to parse JSON configuration")
+    } else {
+        parse_config(&content)
+    }
 }
 
 /// Load JSON file of type `T` from the provided path.

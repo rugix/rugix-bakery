@@ -1,0 +1,2 @@
+root = true
+recipes = ["install-hello"]

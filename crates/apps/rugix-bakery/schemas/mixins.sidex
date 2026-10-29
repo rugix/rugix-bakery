@@ -1,6 +1,7 @@
 //! Mixin configuration.
 
 import recipes::ParameterValue
+import rules::{ArtifactSource, RuleInvocation}
 
 /// Mixin configuration.
 record MixinConfig {
@@ -14,6 +15,10 @@ record MixinConfig {
     recipes?: [string],
     /// Recipes to specifically exclude from this mixin.
     exclude?: [string],
+    /// Prerequisite rules available to recipe input bindings.
+    rules?: [string: RuleInvocation],
+    /// Artifact bindings by recipe reference and input name.
+    inputs?: [string: [string: ArtifactSource]],
     /// Recipe parameters.
     parameters?: [string: [string: ParameterValue]],
 }

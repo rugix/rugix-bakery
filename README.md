@@ -33,6 +33,30 @@ corresponding update bundles.
 
 [For details, check out the documentation.](https://rugix.org/docs/bakery)
 
+## Custom Image Pipelines
+
+Repositories can supply build rules for filesystem images, disk assembly, and
+update bundles. Rules run with Bakery's tools or in a Dockerfile-defined
+environment. Compose them around existing layers and recipes to support custom
+platforms. Standard system configurations use the same rule engine. See the
+[layer input example](examples/layer-inputs) for a recipe that consumes a rule output.
+
+## Inspect Repository Building Blocks
+
+Rules, recipes, and layers carry descriptions and optional Markdown documentation.
+Inspect them without building their artifacts:
+
+```shell
+./run-bakery rules inspect core/image-ext4
+./run-bakery recipes inspect core/ssh
+./run-bakery layers inspect core/debian-trixie
+```
+
+Each command supports `--json`. Use `list --repository core --json` to export
+a complete catalog for reference generation. See the
+[definition catalog guide](https://rugix.org/docs/bakery/next/definition-catalogs/)
+for the metadata format and documentation workflow.
+
 ## Using Rugix Ctrl with Other Build Systems
 
 Choose Rugix Bakery when you want to build on Debian, Alpine Linux, or Raspberry

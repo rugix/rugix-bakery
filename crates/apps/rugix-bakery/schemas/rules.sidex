@@ -1,0 +1,141 @@
+//! Repository-defined artifact builds.
+
+import recipes::{ParameterDef, ParameterValue}
+import systems::Architecture
+
+/// A reusable operation or composition.
+#[json(rename_all = "kebab-case")]
+record RuleDefinition {
+    /// Description for users of this rule.
+    description?: string,
+    /// Optional group used when presenting a rule catalog.
+    category?: string,
+    /// Required artifact inputs.
+    inputs?: [string: ArtifactInput],
+    /// Configurable parameters.
+    parameters?: [string: ParameterDef],
+    /// Required sensitive input bindings. Secret changes invalidate cached outputs.
+    secrets?: [string],
+    /// Implementation of the rule.
+    execution: RuleExecution,
+}
+
+/// A compact artifact kind or a documented input.
+#[json(tagged = implicitly)]
+variant ArtifactInput {
+    Kind: ArtifactKind,
+    Definition: ArtifactInputDefinition,
+}
+
+/// An artifact input with documentation.
+record ArtifactInputDefinition {
+    kind: ArtifactKind,
+    description?: string,
+}
+
+/// An invocation of a repository-defined rule.
+#[json(rename_all = "kebab-case")]
+record RuleInvocation {
+    /// Local or repository-qualified rule name.
+    uses: string,
+    /// Artifact input bindings.
+    inputs?: [string: ArtifactSource],
+    /// Parameter bindings.
+    parameters?: [string: ParameterBinding],
+    /// Secret input bindings.
+    secrets?: [string: ArtifactSource],
+}
+
+/// Filesystem object accepted by an input or produced by an output.
+#[json(tagged = externally, rename_all = "kebab-case")]
+#[rust(derive(Copy, PartialEq, Eq))]
+variant ArtifactKind {
+    File,
+    Directory,
+}
+
+/// An artifact reference within a composition.
+#[json(tagged = externally, rename_all = "kebab-case")]
+variant ArtifactSource {
+    /// An input of the enclosing composition.
+    Input: string,
+    /// A file or directory relative to the repository containing this reference.
+    File: string,
+    /// An output of another node in this composition.
+    Rule: RuleOutputSource,
+    /// Select an existing file or directory within a directory artifact.
+    Select: ArtifactSelection,
+    /// Assemble artifacts at explicit, non-overlapping relative paths.
+    Tree: [string: ArtifactSource],
+}
+
+/// A path within a directory artifact. Symlinks must resolve inside that directory.
+record ArtifactSelection {
+    #[rust(box)]
+    source: ArtifactSource,
+    path: string,
+    kind: ArtifactKind,
+}
+
+/// Reference to a node output.
+record RuleOutputSource {
+    node: string,
+    output: string,
+}
+
+/// A literal parameter value or a reference to an enclosing parameter.
+#[json(tagged = implicitly)]
+variant ParameterBinding {
+    Reference: ParameterReference,
+    Value: ParameterValue,
+}
+
+/// Reference to an enclosing parameter.
+record ParameterReference {
+    parameter: string,
+}
+
+/// Implementation of a reusable rule.
+#[json(tag = "type", rename_all = "kebab-case")]
+variant RuleExecution {
+    Run: RunRule,
+    Graph: GraphRule,
+    /// Build an existing layer with its recipes.
+    Layer: LayerRule,
+}
+
+/// A command executed in Bakery or a fresh tooling environment.
+#[json(rename_all = "kebab-case")]
+record RunRule {
+    /// Optional environment resolved relative to the defining repository. Defaults to Bakery.
+    env?: string,
+    /// Command and literal arguments. No shell expansion is performed by Bakery.
+    command: [string],
+    /// Files and directories to publish from /run/rugix/bakery/work/outputs.
+    outputs: [string: RuleOutput],
+    /// Reuse successful outputs. Defaults to true.
+    cache?: bool,
+}
+
+/// A declared command output.
+record RuleOutput {
+    /// Description for users of the output artifact.
+    description?: string,
+    kind: ArtifactKind,
+    /// Relative path within /run/rugix/bakery/work/outputs.
+    path: string,
+}
+
+/// A composition with the same interface as an executable rule.
+record GraphRule {
+    rules: [string: RuleInvocation],
+    outputs: [string: ArtifactSource],
+}
+
+
+/// A layer executed as part of an artifact graph.
+record LayerRule {
+    /// Layer name resolved from the rule's repository.
+    layer: string,
+    architecture: Architecture,
+}

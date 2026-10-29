@@ -1,8 +1,19 @@
-description = "bootstrap Debian from scratch"
-priority = 10_000_000
+description = "Bootstrap a Debian root filesystem with mmdebstrap."
+category = "Base Systems"
+priority = 10000000
 
-[parameters]
-suite = { default = "stable" }
-snapshot = { default = "" }
-mirror = { default = "" }
-components = { default = "main" }
+[parameters.suite]
+description = "Debian suite or codename, such as bookworm or trixie."
+default = "stable"
+
+[parameters.snapshot]
+description = "Debian snapshot timestamp. Empty uses the selected mirror instead."
+default = ""
+
+[parameters.mirror]
+description = "Custom Debian mirror URL. Empty uses mmdebstrap's default. A snapshot takes precedence."
+default = ""
+
+[parameters.components]
+description = "Space-separated archive components for an explicit custom mirror."
+default = "main"

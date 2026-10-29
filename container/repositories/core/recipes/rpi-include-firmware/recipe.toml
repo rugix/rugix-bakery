@@ -1,4 +1,5 @@
-description = "include firmware update for Raspberry Pi"
+description = "Include a Raspberry Pi EEPROM update in the configuration partition."
+category = "Boot Setup"
 
-[parameters]
-model = {}
+[parameters.model]
+description = "Target Raspberry Pi model: pi4 or pi5."

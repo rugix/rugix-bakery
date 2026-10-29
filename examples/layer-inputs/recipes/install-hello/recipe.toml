@@ -1,0 +1,10 @@
+description = "Install the compiled application"
+[inputs]
+hello = "file"
+
+[rules.hello]
+uses = "compile-hello"
+inputs.source = { file = "application" }
+
+[input-defaults]
+hello = { rule = { node = "hello", output = "binary" } }

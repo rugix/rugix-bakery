@@ -1,0 +1,27 @@
+description = "Resolve a Bakery image layout into an unpopulated disk image."
+category = "Image Assembly"
+
+[inputs.layout]
+kind = "file"
+description = "Rugix ImageLayout definition in JSON or TOML."
+
+[inputs.roots]
+kind = "directory"
+description = "Prepared filesystem trees addressed by each partition root path."
+
+[inputs.layer]
+kind = "directory"
+description = "Layer tree containing roots/ and any referenced firmware blobs."
+
+[parameters.size]
+default = 0
+description = "Disk capacity in bytes. Zero uses the capacity required by the layout."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "image-layout"]
+
+[execution.outputs.image]
+kind = "file"
+path = "layout.img"
+description = "Sparse disk image containing its partition table and raw firmware blobs."

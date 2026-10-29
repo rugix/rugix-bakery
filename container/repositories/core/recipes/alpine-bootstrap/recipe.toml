@@ -1,6 +1,7 @@
-description = "bootstrap Alpine Linux"
-priority = 10_000_000
+description = "Bootstrap an Alpine Linux root filesystem."
+category = "Base Systems"
+priority = 10000000
 dependencies = ["pkg-cleanup"]
 
-[parameters]
-version = {}
+[parameters.version]
+description = "Alpine release series, such as 3.20. The recipe downloads its .0 minirootfs."

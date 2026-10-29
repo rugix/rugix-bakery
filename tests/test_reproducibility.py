@@ -42,11 +42,6 @@ def test_system_partition_is_reproducible(clean_bakes: tuple[Path, Path]) -> Non
     _assert_identical(clean_bakes, ["partition-4.tar", "partition-4.img"])
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Bakery generates random partition IDs and writes the root PARTUUID "
-    "into the GRUB environment on the boot partition.",
-)
 def test_boot_partition_is_reproducible(clean_bakes: tuple[Path, Path]) -> None:
     """The boot partition's contents are identical."""
     _assert_identical(clean_bakes, ["partition-2.tar"])

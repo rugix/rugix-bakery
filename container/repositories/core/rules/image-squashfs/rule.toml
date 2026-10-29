@@ -1,0 +1,31 @@
+description = "Create a SquashFS image from a directory tree."
+category = "Filesystem Images"
+
+[inputs.tree]
+kind = "directory"
+description = "Directory tree to package as a read-only filesystem."
+
+[parameters.compression]
+description = "Compression algorithm accepted by mksquashfs, such as zstd or xz."
+default = "zstd"
+
+[parameters.block-size]
+description = "Filesystem block size in bytes."
+default = 131072
+
+[parameters.mkfs-options]
+description = "Additional mksquashfs arguments, separated with shell-style quoting."
+default = ""
+
+[parameters.source-date-epoch]
+description = "Filesystem creation time and upper bound for file timestamps, as Unix seconds (0..4294967295)."
+default = 0
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "image-squashfs"]
+
+[execution.outputs.image]
+description = "Compressed SquashFS filesystem image."
+kind = "file"
+path = "image.squashfs"

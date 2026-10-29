@@ -1,2 +1,3 @@
-description = "install state file for `/root`"
-priority = 600_000  # Execute rather early.
+description = "Persist the root user's home directory across system updates."
+category = "State Persistence"
+priority = 600000

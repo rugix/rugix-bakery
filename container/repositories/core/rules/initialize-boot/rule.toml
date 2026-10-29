@@ -1,0 +1,36 @@
+description = "Install Rugix boot-flow files into boot and configuration trees."
+category = "Image Assembly"
+
+[inputs.boot]
+kind = "directory"
+description = "Boot filesystem source tree."
+
+[inputs.config]
+kind = "directory"
+description = "Configuration filesystem source tree."
+
+[parameters.target]
+default = "unknown"
+description = "Rugix boot target: rpi-tryboot, rpi-uboot, generic-grub-efi, bsp, or unknown."
+
+[parameters.architecture]
+default = "amd64"
+description = "Target architecture."
+
+[parameters.source-date-epoch]
+default = 0
+description = "Upper bound for generated boot timestamps, as Unix seconds."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "initialize-boot"]
+
+[execution.outputs.boot]
+kind = "directory"
+path = "boot"
+description = "Initialized boot tree."
+
+[execution.outputs.config]
+kind = "directory"
+path = "config"
+description = "Bootloader, firmware, and initial boot-selection configuration."

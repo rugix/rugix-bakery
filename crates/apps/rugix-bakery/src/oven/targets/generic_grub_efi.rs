@@ -4,10 +4,10 @@ use reportify::{bail, ResultExt};
 
 use rugix_common::boot::grub::grub_write_defaults;
 
-use crate::config::systems::{Architecture, SystemConfig};
+use crate::config::systems::Architecture;
 use crate::{paths, BakeryResult};
 
-pub fn initialize_grub<'cx>(config: &SystemConfig, config_dir: &Path) -> BakeryResult<()> {
+pub fn initialize_grub<'cx>(architecture: Architecture, config_dir: &Path) -> BakeryResult<()> {
     rugix_fs::create_dir_recursive(&config_dir.join("EFI/BOOT")).ok();
     rugix_fs::create_dir_recursive(&config_dir.join("rugpi")).ok();
     let mut copier = rugix_fs::Copier::new();
@@ -18,7 +18,7 @@ pub fn initialize_grub<'cx>(config: &SystemConfig, config_dir: &Path) -> BakeryR
         )
         .whatever("unable to copy first stage boot script")?;
     grub_write_defaults(config_dir).whatever("unable to write Grub default environment")?;
-    match config.architecture {
+    match architecture {
         Architecture::Arm64 => {
             copier
                 .copy_file(
@@ -38,7 +38,7 @@ pub fn initialize_grub<'cx>(config: &SystemConfig, config_dir: &Path) -> BakeryR
         _ => {
             bail!(
                 "no Grub support for architecture `{}`",
-                config.architecture.as_str()
+                architecture.as_str()
             );
         }
     }

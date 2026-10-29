@@ -1,6 +1,8 @@
-description = "enabling SSH"
-priority = 80_000
+description = "Enable SSH and persist host keys."
+category = "Networking"
+priority = 80000
 dependencies = ["pkg-update"]
 
-[parameters]
-root_authorized_keys = { default = "" }
+[parameters.root_authorized_keys]
+description = "Public authorized_keys entries appended to root's authorized_keys file. Empty adds no keys."
+default = ""

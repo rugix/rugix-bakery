@@ -1,12 +1,12 @@
-description = "install and configure Rugix Ctrl"
-priority = 700_000                               # Execute very early.
+description = "Install and configure Rugix Ctrl."
+category = "Device Lifecycle"
+priority = 700000
 dependencies = ["pkg-update"]
 
-[parameters]
-# Use MUSL builds by default.
-use_musl = { default = true }
-# Where to get binaries: "container" uses pre-built container binaries,
-# a major version (e.g., "v1") resolves the most recently published matching
-# GitHub release, including prereleases,
-# an exact tag (e.g., "v1.0.0-rc.1") downloads that specific release.
-version = { default = "v1" }
+[parameters.use_musl]
+description = "Choose statically linked musl binaries instead of GNU libc binaries."
+default = true
+
+[parameters.version]
+description = "Binary source: container, a release series such as v1, or an exact release tag."
+default = "v1"

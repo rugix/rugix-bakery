@@ -1,6 +1,7 @@
 //! System configuration.
 
 import foreign::NumBytes
+import rules::RuleInvocation
 import images::{ImageLayout, SquashfsOptions}
 
 record SystemConfig {
@@ -14,6 +15,8 @@ record SystemConfig {
     target?: Target,
     /// System image configuration.
     image?: SystemImageConfig,
+    /// Repository-defined image assembly, receiving the existing layer build.
+    build?: RuleInvocation,
     /// Additional options.
     options?: SystemOptions,
 }

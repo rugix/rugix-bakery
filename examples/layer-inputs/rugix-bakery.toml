@@ -1,0 +1,6 @@
+[systems.demo]
+layer = "demo"
+architecture = "amd64"
+[systems.demo.build]
+uses = "core/image-ext4"
+inputs.tree = { input = "rootfs" }

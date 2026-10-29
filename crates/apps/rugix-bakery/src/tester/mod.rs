@@ -33,7 +33,6 @@ pub fn main(
         .unwrap()
         .to_string_lossy()
         .into_owned();
-    let source_date_epoch = jiff::Timestamp::now().as_second() as u64;
     for system in &test_config.systems {
         let system_out = Path::new("build").join(&system.system);
         oven::bake_system(
@@ -41,9 +40,10 @@ pub fn main(
             &ReleaseInfo::default(),
             &system.system,
             &system_out,
-            source_date_epoch,
+            None,
             param_overrides,
             &Default::default(),
+            None,
         )
         .whatever("error baking system")?;
 

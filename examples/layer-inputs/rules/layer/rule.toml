@@ -1,0 +1,4 @@
+[execution]
+type = "layer"
+layer = "demo"
+architecture = "amd64"

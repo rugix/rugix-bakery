@@ -37,10 +37,32 @@ def _require_mtools() -> None:
         pytest.fail("mtools are required to inspect FAT partitions")
 
 
-def test_tryboot_selects_boot_partitions(bakery: BakeryBuilder) -> None:
-    """Tryboot boots partition 2 for group A and partition 3 for group B, which
-    starts Rugix Ctrl as init on the system partition of group A."""
-    image = bakery.bake_image("tryboot")
+@pytest.mark.parametrize("identified_runtime", [True, False])
+def test_tryboot_selects_boot_partitions(
+    bakery: BakeryBuilder, tmp_path: Path, identified_runtime: bool
+) -> None:
+    """Tryboot selects each boot group with either cached or temporary layers."""
+    if identified_runtime:
+        image = bakery.bake_image("tryboot")
+    else:
+        project = tmp_path / "unidentified-project"
+        project.mkdir()
+        for name in ["run-bakery", "rugix-bakery.toml", "layers", "recipes"]:
+            source = bakery.project_dir / name
+            if source.is_dir():
+                shutil.copytree(source, project / name)
+            else:
+                shutil.copyfile(source, project / name)
+        launcher = project / "run-bakery"
+        launcher.chmod(0o755)
+        launcher.write_text(
+            launcher.read_text().replace(
+                '-e "RUGIX_BAKERY_IMAGE=${RUGIX_BAKERY_IMAGE}"', ""
+            )
+        )
+        isolated = BakeryBuilder(project, tmp_path / "run")
+        isolated.run(["bake", "image", "tryboot"])
+        image = project / "build/tryboot/system.img"
     config = FatPartition(image, CONFIG_PARTITION)
 
     assert _boot_partitions(config.read("autoboot.txt")) == ("2", "3")

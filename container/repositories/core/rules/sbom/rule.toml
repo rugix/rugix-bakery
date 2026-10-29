@@ -1,0 +1,24 @@
+description = "Scan a filesystem tree and produce SPDX and CycloneDX software inventories."
+category = "Image Assembly"
+
+[inputs.tree]
+kind = "directory"
+description = "Root filesystem tree to scan."
+
+[inputs.context]
+kind = "file"
+description = "Bakery build context containing system and release identity."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "sbom"]
+
+[execution.outputs.spdx]
+kind = "file"
+path = "sbom.spdx.json"
+description = "SPDX software inventory."
+
+[execution.outputs.cyclonedx]
+kind = "file"
+path = "sbom.cdx.json"
+description = "CycloneDX software inventory."

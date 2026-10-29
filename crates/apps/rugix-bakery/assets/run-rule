@@ -1,0 +1,23 @@
+# All artifact mount points belong to this command's private workspace.
+mkdir -p /run/rugix/bakery/work
+while [ "$1" != "--" ]; do
+    options="$1"
+    source="$2"
+    target="$3"
+    shift 3
+    bind=bind
+    if [ -d "$source" ]; then
+        mkdir -p "$target"
+        # Recursive binds preserve locked project submounts in nested user namespaces.
+        case "$target" in /run/rugix/bakery/work/project|/run/rugix/bakery/work/project/*) bind=rbind ;; esac
+    elif [ ! -e "$target" ]; then
+        touch "$target"
+    fi
+    mount -o "$bind,$options" -- "$source" "$target"
+done
+shift
+# Bind sources before masking /tmp so inputs and workspaces may reside there.
+mount -t tmpfs tmpfs /tmp
+export TMPDIR=/tmp
+cd /run/rugix/bakery/work/outputs
+exec "$@"

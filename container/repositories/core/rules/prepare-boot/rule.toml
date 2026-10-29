@@ -1,0 +1,27 @@
+description = "Patch an initialized Rugix boot tree against resolved disk geometry."
+category = "Image Assembly"
+
+[inputs.image]
+kind = "file"
+description = "Disk image containing the final partition table."
+
+[inputs.boot]
+kind = "directory"
+description = "Boot filesystem source tree."
+
+[parameters.target]
+default = "unknown"
+description = "Rugix boot target: rpi-tryboot, rpi-uboot, generic-grub-efi, bsp, or unknown."
+
+[parameters.source-date-epoch]
+default = 0
+description = "Upper bound for generated boot timestamps, as Unix seconds."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "prepare-boot"]
+
+[execution.outputs.boot]
+kind = "directory"
+path = "boot"
+description = "Boot tree with its root partition reference patched."

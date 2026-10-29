@@ -1,8 +1,7 @@
+description = "Bootstrap a Debian Bookworm base filesystem."
+category = "Bootstrapped Systems"
 root = true
-
-recipes = [
-    "debian-bootstrap",
-]
+recipes = ["debian-bootstrap"]
 
 [parameters."debian-bootstrap"]
 suite = "bookworm"

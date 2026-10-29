@@ -1,0 +1,39 @@
+description = "Create a FAT image from a directory tree."
+category = "Filesystem Images"
+
+[inputs.tree]
+kind = "directory"
+description = "Directory tree of files and directories. Contained symlinks are dereferenced."
+
+[parameters.size]
+description = "Capacity in bytes. Zero sizes the image from the tree, including FAT32 overhead."
+default = 0
+
+[parameters.label]
+description = "Volume label. Empty uses the formatter's default."
+default = ""
+
+[parameters.volume-id]
+description = "Eight hexadecimal digits. Empty derives a stable ID from tree paths and file contents."
+default = ""
+
+[parameters.sectors-per-cluster]
+description = "Sectors per cluster. Zero chooses a cluster size automatically."
+default = 0
+
+[parameters.mkfs-options]
+description = "Additional mkfs.fat arguments, separated with shell-style quoting."
+default = ""
+
+[parameters.source-date-epoch]
+description = "Timestamp for copied file and directory entries, as Unix seconds (0..4294967295). FAT timestamps cannot precede 1980."
+default = 0
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "image-fat"]
+
+[execution.outputs.image]
+description = "Populated FAT filesystem image."
+kind = "file"
+path = "image.fat"

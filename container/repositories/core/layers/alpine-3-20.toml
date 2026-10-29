@@ -1,8 +1,7 @@
+description = "Bootstrap an Alpine Linux 3.20 base filesystem."
+category = "Bootstrapped Systems"
 root = true
-
-recipes = [
-    "alpine-bootstrap",
-]
+recipes = ["alpine-bootstrap"]
 
 [parameters."alpine-bootstrap"]
 version = "3.20"

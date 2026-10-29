@@ -25,6 +25,7 @@ RUN apt-get -y update \
         qemu-system-arm \
         qemu-system-x86 \
         qemu-utils \
+        qemu-user-static \
         skopeo \
         squashfs-tools \
         wget \
@@ -69,7 +70,7 @@ RUN apt-get -y update \
     && apt-get -y clean \
     && rm -rf /var/lib/apt/lists/*
 
-COPY container/patches/e2fsprogs-preserve-rdump-metadata.patch /tmp/
+COPY container/patches/e2fsprogs-*.patch /tmp/
 COPY container/tests/test-filesystem-metadata.sh /tmp/
 
 RUN cd /tmp \
@@ -77,14 +78,14 @@ RUN cd /tmp \
     && echo "fd5bf388cbdbe006a3d3b318d983b2948382440acc85a87f1e7d108653e8db0b  e2fsprogs-1.47.4.tar.xz" | sha256sum --check - \
     && tar -xf e2fsprogs-1.47.4.tar.xz \
     && cd e2fsprogs-1.47.4 \
-    && git apply --unidiff-zero /tmp/e2fsprogs-preserve-rdump-metadata.patch \
+    && git apply --unidiff-zero /tmp/e2fsprogs-*.patch \
     && ./configure \
     && make \
     && make install \
     && bash /tmp/test-filesystem-metadata.sh \
     && cd .. \
     && rm -rf e2fsprogs-1.47.4 e2fsprogs-1.47.4.tar.xz \
-        e2fsprogs-preserve-rdump-metadata.patch test-filesystem-metadata.sh
+        e2fsprogs-*.patch test-filesystem-metadata.sh
 
 RUN curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 

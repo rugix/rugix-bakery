@@ -1,0 +1,43 @@
+description = "Create an ext4 image from a directory tree."
+category = "Filesystem Images"
+
+[inputs.tree]
+kind = "directory"
+description = "Directory tree to populate the filesystem."
+
+[parameters.size]
+description = "Capacity in bytes. Zero sizes the image from the tree and shrinks it after population."
+default = 0
+
+[parameters.label]
+description = "Filesystem label. Empty leaves the label unset."
+default = ""
+
+[parameters.uuid]
+description = "Filesystem UUID. Empty derives a stable UUID from the normalized input archive."
+default = ""
+
+[parameters.block-size]
+description = "Filesystem block size in bytes."
+default = 4096
+
+[parameters.reserved-percent]
+description = "Percentage of blocks reserved for the superuser."
+default = 0
+
+[parameters.mkfs-options]
+description = "Additional mkfs.ext4 arguments, separated with shell-style quoting."
+default = ""
+
+[parameters.source-date-epoch]
+description = "Filesystem creation, access, and change time and upper bound for modification times, as Unix seconds (0..4294967295)."
+default = 0
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "image-ext4"]
+
+[execution.outputs.image]
+description = "Populated ext4 filesystem image."
+kind = "file"
+path = "image.ext4"

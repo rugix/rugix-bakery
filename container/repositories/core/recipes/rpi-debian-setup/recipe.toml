@@ -1,8 +1,16 @@
-description = "setup Debian for Raspberry Pi"
-priority = 100_000
+description = "Prepare Debian for Raspberry Pi boot."
+category = "Boot Setup"
+priority = 100000
 dependencies = ["rugix-ctrl"]
 
-[parameters]
-with_firmware = { default = "true" }
-with_nonfree = { default = "true" }
-with_squashfs = { default = "true" }
+[parameters.with_firmware]
+description = "Install non-free firmware packages when with_nonfree is enabled. Use true or false."
+default = "true"
+
+[parameters.with_nonfree]
+description = "Enable non-free and non-free-firmware archive components. Use true or false."
+default = "true"
+
+[parameters.with_squashfs]
+description = "Include SquashFS support in the initramfs. Use true or false."
+default = "true"

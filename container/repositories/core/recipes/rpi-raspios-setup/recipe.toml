@@ -1,2 +1,3 @@
-description = "setup Raspberry Pi OS for Rugix"
+description = "Adapt Raspberry Pi OS for Rugix."
+category = "Boot Setup"
 dependencies = ["rugix-ctrl", "rpi-raspios-cleanup", "persist-fake-hwclock"]

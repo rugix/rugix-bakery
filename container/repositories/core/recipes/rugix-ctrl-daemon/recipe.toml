@@ -1,10 +1,24 @@
-description = "install and configure the privileged Rugix Ctrl daemon"
-priority = 100_000
+description = "Install and configure the privileged Rugix Ctrl daemon."
+category = "Device Lifecycle"
+priority = 100000
 dependencies = ["rugix-ctrl"]
 
-[parameters]
-dangerously_insecure = { default = false }
-factory_reset = { default = false }
-system_commit = { default = false }
-system_reboot = { default = false }
-app_lifecycle = { default = false }
+[parameters.dangerously_insecure]
+description = "Bypass normal daemon authorization checks."
+default = false
+
+[parameters.factory_reset]
+description = "Allow daemon clients to request a factory reset."
+default = false
+
+[parameters.system_commit]
+description = "Allow daemon clients to commit a trial system."
+default = false
+
+[parameters.system_reboot]
+description = "Allow daemon clients to reboot the system."
+default = false
+
+[parameters.app_lifecycle]
+description = "Allow daemon clients to manage application lifecycle operations."
+default = false

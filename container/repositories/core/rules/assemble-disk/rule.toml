@@ -1,0 +1,19 @@
+description = "Populate an existing disk layout with numbered partition images."
+category = "Image Assembly"
+
+[inputs.image]
+kind = "file"
+description = "Unpopulated disk image with a partition table and optional raw firmware."
+
+[inputs.partitions]
+kind = "directory"
+description = "Filesystem images named by their partition numbers, such as 1 and 5."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "assemble-disk"]
+
+[execution.outputs.image]
+kind = "file"
+path = "system.img"
+description = "Populated disk image, preserving the input geometry and identifiers."

@@ -1,0 +1,64 @@
+//! Read-only repository definition catalogs for inspection and documentation.
+
+import rules::RuleDefinition
+import recipes::RecipeConfig
+import layers::LayerConfig
+import systems::Architecture
+
+/// Kind of repository definition.
+#[json(tagged = externally, rename_all = "lowercase")]
+#[rust(derive(Copy, PartialEq, Eq))]
+variant DefinitionKind {
+    Rule,
+    Recipe,
+    Layer,
+}
+
+/// A typed definition returned by inspection.
+#[json(tag = "kind", rename_all = "lowercase")]
+variant DefinitionInfo {
+    Rule: RuleInfo,
+    Recipe: RecipeInfo,
+    Layer: LayerInfo,
+}
+
+/// Sorted definitions visible from a project.
+#[json(tagged = adjacently, tag = "kind", content = "definitions", rename_all = "lowercase")]
+variant DefinitionCatalog {
+    Rule: [RuleInfo],
+    Recipe: [RecipeInfo],
+    Layer: [LayerInfo],
+}
+
+/// A named rule and its optional README.md.
+record RuleInfo {
+    name: string,
+    definition: RuleDefinition,
+    documentation?: string,
+}
+
+/// A named recipe and its optional README.md.
+record RecipeInfo {
+    name: string,
+    definition: RecipeConfig,
+    documentation?: string,
+}
+
+/// A named layer and its optional same-named .md sidecar.
+record LayerInfo {
+    name: string,
+    definition: LayerDefinition,
+    documentation?: string,
+}
+
+/// A layer's architecture-specific definitions and optional default.
+record LayerDefinition {
+    variants: [LayerVariant],
+}
+
+/// One complete layer configuration. An architecture override replaces the default.
+record LayerVariant {
+    /// Absent for the fallback definition.
+    architecture?: Architecture,
+    config: LayerConfig,
+}

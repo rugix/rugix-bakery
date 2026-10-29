@@ -11,3 +11,7 @@ cp generated/rugix_bakery.mixins.MixinConfig.schema.json ../../../schemas/rugix-
 cp generated/rugix_bakery.recipes.RecipeConfig.schema.json ../../../schemas/rugix-bakery-recipe.schema.json
 cp generated/rugix_bakery.tests.TestConfig.schema.json ../../../schemas/rugix-bakery-test.schema.json
 cp generated/rugix_bakery.repositories.RepositoryConfig.schema.json ../../../schemas/rugix-bakery-repository.schema.json
+
+cp generated/rugix_bakery.rules.RuleDefinition.schema.json ../../../schemas/rugix-bakery-rule.schema.json
+cp generated/rugix_bakery.catalog.DefinitionCatalog.schema.json ../../../schemas/rugix-bakery-definition-catalog.schema.json
+cp generated/rugix_bakery.catalog.DefinitionInfo.schema.json ../../../schemas/rugix-bakery-definition-info.schema.json

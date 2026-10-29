@@ -48,11 +48,17 @@ pub(crate) fn create(
     destination: &Path,
     source_date_epoch: Option<i64>,
 ) -> BakeryResult<()> {
+    let parent = destination
+        .parent()
+        .filter(|path| !path.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    let temporary = tempfile::NamedTempFile::new_in(parent)
+        .whatever("unable to create temporary layer archive")?;
     let mut tar_command = cmd_os!(
         "tar",
         "--create",
         "--file",
-        destination,
+        temporary.path(),
         "--directory",
         source,
         "--format=pax",
@@ -78,5 +84,8 @@ pub(crate) fn create(
             LC_ALL = "C",
         }))
         .whatever("failed to create metadata-preserving archive")?;
+    temporary
+        .persist(destination)
+        .whatever("unable to publish layer archive")?;
     Ok(())
 }

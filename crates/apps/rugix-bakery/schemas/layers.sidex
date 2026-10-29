@@ -1,6 +1,7 @@
 //! Layer configuration.
 
 import recipes::ParameterValue
+import rules::{ArtifactSource, RuleInvocation}
 
 /// Layer configuration.
 record LayerConfig {
@@ -8,6 +9,8 @@ record LayerConfig {
     name?: string,
     /// Description of the layer.
     description?: string,
+    /// Optional group used when presenting a layer catalog.
+    category?: string,
     /// URL for importing the layer.
     url?: string,
     /// Parent layer.
@@ -18,6 +21,10 @@ record LayerConfig {
     recipes?: [string],
     /// Recipes to specifically exclude.
     exclude?: [string],
+    /// Prerequisite rules available to recipe input bindings.
+    rules?: [string: RuleInvocation],
+    /// Artifact bindings by recipe reference and input name.
+    inputs?: [string: [string: ArtifactSource]],
     /// Recipe parameters.
     parameters?: [string: [string: ParameterValue]],
 }

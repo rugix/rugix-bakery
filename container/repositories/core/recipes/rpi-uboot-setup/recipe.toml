@@ -1,1 +1,2 @@
-description = "copy second stage U-Boot script into boot partition"
+description = "Copy the second-stage U-Boot script into the boot tree."
+category = "Boot Setup"
