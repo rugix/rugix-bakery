@@ -1,0 +1,11 @@
+description = "Install the example Debian package."
+
+[inputs.package]
+kind = "file"
+
+[rules.build-package]
+uses = "cargo-deb"
+inputs.source = { path = "application" }
+
+[input-defaults]
+package = { rule = { node = "build-package", output = "package.deb" } }

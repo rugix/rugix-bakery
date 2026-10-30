@@ -1,5 +1,6 @@
+description = "Bootstrap a Debian Trixie base filesystem."
+category = "Bootstrapped Systems"
 root = true
-
 recipes = ["debian-bootstrap"]
 
 [parameters."debian-bootstrap"]

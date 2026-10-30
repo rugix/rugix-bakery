@@ -5,13 +5,13 @@ use reportify::{bail, ResultExt};
 use rugix_common::boot::uboot::UBootEnv;
 use rugix_common::fsutils::copy_recursive;
 
-use crate::config::systems::{Architecture, SystemConfig};
+use crate::config::systems::Architecture;
 use crate::{paths, BakeryResult};
 
-pub fn initialize_uboot(config: &SystemConfig, config_dir: &Path) -> BakeryResult<()> {
+pub fn initialize_uboot(architecture: Architecture, config_dir: &Path) -> BakeryResult<()> {
     copy_recursive(paths::pi_firmware_dir(), &config_dir)
         .whatever("unable to copy RPi firmware")?;
-    match config.architecture {
+    match architecture {
         Architecture::Arm64 => {
             copy_recursive(
                 paths::boot_dir().join("u-boot/arm64_config.txt"),
@@ -41,7 +41,7 @@ pub fn initialize_uboot(config: &SystemConfig, config_dir: &Path) -> BakeryResul
         _ => {
             bail!(
                 "no U-Boot support for architecture `{}`",
-                config.architecture.as_str()
+                architecture.as_str()
             );
         }
     }

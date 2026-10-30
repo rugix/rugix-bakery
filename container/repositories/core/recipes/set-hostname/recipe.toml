@@ -1,5 +1,6 @@
-description = "sets the hostname"
-priority = 90_000
+description = "Set the system hostname."
+category = "System Identity"
+priority = 90000
 
-[parameters]
-hostname = {}
+[parameters.hostname]
+description = "Hostname written to /etc/hostname."

@@ -1,0 +1,2 @@
+parent = "core/debian-bookworm"
+recipes = ["install-hello"]

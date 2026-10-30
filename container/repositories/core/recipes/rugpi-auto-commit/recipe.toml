@@ -1,2 +1,3 @@
-description = "enabling Rugix Ctrl auto commit"
-priority = 80_000
+description = "Commit the active Rugix system automatically during boot."
+category = "Device Lifecycle"
+priority = 80000

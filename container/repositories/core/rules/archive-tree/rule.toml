@@ -1,0 +1,19 @@
+description = "Archive a directory tree while preserving Linux filesystem metadata."
+category = "Image Assembly"
+
+[inputs.tree]
+kind = "directory"
+description = "Directory tree including ownership, links, ACLs, and extended attributes."
+
+[parameters.clamp-mtime]
+default = ""
+description = "Optional RFC 3339 upper bound for modification times. Defaults to the build source date."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "archive-tree"]
+
+[execution.outputs.archive]
+kind = "file"
+path = "tree.tar"
+description = "Sorted PAX archive with normalized volatile metadata."

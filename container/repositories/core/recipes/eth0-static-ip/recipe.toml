@@ -1,7 +1,12 @@
-description = "configure a static IP address"
-priority = 80_000
+description = "Configure a static IPv4 address for eth0 using ifupdown."
+category = "Networking"
+priority = 80000
 
-[parameters]
-address = {}
-gateway = {}
-netmask = {}
+[parameters.address]
+description = "Static IPv4 address for eth0."
+
+[parameters.gateway]
+description = "IPv4 default gateway."
+
+[parameters.netmask]
+description = "IPv4 subnet mask in dotted-decimal form."

@@ -1,0 +1,11 @@
+diff --git a/misc/create_inode.c b/misc/create_inode.c
+--- a/misc/create_inode.c
++++ b/misc/create_inode.c
+@@ -127,2 +127,5 @@ errcode_t set_inode_extra(ext2_filsys fs, ext2_ino_t ino,
+-	ext2fs_inode_xtime_set(&inode, i_atime, clamped_time(fs, st->st_atime));
+-	ext2fs_inode_xtime_set(&inode, i_ctime, clamped_time(fs, st->st_ctime));
++	/* Access and change times are not part of the source tree identity. */
++	ext2fs_inode_xtime_set(&inode, i_atime,
++		(fs->flags2 & EXT2_FLAG2_USE_FAKE_TIME) ? fs->now : st->st_atime);
++	ext2fs_inode_xtime_set(&inode, i_ctime,
++		(fs->flags2 & EXT2_FLAG2_USE_FAKE_TIME) ? fs->now : st->st_ctime);

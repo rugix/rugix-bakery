@@ -23,12 +23,24 @@ pub struct Args {
 /// Commands of the CLI.
 #[derive(Debug, Parser)]
 pub enum Command {
+    /// Internal implementation entry points.
+    #[clap(subcommand, hide = true)]
+    Internal(InternalCommand),
     /// Build an image, layer, or update bundle.
     #[clap(subcommand)]
     Bake(BakeCommand),
     /// Inspect, build, and enter tooling environments.
     #[clap(subcommand)]
     Envs(EnvsCommand),
+    /// Discover and inspect repository-defined build rules.
+    #[clap(subcommand)]
+    Rules(DefinitionsCommand),
+    /// Discover and inspect repository recipes.
+    #[clap(subcommand)]
+    Recipes(DefinitionsCommand),
+    /// Discover and inspect layers and their architecture variants.
+    #[clap(subcommand)]
+    Layers(DefinitionsCommand),
     /// Run system tests.
     Test(TestCommand),
     /// Run a system in a VM.
@@ -71,6 +83,25 @@ impl ReleaseInfoArgs {
 pub enum ListCommand {
     /// List available images.
     Systems,
+}
+
+/// Inspect repository definitions without building them.
+#[derive(Debug, Parser)]
+pub enum DefinitionsCommand {
+    /// List visible names, or export their definitions as a JSON catalog.
+    List {
+        /// Restrict to a repository alias, core, or . for the project itself.
+        #[clap(long)]
+        repository: Option<String>,
+        #[clap(long)]
+        json: bool,
+    },
+    /// Show a definition and its reference documentation.
+    Inspect {
+        name: String,
+        #[clap(long)]
+        json: bool,
+    },
 }
 
 /// Commands for independent tooling environments.
@@ -145,6 +176,16 @@ impl MixinArgs {
 /// The `bake` command.
 #[derive(Debug, Parser)]
 pub enum BakeCommand {
+    /// Execute a rule invocation from a TOML file.
+    Rule {
+        /// Source timestamp in RFC 3339 format; overrides SOURCE_DATE_EPOCH (default: 0).
+        #[clap(long)]
+        source_date: Option<jiff::Timestamp>,
+        /// Invocation with uses, inputs, parameters, and optional secrets.
+        invocation: PathBuf,
+        /// Directory in which to publish named outputs.
+        output: PathBuf,
+    },
     /// Bake a system
     Image {
         /// The name of the system to bake.
@@ -174,6 +215,9 @@ pub enum BakeCommand {
     },
     /// Bake a bundle.
     Bundle {
+        /// Source timestamp in RFC 3339 format; overrides SOURCE_DATE_EPOCH (default: 0).
+        #[clap(long)]
+        source_date: Option<jiff::Timestamp>,
         system: String,
         output: Option<PathBuf>,
         /// Disable compression of the bundle.
@@ -215,14 +259,11 @@ pub struct RunCommand {
     pub mixins: MixinArgs,
 }
 
-/// The `bake` command.
+/// Implementation entry points used by repository rules.
 #[derive(Debug, Parser)]
 pub enum InternalCommand {
-    MakeImage {
-        config: PathBuf,
-        source: PathBuf,
-        image: PathBuf,
-    },
+    /// Execute a core rule using Bakery's standard rule mounts.
+    ExecRule { name: String },
 }
 
 /// The `init` command.

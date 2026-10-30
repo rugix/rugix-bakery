@@ -1,0 +1,22 @@
+description = "Build a Debian package from a Cargo application."
+
+[inputs.source]
+kind = "directory"
+description = "Cargo project with a committed lockfile and Debian package metadata."
+
+[execution]
+type = "run"
+env = "compiler"
+command = [
+    "env",
+    "CARGO_TARGET_DIR=/tmp/target",
+    "SOURCE_DATE_EPOCH=0",
+    "cargo", "deb",
+    "--manifest-path", "/run/rugix/bakery/work/inputs/source/Cargo.toml",
+    "--output", "/run/rugix/bakery/work/outputs/package.deb",
+    "--", "--frozen",
+]
+
+[execution.outputs."package.deb"]
+kind = "file"
+path = "package.deb"

@@ -1,11 +1,12 @@
 //! Functionality for baking layers and images.
 
-use std::collections::{HashMap, HashSet};
+use crate::build::{Artifact, ExecutionContext, Executor, Planner};
+use sidex::types::Str;
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use clap::Args;
-use layer::FrozenLayer;
 use reportify::{bail, whatever, ResultExt};
 use rugix_bundle::manifest::{self, BundleManifest, ChunkerAlgorithm};
 use rugix_common::img_extract::extract_image_partitions;
@@ -15,20 +16,20 @@ use tracing::info;
 use url::Url;
 use xscript::{run, Run};
 
-use crate::config::images::PartitionTableType;
 use crate::config::recipes::ParameterValue;
-use crate::config::systems::{Architecture, SystemConfig, Target};
-use crate::project::library::{LayerIdx, Library, MixinIdx};
+use crate::config::systems::{Architecture, SystemConfig};
+use crate::project::library::{Library, MixinIdx};
 use crate::project::ProjectRef;
 use crate::utils::caching::{download, Hasher};
 use crate::BakeryResult;
 
+mod build;
 pub mod customize;
-pub mod layer;
+mod pipeline;
 pub mod system;
 pub mod targets;
 
-mod archive;
+pub(crate) mod archive;
 
 /// Parameter overrides loaded from parameter files.
 ///
@@ -46,12 +47,6 @@ pub struct MixinSelection {
     pub disable: Vec<String>,
     /// Do not enable mixins configured on the system by default.
     pub no_default_mixins: bool,
-}
-
-#[derive(Debug)]
-struct BakedSystemLayer {
-    path: PathBuf,
-    mixins: Vec<String>,
 }
 
 /// Load and merge parameter overrides from the given parameter files.
@@ -76,30 +71,38 @@ pub fn bake_system(
     release_info: &ReleaseInfo,
     system: &str,
     output: &Path,
-    source_date_epoch: u64,
+    source_date_epoch: Option<u64>,
     param_overrides: &ParameterOverrides,
     mixin_selection: &MixinSelection,
+    bundle_options: Option<&BundleOpts>,
 ) -> BakeryResult<()> {
+    let context = ExecutionContext::resolve(source_date_epoch)?;
     let system_config = project
         .config()
         .get_system_config(system)
         .ok_or_else(|| whatever!("unable to find image {system}"))?;
+    if system_config.build.is_some()
+        && (system_config.target.is_some()
+            || system_config.image.is_some()
+            || system_config.options.is_some())
+    {
+        bail!("repository-defined builds cannot be combined with target, image, or options; configure the assembly rule instead");
+    }
     info!("baking image `{system}`");
     let layer_bakery = LayerBakery::new(project, system_config.architecture, param_overrides);
+    let mut planner = Planner::new(project.repositories()?)?.with_layers(project, param_overrides);
     let baked_layer =
-        layer_bakery.bake_system_layer(system_config, mixin_selection, source_date_epoch)?;
-    let frozen = FrozenLayer::new(
-        frozen_layer_name(&system_config.layer, &baked_layer.mixins),
-        baked_layer.path,
-    );
-    system::make_system(
+        layer_bakery.plan_system_layer(&mut planner, system_config, mixin_selection)?;
+    build::assemble(
+        project,
+        planner,
+        baked_layer,
         system_config,
+        bundle_options,
         release_info,
         system,
-        &frozen,
         output,
-        source_date_epoch,
-        &baked_layer.mixins,
+        context,
     )
 }
 
@@ -122,140 +125,46 @@ impl<'p> LayerBakery<'p> {
         }
     }
 
-    pub fn bake_root(&self, layer: &str, source_date_epoch: u64) -> BakeryResult<PathBuf> {
-        let library = self.project.library()?;
-        let Some(layer) = library.lookup_layer(library.repositories.root_repository, layer) else {
-            bail!("unable to find layer {layer}");
-        };
-        self.bake(layer, source_date_epoch)
-    }
-
-    fn bake_system_layer(
+    fn plan_system_layer(
         &self,
+        planner: &mut Planner,
         system_config: &SystemConfig,
         mixin_selection: &MixinSelection,
-        source_date_epoch: u64,
-    ) -> BakeryResult<BakedSystemLayer> {
-        let mut path = self.bake_root(&system_config.layer, source_date_epoch)?;
-        let mixins = self.resolve_mixins(system_config, mixin_selection)?;
-        let mut mixin_names = Vec::new();
-        for mixin in mixins {
-            let library = self.project.library()?;
-            mixin_names.push(library.mixins[mixin].name.clone());
-            drop(library);
-            path = self.bake_mixin(mixin, &path, source_date_epoch)?;
-        }
-        Ok(BakedSystemLayer {
-            path,
-            mixins: mixin_names,
-        })
-    }
-
-    pub fn bake(&self, layer: LayerIdx, source_date_epoch: u64) -> BakeryResult<PathBuf> {
-        let repositories = &self.project.repositories()?.repositories;
-        let library = self.project.library()?;
-        let layer = &library.layers[layer];
-        info!("baking layer `{}`", layer.name);
-        let Some(config) = layer.config(self.arch) else {
-            bail!("no layer configuration for architecture `{}`", self.arch);
-        };
-        let mut layer_id = Hasher::new();
-        layer_id.push("layer", &layer.name);
-        layer_id.push("repository", repositories[layer.repo].source.id.as_str());
-        layer_id.push("arch", self.arch.as_str());
-        push_parameter_overrides(&mut layer_id, self.param_overrides, &library);
-        if let Some(url) = &config.url {
-            layer_id.push("url", url);
-            let layer_id = layer_id.finalize();
-            let system_tar = self
-                .project
-                .dir()
-                .join(format!(".rugix/layers/{layer_id}/system.tar"));
-            if !system_tar.exists() {
-                extract(self.project, url, &system_tar)?;
-            }
-            Ok(system_tar)
-        } else if let Some(parent) = &config.parent {
-            layer_id.push("parent", parent);
-            let Some(parent) = library.lookup_layer(layer.repo, parent) else {
-                bail!("unable to find layer `{parent}`");
-            };
-            let src = self.bake(parent, source_date_epoch)?;
-            let layer_id = layer_id.finalize();
-            let layer_path = PathBuf::from(format!(".rugix/layers/{layer_id}"));
-            let target = self.project.dir().join(&layer_path).join("system.tar");
-            fs::create_dir_all(target.parent().unwrap()).ok();
-            customize::customize(
-                self.project,
-                self.arch,
-                layer,
-                Some(&src),
-                &target,
-                &layer_path,
-                source_date_epoch,
-                self.param_overrides,
-            )?;
-            Ok(target)
-        } else if config.root.unwrap_or(false) {
-            layer_id.push("bare", "true");
-            let layer_id = layer_id.finalize();
-            let layer_path = PathBuf::from(format!(".rugix/layers/{layer_id}"));
-            let target = self.project.dir().join(&layer_path).join("system.tar");
-            fs::create_dir_all(target.parent().unwrap()).ok();
-            customize::customize(
-                self.project,
-                self.arch,
-                layer,
-                None,
-                &target,
-                &layer_path,
-                source_date_epoch,
-                self.param_overrides,
-            )?;
-            Ok(target)
-        } else {
-            bail!("invalid layer configuration")
-        }
-    }
-
-    fn bake_mixin(
-        &self,
-        mixin: MixinIdx,
-        src: &Path,
-        source_date_epoch: u64,
-    ) -> BakeryResult<PathBuf> {
-        let repositories = &self.project.repositories()?.repositories;
-        let library = self.project.library()?;
-        let mixin = &library.mixins[mixin];
-        info!("applying mixin `{}`", mixin.name);
-        if mixin.config(self.arch).is_none() {
-            bail!("no mixin configuration for architecture `{}`", self.arch);
-        }
-        let mut layer_id = Hasher::new();
-        layer_id.push("mixin", &mixin.name);
-        layer_id.push("repository", repositories[mixin.repo].source.id.as_str());
-        layer_id.push("arch", self.arch.as_str());
-        layer_id.push("source", src.to_string_lossy().as_ref());
-        push_parameter_overrides(&mut layer_id, self.param_overrides, &library);
-        let layer_id = layer_id.finalize();
-        let layer_path = PathBuf::from(format!(".rugix/layers/{layer_id}"));
-        let target = self.project.dir().join(&layer_path).join("system.tar");
-        fs::create_dir_all(target.parent().unwrap()).ok();
-        let applied = customize::customize_mixin(
-            self.project,
+    ) -> BakeryResult<BTreeMap<Str, Artifact>> {
+        let repository = self.project.repositories()?.root_repository;
+        let mut outputs = planner.layer(
+            repository,
+            &system_config.layer,
             self.arch,
-            mixin,
-            src,
-            &target,
-            &layer_path,
-            source_date_epoch,
-            self.param_overrides,
+            BTreeMap::new(),
+            BTreeMap::new(),
         )?;
-        if applied {
-            Ok(target)
-        } else {
-            Ok(src.to_path_buf())
+        for mixin in self.resolve_mixins(system_config, mixin_selection)? {
+            outputs = planner.mixin(mixin, self.arch, outputs)?;
         }
+        Ok(outputs)
+    }
+
+    pub fn bake_root(&self, layer: &str, source_date_epoch: Option<u64>) -> BakeryResult<PathBuf> {
+        let context = ExecutionContext::resolve(source_date_epoch)?;
+        let repository = self.project.repositories()?.root_repository;
+        let mut planner = Planner::new(self.project.repositories()?)?
+            .with_layers(self.project, self.param_overrides);
+        let outputs = planner.layer(
+            repository,
+            layer,
+            self.arch,
+            BTreeMap::new(),
+            BTreeMap::new(),
+        )?;
+        let plan = planner.finish(BTreeMap::from([(
+            "archive".into(),
+            outputs["archive"].clone(),
+        )]));
+        let mut executor = Executor::for_project(self.project, context)?;
+        let archive = executor.execute(&plan)?["archive"].clone();
+        executor.keep_artifact(&archive);
+        Ok(archive)
     }
 
     fn resolve_mixins(
@@ -361,7 +270,7 @@ enum VisitState {
     Done,
 }
 
-fn push_parameter_overrides(
+pub(crate) fn push_parameter_overrides(
     layer_id: &mut Hasher,
     param_overrides: &ParameterOverrides,
     library: &Library,
@@ -389,15 +298,11 @@ fn push_parameter_overrides(
     }
 }
 
-fn frozen_layer_name(layer: &str, mixins: &[String]) -> String {
-    if mixins.is_empty() {
-        layer.to_owned()
-    } else {
-        format!("{}+{}", layer, mixins.join("+"))
-    }
-}
-
-fn extract(project: &ProjectRef, image_url: &str, layer_path: &Path) -> BakeryResult<()> {
+pub(crate) fn extract(
+    project: &ProjectRef,
+    image_url: &str,
+    layer_path: &Path,
+) -> BakeryResult<()> {
     let image_url = image_url
         .parse::<Url>()
         .whatever("unable to parse image URL")?;
@@ -482,121 +387,40 @@ pub fn bake_bundle(
     output: &Path,
     opts: &BundleOpts,
 ) -> BakeryResult<si_crypto_hashes::HashDigest> {
-    let bundle_dir = tempdir().whatever("unable to create temporary directory")?;
-    let bundle_dir = bundle_dir.path();
     let system_config = project.config().resolve_system_config(system)?;
-    let is_gpt = system_config
-        .image
-        .as_ref()
-        .and_then(|img| {
-            img.layout
-                .as_ref()
-                .map(|layout| layout.ty == Some(PartitionTableType::Gpt))
-        })
-        .unwrap_or(false);
-    let config = match system_config.target.clone().unwrap_or(Target::Unknown) {
-        Target::GenericGrubEfi => efi_bundle_config(opts),
-        Target::RpiTryboot => rpi_bundle_config(opts, is_gpt),
-        Target::RpiUboot => rpi_bundle_config(opts, is_gpt),
-        Target::Bsp => bsp_bundle_config(system_path, opts)?,
-        Target::Unknown => bail!("cannot bake bundles for unknown targets"),
-    };
-    std::fs::write(
-        bundle_dir.join("rugix-bundle.toml"),
-        toml::to_string(&config).unwrap(),
-    )
-    .whatever("unable to write bundle config")?;
-    std::os::unix::fs::symlink(
-        system_path
-            .join("filesystems")
-            .canonicalize()
-            .whatever("unable to canonicalize filesystems directory")?,
-        bundle_dir.join("payloads"),
-    )
-    .whatever("unable to symlink filesystems")?;
-    info!("Creating bundle, this may take a while...");
-    if let Some(parent) = output.parent() {
-        std::fs::create_dir_all(parent).ok();
+    if system_config.build.is_some() && (opts.disable_compression || opts.chunker.is_some()) {
+        bail!("configure bundle encoding through the repository-defined assembly rule");
     }
-    let hash =
-        rugix_bundle::builder::pack(bundle_dir, output).whatever("unable to create bundle")?;
-    Ok(hash)
+    let source = system_path.join("system.rugixb");
+    if !source.is_file() {
+        bail!("system assembly did not export a bundle artifact");
+    }
+    crate::build::copy_file(&source, output)?;
+    rugix_bundle::bundle_hash(output).whatever("unable to hash assembled update bundle")
 }
 
-fn rpi_bundle_config(opts: &BundleOpts, is_gpt: bool) -> BundleManifest {
+/// Standard boot and system payloads differ only in the system partition number.
+fn standard_bundle_config(opts: &BundleOpts, system_partition: u32) -> BundleManifest {
     let compression = if opts.disable_compression {
         None
     } else {
         Some(manifest::Compression::Xz(manifest::XzCompression::new()))
     };
-    manifest::BundleManifest::new(
-        manifest::UpdateType::Full,
-        (vec![
+    let payloads = [("boot", 2), ("system", system_partition)]
+        .into_iter()
+        .map(|(slot, partition)| {
             manifest::Payload::new(
-                manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig {
-                    slot: "boot".to_owned().into(),
-                }),
-                "partition-2.img".to_owned(),
+                manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig { slot: slot.into() }),
+                format!("partition-{partition}.img"),
             )
             .with_block_encoding(Some(
                 manifest::BlockEncoding::new(opts.chunker_algorithm())
                     .with_deduplicate(Some(true))
                     .with_compression(compression.clone()),
-            )),
-            manifest::Payload::new(
-                manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig {
-                    slot: "system".to_owned().into(),
-                }),
-                if is_gpt {
-                    "partition-4.img".to_owned()
-                } else {
-                    "partition-5.img".to_owned()
-                },
-            )
-            .with_block_encoding(Some(
-                manifest::BlockEncoding::new(opts.chunker_algorithm())
-                    .with_deduplicate(Some(true))
-                    .with_compression(compression.clone()),
-            )),
-        ])
-        .into(),
-    )
-}
-
-fn efi_bundle_config(opts: &BundleOpts) -> BundleManifest {
-    let compression = if opts.disable_compression {
-        None
-    } else {
-        Some(manifest::Compression::Xz(manifest::XzCompression::new()))
-    };
-    manifest::BundleManifest::new(
-        manifest::UpdateType::Full,
-        (vec![
-            manifest::Payload::new(
-                manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig {
-                    slot: "boot".to_owned().into(),
-                }),
-                "partition-2.img".to_owned(),
-            )
-            .with_block_encoding(Some(
-                manifest::BlockEncoding::new(opts.chunker_algorithm())
-                    .with_deduplicate(Some(true))
-                    .with_compression(compression.clone()),
-            )),
-            manifest::Payload::new(
-                manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig {
-                    slot: "system".to_owned().into(),
-                }),
-                "partition-4.img".to_owned(),
-            )
-            .with_block_encoding(Some(
-                manifest::BlockEncoding::new(opts.chunker_algorithm())
-                    .with_deduplicate(Some(true))
-                    .with_compression(compression),
-            )),
-        ])
-        .into(),
-    )
+            ))
+        })
+        .collect::<Vec<_>>();
+    manifest::BundleManifest::new(manifest::UpdateType::Full, payloads.into())
 }
 
 fn bsp_bundle_config(system_path: &Path, opts: &BundleOpts) -> BakeryResult<BundleManifest> {
@@ -627,12 +451,12 @@ fn bsp_bundle_config(system_path: &Path, opts: &BundleOpts) -> BakeryResult<Bund
             } else if let Some(file) = &p.file {
                 file.to_string()
             } else {
-                panic!(
-                    "bundle payload for slot {:?} must have either `partition` or `file`",
+                return Err(whatever!(
+                    "bundle payload for slot {:?} must have either partition or file",
                     p.slot
-                );
+                ));
             };
-            manifest::Payload::new(
+            Ok(manifest::Payload::new(
                 manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig {
                     slot: p.slot.clone(),
                 }),
@@ -642,9 +466,9 @@ fn bsp_bundle_config(system_path: &Path, opts: &BundleOpts) -> BakeryResult<Bund
                 manifest::BlockEncoding::new(opts.chunker_algorithm())
                     .with_deduplicate(Some(true))
                     .with_compression(compression.clone()),
-            ))
+            )))
         })
-        .collect();
+        .collect::<BakeryResult<_>>()?;
 
     Ok(manifest::BundleManifest::new(
         manifest::UpdateType::Full,

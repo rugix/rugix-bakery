@@ -24,5 +24,6 @@ exec $DOCKER run --rm --privileged \
     $DOCKER_FLAGS \
     -v "$(pwd)":/project \
     -v /dev:/dev \
+    -e SOURCE_DATE_EPOCH \
     "${RUGIX_BAKERY_IMAGE}" \
     "$@"

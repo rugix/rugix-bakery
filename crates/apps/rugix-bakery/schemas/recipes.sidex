@@ -1,19 +1,32 @@
 //! Recipe configuration.
 
+import rules::{ArtifactInput, ArtifactSource, RuleInvocation}
+
 /// Recipe configuration.
+#[json(rename_all = "kebab-case")]
 record RecipeConfig {
     /// Description of the recipe.
     description?: string,
+    /// Optional group used when presenting a recipe catalog.
+    category?: string,
     /// Priority of the recipe.
     priority?: i64,
     /// Dependencies of the recipe.
     dependencies?: [string],
+    /// Required artifact inputs.
+    inputs?: [string: ArtifactInput],
+    /// Prerequisite rules available to this recipe's default input bindings.
+    rules?: [string: RuleInvocation],
+    /// Input bindings used when the enclosing layer supplies no artifact.
+    input_defaults?: [string: ArtifactSource],
     /// Parameter definitions of the recipe.
     parameters?: [string: ParameterDef],
 }
 
 /// Recipe parameter definition.
 record ParameterDef {
+    /// Description, including units and special values.
+    description?: string,
     /// Optional default value of the parameter.
     default?: ParameterValue,
 }

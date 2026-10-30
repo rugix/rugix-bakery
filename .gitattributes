@@ -1,0 +1,3 @@
+# Generated from Sidex definitions.
+/crates/apps/rugix-bakery/src/config/generated/** linguist-generated=true
+/schemas/*.schema.json linguist-generated=true

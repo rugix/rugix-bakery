@@ -129,6 +129,16 @@ where
     .message(|| format!("loading configuration from {path:?}"))
 }
 
+/// Load an existing Rugix schema from either JSON or TOML.
+pub fn load_config_or_json<T: DeserializeOwned>(path: &Path) -> BakeryResult<T> {
+    let content = fs::read_to_string(path).whatever("unable to read configuration")?;
+    if content.trim_start().starts_with('{') {
+        serde_json::from_str(&content).whatever("unable to parse JSON configuration")
+    } else {
+        parse_config(&content)
+    }
+}
+
 /// Load JSON file of type `T` from the provided path.
 pub fn load_json<T>(path: &Path) -> BakeryResult<T>
 where

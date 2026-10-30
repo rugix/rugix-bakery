@@ -1,5 +1,7 @@
-description = "remove unnecessary Raspberry Pi OS functionality"
-priority = 700_000  # Execute very early.
+description = "Remove Raspberry Pi OS first-boot setup that conflicts with Rugix."
+category = "Boot Setup"
+priority = 700000
 
-[parameters]
-disable_swapfile = { default = "true" }
+[parameters.disable_swapfile]
+description = "Remove dphys-swapfile. Use true or false."
+default = "true"

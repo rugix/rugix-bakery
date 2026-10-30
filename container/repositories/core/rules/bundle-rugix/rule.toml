@@ -1,0 +1,19 @@
+description = "Create an indexed Rugix update bundle from a manifest and payloads."
+category = "Update Bundles"
+
+[inputs.manifest]
+kind = "file"
+description = "Rugix bundle manifest in TOML format."
+
+[inputs.payloads]
+kind = "directory"
+description = "Payload directory with paths referenced by the manifest."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "bundle-rugix"]
+
+[execution.outputs.bundle]
+description = "Indexed Rugix update bundle."
+kind = "file"
+path = "update.rugixb"

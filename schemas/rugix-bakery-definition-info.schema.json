@@ -1,0 +1,612 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rugix_bakery.catalog.DefinitionInfo",
+  "description": "A typed definition returned by inspection.",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "rule"
+        },
+        "name": {
+          "type": "string"
+        },
+        "definition": {
+          "$ref": "#/$defs/rugix_bakery.rules.RuleDefinition"
+        },
+        "documentation": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "definition"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "recipe"
+        },
+        "name": {
+          "type": "string"
+        },
+        "definition": {
+          "$ref": "#/$defs/rugix_bakery.recipes.RecipeConfig"
+        },
+        "documentation": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "definition"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "layer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "definition": {
+          "$ref": "#/$defs/rugix_bakery.catalog.LayerDefinition"
+        },
+        "documentation": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "definition"
+      ]
+    }
+  ],
+  "$defs": {
+    "rugix_bakery.catalog.LayerDefinition": {
+      "type": "object",
+      "description": "A layer's architecture-specific definitions and optional default.",
+      "properties": {
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rugix_bakery.catalog.LayerVariant"
+          }
+        }
+      },
+      "required": [
+        "variants"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.catalog.LayerVariant": {
+      "type": "object",
+      "description": "One complete layer configuration. An architecture override replaces the default.",
+      "properties": {
+        "architecture": {
+          "$ref": "#/$defs/rugix_bakery.systems.Architecture"
+        },
+        "config": {
+          "$ref": "#/$defs/rugix_bakery.layers.LayerConfig"
+        }
+      },
+      "required": [
+        "config"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.layers.LayerConfig": {
+      "type": "object",
+      "description": "Layer configuration.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string"
+        },
+        "root": {
+          "type": "boolean"
+        },
+        "recipes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.RuleInvocation"
+          }
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+            }
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/$defs/rugix_bakery.recipes.ParameterValue"
+            }
+          }
+        }
+      },
+      "required": [],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.recipes.ParameterDef": {
+      "type": "object",
+      "description": "Recipe parameter definition.",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "default": {
+          "$ref": "#/$defs/rugix_bakery.recipes.ParameterValue"
+        }
+      },
+      "required": [],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.recipes.ParameterValue": {
+      "description": "Value of a parameter.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": [
+            "integer",
+            "string"
+          ],
+          "format": "int64",
+          "pattern": "^-?[0-9]+$"
+        },
+        {
+          "type": [
+            "number",
+            "string"
+          ],
+          "pattern": "^(NaN|[+-]?Infinity)$"
+        }
+      ]
+    },
+    "rugix_bakery.recipes.RecipeConfig": {
+      "type": "object",
+      "description": "Recipe configuration.",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "priority": {
+          "type": [
+            "integer",
+            "string"
+          ],
+          "format": "int64",
+          "pattern": "^-?[0-9]+$"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ArtifactInput"
+          }
+        },
+        "rules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.RuleInvocation"
+          }
+        },
+        "input-defaults": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.recipes.ParameterDef"
+          }
+        }
+      },
+      "required": [],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.rules.ArtifactInput": {
+      "type": "object",
+      "description": "An artifact input with optional documentation.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/rugix_bakery.rules.ArtifactKind"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.rules.ArtifactKind": {
+      "enum": [
+        "file",
+        "directory"
+      ],
+      "description": "Filesystem object accepted by an input or produced by an output."
+    },
+    "rugix_bakery.rules.ArtifactSelection": {
+      "type": "object",
+      "description": "A path within a directory artifact. Symlinks must resolve inside that directory.",
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+        },
+        "path": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/rugix_bakery.rules.ArtifactKind"
+        }
+      },
+      "required": [
+        "source",
+        "path",
+        "kind"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.rules.ArtifactSource": {
+      "description": "An artifact reference within a composition.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "input": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "input"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "path"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "$ref": "#/$defs/rugix_bakery.rules.RuleOutputSource"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "rule"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "select": {
+              "$ref": "#/$defs/rugix_bakery.rules.ArtifactSelection"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "select"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "tree": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "tree"
+          ]
+        }
+      ]
+    },
+    "rugix_bakery.rules.ParameterBinding": {
+      "description": "A literal parameter value or a reference to an enclosing parameter.",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "parameter": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "parameter"
+          ]
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int64",
+              "pattern": "^-?[0-9]+$"
+            },
+            {
+              "type": [
+                "number",
+                "string"
+              ],
+              "pattern": "^(NaN|[+-]?Infinity)$"
+            }
+          ]
+        }
+      ]
+    },
+    "rugix_bakery.rules.RuleDefinition": {
+      "type": "object",
+      "description": "A reusable operation or composition.",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ArtifactInput"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.recipes.ParameterDef"
+          }
+        },
+        "secrets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "execution": {
+          "$ref": "#/$defs/rugix_bakery.rules.RuleExecution"
+        }
+      },
+      "required": [
+        "execution"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.rules.RuleExecution": {
+      "description": "Implementation of a reusable rule.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "run"
+            },
+            "env": {
+              "type": "string"
+            },
+            "command": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "outputs": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/rugix_bakery.rules.RuleOutput"
+              }
+            },
+            "cache": {
+              "type": "boolean"
+            },
+            "uses-source-date-epoch": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type",
+            "command",
+            "outputs"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "graph"
+            },
+            "rules": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/rugix_bakery.rules.RuleInvocation"
+              }
+            },
+            "outputs": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "rules",
+            "outputs"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "layer"
+            },
+            "layer": {
+              "type": "string"
+            },
+            "architecture": {
+              "$ref": "#/$defs/rugix_bakery.systems.Architecture"
+            }
+          },
+          "required": [
+            "type",
+            "layer",
+            "architecture"
+          ]
+        }
+      ]
+    },
+    "rugix_bakery.rules.RuleInvocation": {
+      "type": "object",
+      "description": "An invocation of a repository-defined rule.",
+      "properties": {
+        "uses": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ParameterBinding"
+          }
+        },
+        "secrets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+          }
+        }
+      },
+      "required": [
+        "uses"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.rules.RuleOutput": {
+      "type": "object",
+      "description": "A declared command output.",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/rugix_bakery.rules.ArtifactKind"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "path"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.rules.RuleOutputSource": {
+      "type": "object",
+      "description": "Reference to a node output.",
+      "properties": {
+        "node": {
+          "type": "string"
+        },
+        "output": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "node",
+        "output"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.systems.Architecture": {
+      "enum": [
+        "amd64",
+        "arm64",
+        "armv7",
+        "armhf",
+        "arm"
+      ],
+      "description": "Architecture."
+    }
+  }
+}

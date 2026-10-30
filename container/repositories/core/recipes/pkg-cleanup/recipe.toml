@@ -1,5 +1,7 @@
-description = "cleanup cache and delete package lists"
-priority = -900_000  # Execute after everything else.
+description = "Clean package caches and package lists."
+category = "Package Management"
+priority = -900000
 
-[parameters]
-autoremove = { default = false }
+[parameters.autoremove]
+description = "With APT, remove automatically installed packages that are no longer required. Ignored on Alpine."
+default = false

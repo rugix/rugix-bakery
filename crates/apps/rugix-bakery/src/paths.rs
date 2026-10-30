@@ -89,7 +89,7 @@ pub fn ovmf_code_path(arch: Architecture) -> &'static Path {
             .get_or_init(|| {
                 env_or_default(
                     "RUGIX_OVMF_CODE_AMD64",
-                    "/usr/share/OVMF/OVMF_CODE.fd",
+                    "/usr/share/ovmf/OVMF.fd",
                     option_env!("RUGIX_OVMF_CODE_AMD64"),
                 )
             })

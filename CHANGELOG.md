@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Introduce repository-defined build rules with artifact inputs and outputs,
+  parameters, sensitive inputs, tooling environments, and reusable compositions.
+- Run existing layer, recipe, image, SBOM, and bundle builds through one executor
+  while preserving existing system configurations and published artifact names.
+- Provide generic filesystem, disk assembly, archive, and bundle rules, with
+  reproducible outputs and automatic filesystem sizing.
+- Track declared artifact contents and registered project dependencies when
+  caching rules and layers. Include secret changes using cache-local fingerprints.
+- Add rule, recipe, and layer inspection with JSON catalogs for documentation.
+
 - Update `crypto-bigint`, `ctutils`, and `tokio` to resolve security advisories.
 - Accept `--param-file` in the `test` command, for example, to authorize an SSH
   key for test workflows without a separate layer.

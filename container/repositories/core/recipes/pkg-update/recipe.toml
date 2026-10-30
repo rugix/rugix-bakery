@@ -1,3 +1,4 @@
-description = "update package lists"
-priority = 900_000  # Execute before everything else.
+description = "Refresh package lists before installing packages."
+category = "Package Management"
+priority = 900000
 dependencies = ["pkg-cleanup"]

@@ -1,0 +1,22 @@
+[package]
+name = "rugix-hello"
+version = "0.1.0"
+edition = "2024"
+authors = ["Silitics GmbH <info@silitics.com>"]
+description = "Example application built and packaged with Rugix Bakery"
+license = "MIT"
+readme = "README.md"
+publish = false
+
+[package.metadata.deb]
+extended-description = "Demonstrates building a Cargo application as a Debian package and installing it into a Rugix Bakery layer."
+license-file = ["LICENSE-MIT", "0"]
+depends = "$auto"
+section = "utils"
+priority = "optional"
+assets = [
+    ["target/release/rugix-hello", "usr/bin/rugix-hello", "755"],
+    ["README.md", "usr/share/doc/rugix-hello/README.md", "644"],
+]
+
+[workspace]

@@ -17,8 +17,20 @@ pub(crate) mod status;
 /// Run Rugix Bakery with the provided command line arguments.
 pub fn run(args: args::Args) -> BakeryResult<()> {
     match &args.cmd {
+        args::Command::Internal(args::InternalCommand::ExecRule { name }) => {
+            crate::rules::execute(name)
+        }
         args::Command::Bake(cmd) => cmds::run_bake::run(&args, cmd),
         args::Command::Envs(cmd) => cmds::run_envs::run(&args, cmd),
+        args::Command::Rules(cmd) => {
+            cmds::run_catalog::run(&args, cmd, crate::config::catalog::DefinitionKind::Rule)
+        }
+        args::Command::Recipes(cmd) => {
+            cmds::run_catalog::run(&args, cmd, crate::config::catalog::DefinitionKind::Recipe)
+        }
+        args::Command::Layers(cmd) => {
+            cmds::run_catalog::run(&args, cmd, crate::config::catalog::DefinitionKind::Layer)
+        }
         args::Command::Test(cmd) => cmds::run_test::run(&args, cmd),
         args::Command::Run(cmd) => cmds::run_run::run(&args, cmd),
         args::Command::List(cmd) => cmds::run_list::run(&args, cmd),

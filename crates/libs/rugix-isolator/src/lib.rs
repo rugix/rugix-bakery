@@ -6,6 +6,9 @@
 //! child's exit status when the child exits. This essentially transfers the runtime
 //! context and ongoing execution to the child.
 //!
+//! The [`supervise`] function instead retains the existing PID namespace and
+//! terminates a command's surviving descendants before returning its status.
+//!
 //! ## Safety Considerations
 //!
 //! Forking a process in a multi-threaded program is inherently problematic, as it may
@@ -27,6 +30,10 @@ use std::ffi::CString;
 use std::os::unix::io::{AsRawFd, OwnedFd};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicI32, Ordering};
+
+mod supervision;
+
+pub use supervision::supervise;
 
 /// Isolator for forking a process into an isolated environment.
 pub struct Isolator {

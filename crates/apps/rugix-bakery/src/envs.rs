@@ -9,23 +9,18 @@ use std::fs;
 use std::io::{self, IsTerminal};
 use std::os::fd::AsFd;
 use std::os::unix::ffi::OsStrExt;
-use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
-use std::process::{Command, ExitStatus, Output, Stdio};
+use std::process::{Command, ExitStatus, Stdio};
 use std::sync::Arc;
-use std::time::{Duration, Instant};
 
-use nix::errno::Errno;
-use nix::sys::signal::{kill, killpg, Signal};
-use nix::unistd::Pid;
 use reportify::{bail, ResultExt};
 use serde::Deserialize;
 use tempfile::TempDir;
-use tokio::io::{AsyncRead, AsyncReadExt};
 use tracing::{info, warn};
 
 use crate::config::envs::{EnvBuildInfo, EnvStorage};
 use crate::project::envs::EnvDefinition;
+use crate::utils::command::{execute, execute_with_terminal};
 use crate::BakeryResult;
 
 /// Project-scoped image storage with temporary process-local runtime state.
@@ -147,7 +142,20 @@ impl EnvStore {
 
     /// Prepare a Buildah invocation using only this store.
     fn command(&self) -> Command {
-        let mut command = Command::new("buildah");
+        self.configure_command(Command::new("buildah"))
+    }
+
+    /// Contain every process started by a chroot-isolated environment command.
+    fn run_command(&self) -> Command {
+        let mut command = Command::new("rugix-isolate");
+        command.args(["--supervise", "--", "buildah"]);
+        self.configure_command(command)
+    }
+
+    /// Apply the same storage backend and inherited process settings to both commands.
+    fn configure_command(&self, mut command: Command) -> Command {
+        // The node epoch must not alter environment image construction or Buildah itself.
+        command.env_remove("SOURCE_DATE_EPOCH");
         command
             .arg("--root")
             .arg(&self.root)
@@ -198,6 +206,17 @@ impl BuiltEnv {
     /// Execute in a fresh container, preserving image defaults and cleaning up afterward.
     #[tracing::instrument(skip_all)]
     pub fn run(&self, arguments: &[OsString], mounts: &[BindMount]) -> BakeryResult<ExitStatus> {
+        self.run_with_env(arguments, mounts, &[])
+    }
+
+    /// Set or remove selected image variables for one command.
+    #[tracing::instrument(skip_all)]
+    pub fn run_with_env(
+        &self,
+        arguments: &[OsString],
+        mounts: &[BindMount],
+        environment: &[(&str, Option<&str>)],
+    ) -> BakeryResult<ExitStatus> {
         // Own the name before acquisition so cancellation during 'from' also cleans up.
         let container = WorkingContainer {
             id: format!("rugix-env-{}", uuid::Uuid::new_v4()),
@@ -212,8 +231,38 @@ impl BuiltEnv {
                 .stdout(Stdio::null()),
         )?;
         require_success(output.status, "creating env working container")?;
-        let mut command = self.store.command();
+        if environment.iter().any(|(_, value)| value.is_none()) {
+            let mut config = self.store.command();
+            config.arg("config");
+            for (name, value) in environment {
+                if value.is_none() {
+                    config.arg("--env").arg(format!("{name}-"));
+                }
+            }
+            require_success(
+                execute(config.arg(&container.id))?.status,
+                "configuring env working container",
+            )?;
+        }
+        // Storage helpers must outlive command supervision until container removal.
+        require_success(
+            execute(
+                self.store
+                    .command()
+                    .arg("mount")
+                    .arg(&container.id)
+                    .stdout(Stdio::null()),
+            )?
+            .status,
+            "mounting env working container",
+        )?;
+        let mut command = self.store.run_command();
         command.args(["run", "--isolation=chroot"]);
+        for (name, value) in environment {
+            if let Some(value) = value {
+                command.arg("--env").arg(format!("{name}={value}"));
+            }
+        }
         let terminal = io::stdin().is_terminal() && io::stdout().is_terminal();
         command.arg(if terminal {
             "--terminal=true"
@@ -229,7 +278,8 @@ impl BuiltEnv {
             let mut value = mount.source.as_os_str().to_os_string();
             value.push(":");
             value.push(&mount.target);
-            value.push(if mount.read_only { ":ro" } else { ":rw" });
+            value.push(":");
+            value.push(mount.options()?);
             command.arg("--volume").arg(value);
         }
         command
@@ -238,19 +288,39 @@ impl BuiltEnv {
             .args(arguments)
             .stdin(Stdio::inherit());
         let status = execute_with_terminal(&mut command, terminal)?.status;
-        // Removal must finish before a caller publishes outputs or exits with the command's
-        // status.
+        // Removal must finish before a caller publishes outputs or exits with the
+        // command's status.
         container.remove()?;
         Ok(status)
     }
 }
 
 /// A directory or file exposed to a command through a bind mount.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BindMount {
     pub source: PathBuf,
     pub target: PathBuf,
     pub read_only: bool,
+}
+
+impl BindMount {
+    /// Preserve inherited restrictions when remounting a bind in a rootless namespace.
+    pub fn options(&self) -> BakeryResult<String> {
+        let flags = nix::sys::statvfs::statvfs(&self.source)
+            .whatever("unable to inspect bind mount restrictions")?
+            .flags();
+        let mut options = if self.read_only { "ro" } else { "rw" }.to_owned();
+        for (flag, option) in [
+            (nix::sys::statvfs::FsFlags::ST_NOSUID, ",nosuid"),
+            (nix::sys::statvfs::FsFlags::ST_NODEV, ",nodev"),
+            (nix::sys::statvfs::FsFlags::ST_NOEXEC, ",noexec"),
+        ] {
+            if flags.contains(flag) {
+                options.push_str(option);
+            }
+        }
+        Ok(options)
+    }
 }
 
 /// Remove working containers during both normal completion and unwinding.
@@ -310,100 +380,6 @@ struct BuildahInfo {
 #[serde(rename_all = "PascalCase")]
 struct BuildahStoreInfo {
     graph_status: HashMap<String, String>,
-}
-
-/// Run a cancelable subprocess without buffering build logs or terminal output.
-fn execute(command: &mut Command) -> BakeryResult<Output> {
-    execute_with_terminal(command, false)
-}
-
-/// Interactive Buildah must stay in the foreground group to access the controlling
-/// terminal.
-fn execute_with_terminal(command: &mut Command, terminal: bool) -> BakeryResult<Output> {
-    rugix_tasks::check_canceled();
-    if !terminal {
-        command.process_group(0);
-    }
-    let mut command =
-        tokio::process::Command::from(std::mem::replace(command, Command::new("buildah")));
-    command.kill_on_drop(true);
-    let mut child = command
-        .spawn()
-        .whatever("unable to start Buildah; ensure it is installed in Bakery")?;
-    let stdout = child.stdout.take();
-    let stderr = child.stderr.take();
-    let mut process = BuildahProcess {
-        child,
-        group: !terminal,
-        completed: false,
-    };
-    // Borrow the child while waiting so cancellation leaves it with the cleanup guard.
-    let (status, stdout, stderr) = rugix_tasks::block_on(async {
-        tokio::try_join!(process.child.wait(), capture(stdout), capture(stderr))
-    })
-    .whatever("unable to wait for Buildah")?;
-    process.completed = true;
-    Ok(Output {
-        status,
-        stdout,
-        stderr,
-    })
-}
-
-/// Read only explicitly piped output. Build logs and terminal output are inherited.
-async fn capture(pipe: Option<impl AsyncRead + Unpin>) -> io::Result<Vec<u8>> {
-    let mut bytes = Vec::new();
-    if let Some(mut pipe) = pipe {
-        pipe.read_to_end(&mut bytes).await?;
-    }
-    Ok(bytes)
-}
-
-/// Give Buildah time to remove intermediate containers before forcing termination.
-struct BuildahProcess {
-    child: tokio::process::Child,
-    group: bool,
-    completed: bool,
-}
-
-impl BuildahProcess {
-    fn signal(&self, signal: Signal) {
-        let Some(pid) = self.child.id().map(|pid| Pid::from_raw(pid as i32)) else {
-            return;
-        };
-        let result = if self.group {
-            killpg(pid, signal)
-        } else {
-            kill(pid, signal)
-        };
-        if let Err(error) = result {
-            if error != Errno::ESRCH {
-                warn!(%error, "unable to signal Buildah");
-            }
-        }
-    }
-}
-
-impl Drop for BuildahProcess {
-    fn drop(&mut self) {
-        if self.completed {
-            return;
-        }
-        self.signal(Signal::SIGTERM);
-        let deadline = Instant::now() + Duration::from_secs(5);
-        while Instant::now() < deadline {
-            match self.child.try_wait() {
-                Ok(Some(_)) => return,
-                Ok(None) => std::thread::sleep(Duration::from_millis(20)),
-                Err(error) => {
-                    warn!(%error, "unable to wait for Buildah during cleanup");
-                    break;
-                }
-            }
-        }
-        warn!("Buildah did not exit during cleanup; forcing termination");
-        self.signal(Signal::SIGKILL);
-    }
 }
 
 /// Retain the subprocess status in the error without logging its command arguments.

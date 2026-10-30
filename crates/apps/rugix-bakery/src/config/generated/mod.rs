@@ -1258,6 +1258,1370 @@ pub mod bsp {
         }
     }
 }
+pub mod build_context {
+    #![doc = "Metadata supplied to repository-defined system assembly.\n"]
+    #![allow(
+        clippy::all,
+        clippy::pedantic,
+        clippy::nursery,
+        clippy::cargo,
+        dead_code
+    )]
+    #[doc = "Release metadata exposed as the context artifact during image assembly.\n"]
+    #[derive(Clone, Debug)]
+    pub struct BuildContext {
+        #[doc = ""]
+        pub system: ::sidex::types::Str,
+        #[doc = ""]
+        pub architecture: super::systems::Architecture,
+        #[doc = ""]
+        pub source_date_epoch: u64,
+        #[doc = ""]
+        pub release_id: ::sidex::types::Str,
+        #[doc = ""]
+        pub release_version: ::sidex::types::Str,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for BuildContext {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::build_context::BuildContext",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "system",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                ),
+                ::sidex::shape::FieldShape::new(
+                    "architecture",
+                    ::sidex::shape::shape_of::<super::systems::Architecture>,
+                ),
+                ::sidex::shape::FieldShape::new(
+                    "source_date_epoch",
+                    ::sidex::shape::shape_of::<u64>,
+                )
+                .json_name("source-date-epoch"),
+                ::sidex::shape::FieldShape::new(
+                    "release_id",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .json_name("release-id"),
+                ::sidex::shape::FieldShape::new(
+                    "release_version",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .json_name("release-version"),
+            ])),
+        )
+        .with_docs("Release metadata exposed as the context artifact during image assembly.\n")
+        .with_attrs(&[::sidex::shape::Attr::List {
+            path: "json",
+            args: &[::sidex::shape::Attr::Assign {
+                path: "rename_all",
+                value: ::sidex::shape::AttrValue::String("kebab-case"),
+            }],
+        }]);
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for BuildContext {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for BuildContext {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.system)),
+                1usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.architecture)),
+                2usize => {
+                    ::std::option::Option::Some(::sidex::Encode::encode(&self.source_date_epoch))
+                }
+                3usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.release_id)),
+                4usize => {
+                    ::std::option::Option::Some(::sidex::Encode::encode(&self.release_version))
+                }
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for BuildContext {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 = ::std::option::Option::<super::systems::Architecture>::None;
+            let mut __field_2 = ::std::option::Option::<u64>::None;
+            let mut __field_3 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_4 = ::std::option::Option::<::sidex::types::Str>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
+                            <super::systems::Architecture as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    2usize => {
+                        __field_2 =
+                            ::std::option::Option::Some(<u64 as ::sidex::Decode>::decode(decoder)?)
+                    }
+                    3usize => {
+                        __field_3 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    4usize => {
+                        __field_4 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                system: __field_0
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `system`"))?,
+                architecture: __field_1
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `architecture`"))?,
+                source_date_epoch: __field_2.ok_or_else(|| {
+                    ::sidex::DecodeError::new("missing field `source-date-epoch`")
+                })?,
+                release_id: __field_3
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `release-id`"))?,
+                release_version: __field_4
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `release-version`"))?,
+            })
+        }
+    }
+    impl BuildContext {
+        #[doc = "Creates a new [`BuildContext`]."]
+        pub fn new(
+            system: impl ::std::convert::Into<::sidex::types::Str>,
+            architecture: super::systems::Architecture,
+            source_date_epoch: u64,
+            release_id: impl ::std::convert::Into<::sidex::types::Str>,
+            release_version: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> Self {
+            Self {
+                system: system.into(),
+                architecture: architecture,
+                source_date_epoch: source_date_epoch,
+                release_id: release_id.into(),
+                release_version: release_version.into(),
+            }
+        }
+        #[doc = "Sets the value of `system`."]
+        pub fn set_system(
+            &mut self,
+            system: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.system = system.into();
+            self
+        }
+        #[doc = "Sets the value of `system`."]
+        pub fn with_system(
+            mut self,
+            system: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> Self {
+            self.system = system.into();
+            self
+        }
+        #[doc = "Sets the value of `architecture`."]
+        pub fn set_architecture(
+            &mut self,
+            architecture: super::systems::Architecture,
+        ) -> &mut Self {
+            self.architecture = architecture;
+            self
+        }
+        #[doc = "Sets the value of `architecture`."]
+        pub fn with_architecture(mut self, architecture: super::systems::Architecture) -> Self {
+            self.architecture = architecture;
+            self
+        }
+        #[doc = "Sets the value of `source_date_epoch`."]
+        pub fn set_source_date_epoch(&mut self, source_date_epoch: u64) -> &mut Self {
+            self.source_date_epoch = source_date_epoch;
+            self
+        }
+        #[doc = "Sets the value of `source_date_epoch`."]
+        pub fn with_source_date_epoch(mut self, source_date_epoch: u64) -> Self {
+            self.source_date_epoch = source_date_epoch;
+            self
+        }
+        #[doc = "Sets the value of `release_id`."]
+        pub fn set_release_id(
+            &mut self,
+            release_id: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.release_id = release_id.into();
+            self
+        }
+        #[doc = "Sets the value of `release_id`."]
+        pub fn with_release_id(
+            mut self,
+            release_id: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> Self {
+            self.release_id = release_id.into();
+            self
+        }
+        #[doc = "Sets the value of `release_version`."]
+        pub fn set_release_version(
+            &mut self,
+            release_version: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.release_version = release_version.into();
+            self
+        }
+        #[doc = "Sets the value of `release_version`."]
+        pub fn with_release_version(
+            mut self,
+            release_version: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> Self {
+            self.release_version = release_version.into();
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for BuildContext {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for BuildContext {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+}
+pub mod catalog {
+    #![doc = "Read-only repository definition catalogs for inspection and documentation.\n"]
+    #![allow(
+        clippy::all,
+        clippy::pedantic,
+        clippy::nursery,
+        clippy::cargo,
+        dead_code
+    )]
+    #[doc = "Kind of repository definition.\n"]
+    #[derive(Clone, Debug, Copy, PartialEq, Eq)]
+    pub enum DefinitionKind {
+        #[doc = ""]
+        Rule,
+        #[doc = ""]
+        Recipe,
+        #[doc = ""]
+        Layer,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for DefinitionKind {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::catalog::DefinitionKind",
+            ::sidex::shape::ShapeKind::Variant(
+                ::sidex::shape::VariantShape::new(&[
+                    ::sidex::shape::CaseShape::new("Rule", ::std::option::Option::None)
+                        .json_name("rule"),
+                    ::sidex::shape::CaseShape::new("Recipe", ::std::option::Option::None)
+                        .json_name("recipe"),
+                    ::sidex::shape::CaseShape::new("Layer", ::std::option::Option::None)
+                        .json_name("layer"),
+                ])
+                .json_tagging(::sidex::formats::json::Tagging::External),
+            ),
+        )
+        .with_docs("Kind of repository definition.\n")
+        .with_attrs(&[
+            ::sidex::shape::Attr::List {
+                path: "json",
+                args: &[
+                    ::sidex::shape::Attr::Assign {
+                        path: "tagged",
+                        value: ::sidex::shape::AttrValue::Path("externally"),
+                    },
+                    ::sidex::shape::Attr::Assign {
+                        path: "rename_all",
+                        value: ::sidex::shape::AttrValue::String("lowercase"),
+                    },
+                ],
+            },
+            ::sidex::shape::Attr::List {
+                path: "rust",
+                args: &[::sidex::shape::Attr::List {
+                    path: "derive",
+                    args: &[
+                        ::sidex::shape::Attr::Path("Copy"),
+                        ::sidex::shape::Attr::Path("PartialEq"),
+                        ::sidex::shape::Attr::Path("Eq"),
+                    ],
+                }],
+            },
+        ]);
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for DefinitionKind {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Variant(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::VariantView for DefinitionKind {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn case(&self) -> usize {
+            match *self {
+                Self::Rule => 0usize,
+                Self::Recipe => 1usize,
+                Self::Layer => 2usize,
+            }
+        }
+        fn payload(&self) -> ::std::option::Option<::sidex::View<'_>> {
+            match self {
+                Self::Rule => ::std::option::Option::None,
+                Self::Recipe => ::std::option::Option::None,
+                Self::Layer => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for DefinitionKind {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut out = ::std::option::Option::<Self>::None;
+            decoder.variant(<Self as ::sidex::Shaped>::SHAPE, &mut |case, decoder| {
+                out = ::std::option::Option::Some(match case {
+                    0usize => Self::Rule,
+                    1usize => Self::Recipe,
+                    2usize => Self::Layer,
+                    _ => {
+                        return ::std::result::Result::Err(::sidex::DecodeError::new(
+                            "unknown case",
+                        ));
+                    }
+                });
+                ::std::result::Result::Ok(())
+            })?;
+            out.ok_or_else(|| ::sidex::DecodeError::new("missing case"))
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for DefinitionKind {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for DefinitionKind {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "A typed definition returned by inspection.\n"]
+    #[derive(Clone, Debug)]
+    pub enum DefinitionInfo {
+        #[doc = ""]
+        Rule(RuleInfo),
+        #[doc = ""]
+        Recipe(RecipeInfo),
+        #[doc = ""]
+        Layer(LayerInfo),
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for DefinitionInfo {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::catalog::DefinitionInfo",
+            ::sidex::shape::ShapeKind::Variant(
+                ::sidex::shape::VariantShape::new(&[
+                    ::sidex::shape::CaseShape::new(
+                        "Rule",
+                        ::std::option::Option::Some(::sidex::shape::shape_of::<RuleInfo>),
+                    )
+                    .json_name("rule"),
+                    ::sidex::shape::CaseShape::new(
+                        "Recipe",
+                        ::std::option::Option::Some(::sidex::shape::shape_of::<RecipeInfo>),
+                    )
+                    .json_name("recipe"),
+                    ::sidex::shape::CaseShape::new(
+                        "Layer",
+                        ::std::option::Option::Some(::sidex::shape::shape_of::<LayerInfo>),
+                    )
+                    .json_name("layer"),
+                ])
+                .json_tagging(::sidex::formats::json::Tagging::Internal {
+                    tag: "kind",
+                    content: "content",
+                }),
+            ),
+        )
+        .with_docs("A typed definition returned by inspection.\n")
+        .with_attrs(&[::sidex::shape::Attr::List {
+            path: "json",
+            args: &[
+                ::sidex::shape::Attr::Assign {
+                    path: "tag",
+                    value: ::sidex::shape::AttrValue::String("kind"),
+                },
+                ::sidex::shape::Attr::Assign {
+                    path: "rename_all",
+                    value: ::sidex::shape::AttrValue::String("lowercase"),
+                },
+            ],
+        }]);
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for DefinitionInfo {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Variant(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::VariantView for DefinitionInfo {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn case(&self) -> usize {
+            match *self {
+                Self::Rule(_) => 0usize,
+                Self::Recipe(_) => 1usize,
+                Self::Layer(_) => 2usize,
+            }
+        }
+        fn payload(&self) -> ::std::option::Option<::sidex::View<'_>> {
+            match self {
+                Self::Rule(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+                Self::Recipe(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+                Self::Layer(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for DefinitionInfo {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut out = ::std::option::Option::<Self>::None;
+            decoder.variant(<Self as ::sidex::Shaped>::SHAPE, &mut |case, decoder| {
+                out = ::std::option::Option::Some(match case {
+                    0usize => Self::Rule(<RuleInfo as ::sidex::Decode>::decode(decoder)?),
+                    1usize => Self::Recipe(<RecipeInfo as ::sidex::Decode>::decode(decoder)?),
+                    2usize => Self::Layer(<LayerInfo as ::sidex::Decode>::decode(decoder)?),
+                    _ => {
+                        return ::std::result::Result::Err(::sidex::DecodeError::new(
+                            "unknown case",
+                        ));
+                    }
+                });
+                ::std::result::Result::Ok(())
+            })?;
+            out.ok_or_else(|| ::sidex::DecodeError::new("missing case"))
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for DefinitionInfo {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for DefinitionInfo {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "Sorted definitions visible from a project.\n"]
+    #[derive(Clone, Debug)]
+    pub enum DefinitionCatalog {
+        #[doc = ""]
+        Rule(::sidex::types::Seq<RuleInfo>),
+        #[doc = ""]
+        Recipe(::sidex::types::Seq<RecipeInfo>),
+        #[doc = ""]
+        Layer(::sidex::types::Seq<LayerInfo>),
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for DefinitionCatalog {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::catalog::DefinitionCatalog",
+            ::sidex::shape::ShapeKind::Variant(
+                ::sidex::shape::VariantShape::new(&[
+                    ::sidex::shape::CaseShape::new(
+                        "Rule",
+                        ::std::option::Option::Some(
+                            ::sidex::shape::shape_of::<::sidex::types::Seq<RuleInfo>>,
+                        ),
+                    )
+                    .json_name("rule"),
+                    ::sidex::shape::CaseShape::new(
+                        "Recipe",
+                        ::std::option::Option::Some(
+                            ::sidex::shape::shape_of::<::sidex::types::Seq<RecipeInfo>>,
+                        ),
+                    )
+                    .json_name("recipe"),
+                    ::sidex::shape::CaseShape::new(
+                        "Layer",
+                        ::std::option::Option::Some(
+                            ::sidex::shape::shape_of::<::sidex::types::Seq<LayerInfo>>,
+                        ),
+                    )
+                    .json_name("layer"),
+                ])
+                .json_tagging(::sidex::formats::json::Tagging::Adjacent {
+                    tag: "kind",
+                    content: "definitions",
+                }),
+            ),
+        )
+        .with_docs("Sorted definitions visible from a project.\n")
+        .with_attrs(&[::sidex::shape::Attr::List {
+            path: "json",
+            args: &[
+                ::sidex::shape::Attr::Assign {
+                    path: "tagged",
+                    value: ::sidex::shape::AttrValue::Path("adjacently"),
+                },
+                ::sidex::shape::Attr::Assign {
+                    path: "tag",
+                    value: ::sidex::shape::AttrValue::String("kind"),
+                },
+                ::sidex::shape::Attr::Assign {
+                    path: "content",
+                    value: ::sidex::shape::AttrValue::String("definitions"),
+                },
+                ::sidex::shape::Attr::Assign {
+                    path: "rename_all",
+                    value: ::sidex::shape::AttrValue::String("lowercase"),
+                },
+            ],
+        }]);
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for DefinitionCatalog {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Variant(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::VariantView for DefinitionCatalog {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn case(&self) -> usize {
+            match *self {
+                Self::Rule(_) => 0usize,
+                Self::Recipe(_) => 1usize,
+                Self::Layer(_) => 2usize,
+            }
+        }
+        fn payload(&self) -> ::std::option::Option<::sidex::View<'_>> {
+            match self {
+                Self::Rule(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+                Self::Recipe(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+                Self::Layer(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for DefinitionCatalog {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut out = ::std::option::Option::<Self>::None;
+            decoder.variant(<Self as ::sidex::Shaped>::SHAPE, &mut |case, decoder| {
+                out = ::std::option::Option::Some(match case {
+                    0usize => Self::Rule(
+                        <::sidex::types::Seq<RuleInfo> as ::sidex::Decode>::decode(decoder)?,
+                    ),
+                    1usize => Self::Recipe(
+                        <::sidex::types::Seq<RecipeInfo> as ::sidex::Decode>::decode(decoder)?,
+                    ),
+                    2usize => Self::Layer(
+                        <::sidex::types::Seq<LayerInfo> as ::sidex::Decode>::decode(decoder)?,
+                    ),
+                    _ => {
+                        return ::std::result::Result::Err(::sidex::DecodeError::new(
+                            "unknown case",
+                        ));
+                    }
+                });
+                ::std::result::Result::Ok(())
+            })?;
+            out.ok_or_else(|| ::sidex::DecodeError::new("missing case"))
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for DefinitionCatalog {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for DefinitionCatalog {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "A named rule and its optional README.md.\n"]
+    #[derive(Clone, Debug)]
+    pub struct RuleInfo {
+        #[doc = ""]
+        pub name: ::sidex::types::Str,
+        #[doc = ""]
+        pub definition: super::rules::RuleDefinition,
+        #[doc = ""]
+        pub documentation: ::std::option::Option<::sidex::types::Str>,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for RuleInfo {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::catalog::RuleInfo",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "name",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                ),
+                ::sidex::shape::FieldShape::new(
+                    "definition",
+                    ::sidex::shape::shape_of::<super::rules::RuleDefinition>,
+                ),
+                ::sidex::shape::FieldShape::new(
+                    "documentation",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .optional(),
+            ])),
+        )
+        .with_docs("A named rule and its optional README.md.\n");
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for RuleInfo {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for RuleInfo {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.name)),
+                1usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.definition)),
+                2usize => self
+                    .documentation
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for RuleInfo {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 = ::std::option::Option::<super::rules::RuleDefinition>::None;
+            let mut __field_2 = ::std::option::Option::<::sidex::types::Str>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
+                            <super::rules::RuleDefinition as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    2usize => {
+                        __field_2 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                name: __field_0.ok_or_else(|| ::sidex::DecodeError::new("missing field `name`"))?,
+                definition: __field_1
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `definition`"))?,
+                documentation: __field_2,
+            })
+        }
+    }
+    impl RuleInfo {
+        #[doc = "Creates a new [`RuleInfo`]."]
+        pub fn new(
+            name: impl ::std::convert::Into<::sidex::types::Str>,
+            definition: super::rules::RuleDefinition,
+        ) -> Self {
+            Self {
+                name: name.into(),
+                definition: definition,
+                documentation: ::std::default::Default::default(),
+            }
+        }
+        #[doc = "Sets the value of `name`."]
+        pub fn set_name(
+            &mut self,
+            name: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.name = name.into();
+            self
+        }
+        #[doc = "Sets the value of `name`."]
+        pub fn with_name(mut self, name: impl ::std::convert::Into<::sidex::types::Str>) -> Self {
+            self.name = name.into();
+            self
+        }
+        #[doc = "Sets the value of `definition`."]
+        pub fn set_definition(&mut self, definition: super::rules::RuleDefinition) -> &mut Self {
+            self.definition = definition;
+            self
+        }
+        #[doc = "Sets the value of `definition`."]
+        pub fn with_definition(mut self, definition: super::rules::RuleDefinition) -> Self {
+            self.definition = definition;
+            self
+        }
+        #[doc = "Sets the value of `documentation`."]
+        pub fn set_documentation(
+            &mut self,
+            documentation: ::std::option::Option<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.documentation = documentation;
+            self
+        }
+        #[doc = "Sets the value of `documentation`."]
+        pub fn with_documentation(
+            mut self,
+            documentation: ::std::option::Option<::sidex::types::Str>,
+        ) -> Self {
+            self.documentation = documentation;
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for RuleInfo {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for RuleInfo {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "A named recipe and its optional README.md.\n"]
+    #[derive(Clone, Debug)]
+    pub struct RecipeInfo {
+        #[doc = ""]
+        pub name: ::sidex::types::Str,
+        #[doc = ""]
+        pub definition: super::recipes::RecipeConfig,
+        #[doc = ""]
+        pub documentation: ::std::option::Option<::sidex::types::Str>,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for RecipeInfo {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::catalog::RecipeInfo",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "name",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                ),
+                ::sidex::shape::FieldShape::new(
+                    "definition",
+                    ::sidex::shape::shape_of::<super::recipes::RecipeConfig>,
+                ),
+                ::sidex::shape::FieldShape::new(
+                    "documentation",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .optional(),
+            ])),
+        )
+        .with_docs("A named recipe and its optional README.md.\n");
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for RecipeInfo {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for RecipeInfo {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.name)),
+                1usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.definition)),
+                2usize => self
+                    .documentation
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for RecipeInfo {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 = ::std::option::Option::<super::recipes::RecipeConfig>::None;
+            let mut __field_2 = ::std::option::Option::<::sidex::types::Str>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
+                            <super::recipes::RecipeConfig as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    2usize => {
+                        __field_2 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                name: __field_0.ok_or_else(|| ::sidex::DecodeError::new("missing field `name`"))?,
+                definition: __field_1
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `definition`"))?,
+                documentation: __field_2,
+            })
+        }
+    }
+    impl RecipeInfo {
+        #[doc = "Creates a new [`RecipeInfo`]."]
+        pub fn new(
+            name: impl ::std::convert::Into<::sidex::types::Str>,
+            definition: super::recipes::RecipeConfig,
+        ) -> Self {
+            Self {
+                name: name.into(),
+                definition: definition,
+                documentation: ::std::default::Default::default(),
+            }
+        }
+        #[doc = "Sets the value of `name`."]
+        pub fn set_name(
+            &mut self,
+            name: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.name = name.into();
+            self
+        }
+        #[doc = "Sets the value of `name`."]
+        pub fn with_name(mut self, name: impl ::std::convert::Into<::sidex::types::Str>) -> Self {
+            self.name = name.into();
+            self
+        }
+        #[doc = "Sets the value of `definition`."]
+        pub fn set_definition(&mut self, definition: super::recipes::RecipeConfig) -> &mut Self {
+            self.definition = definition;
+            self
+        }
+        #[doc = "Sets the value of `definition`."]
+        pub fn with_definition(mut self, definition: super::recipes::RecipeConfig) -> Self {
+            self.definition = definition;
+            self
+        }
+        #[doc = "Sets the value of `documentation`."]
+        pub fn set_documentation(
+            &mut self,
+            documentation: ::std::option::Option<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.documentation = documentation;
+            self
+        }
+        #[doc = "Sets the value of `documentation`."]
+        pub fn with_documentation(
+            mut self,
+            documentation: ::std::option::Option<::sidex::types::Str>,
+        ) -> Self {
+            self.documentation = documentation;
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for RecipeInfo {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for RecipeInfo {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "A named layer and its optional same-named .md sidecar.\n"]
+    #[derive(Clone, Debug)]
+    pub struct LayerInfo {
+        #[doc = ""]
+        pub name: ::sidex::types::Str,
+        #[doc = ""]
+        pub definition: LayerDefinition,
+        #[doc = ""]
+        pub documentation: ::std::option::Option<::sidex::types::Str>,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for LayerInfo {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::catalog::LayerInfo",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "name",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                ),
+                ::sidex::shape::FieldShape::new(
+                    "definition",
+                    ::sidex::shape::shape_of::<LayerDefinition>,
+                ),
+                ::sidex::shape::FieldShape::new(
+                    "documentation",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .optional(),
+            ])),
+        )
+        .with_docs("A named layer and its optional same-named .md sidecar.\n");
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for LayerInfo {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for LayerInfo {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.name)),
+                1usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.definition)),
+                2usize => self
+                    .documentation
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for LayerInfo {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 = ::std::option::Option::<LayerDefinition>::None;
+            let mut __field_2 = ::std::option::Option::<::sidex::types::Str>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
+                            <LayerDefinition as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    2usize => {
+                        __field_2 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                name: __field_0.ok_or_else(|| ::sidex::DecodeError::new("missing field `name`"))?,
+                definition: __field_1
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `definition`"))?,
+                documentation: __field_2,
+            })
+        }
+    }
+    impl LayerInfo {
+        #[doc = "Creates a new [`LayerInfo`]."]
+        pub fn new(
+            name: impl ::std::convert::Into<::sidex::types::Str>,
+            definition: LayerDefinition,
+        ) -> Self {
+            Self {
+                name: name.into(),
+                definition: definition,
+                documentation: ::std::default::Default::default(),
+            }
+        }
+        #[doc = "Sets the value of `name`."]
+        pub fn set_name(
+            &mut self,
+            name: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.name = name.into();
+            self
+        }
+        #[doc = "Sets the value of `name`."]
+        pub fn with_name(mut self, name: impl ::std::convert::Into<::sidex::types::Str>) -> Self {
+            self.name = name.into();
+            self
+        }
+        #[doc = "Sets the value of `definition`."]
+        pub fn set_definition(&mut self, definition: LayerDefinition) -> &mut Self {
+            self.definition = definition;
+            self
+        }
+        #[doc = "Sets the value of `definition`."]
+        pub fn with_definition(mut self, definition: LayerDefinition) -> Self {
+            self.definition = definition;
+            self
+        }
+        #[doc = "Sets the value of `documentation`."]
+        pub fn set_documentation(
+            &mut self,
+            documentation: ::std::option::Option<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.documentation = documentation;
+            self
+        }
+        #[doc = "Sets the value of `documentation`."]
+        pub fn with_documentation(
+            mut self,
+            documentation: ::std::option::Option<::sidex::types::Str>,
+        ) -> Self {
+            self.documentation = documentation;
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for LayerInfo {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for LayerInfo {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "A layer's architecture-specific definitions and optional default.\n"]
+    #[derive(Clone, Debug)]
+    pub struct LayerDefinition {
+        #[doc = ""]
+        pub variants: ::sidex::types::Seq<LayerVariant>,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for LayerDefinition {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::catalog::LayerDefinition",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "variants",
+                    ::sidex::shape::shape_of::<::sidex::types::Seq<LayerVariant>>,
+                ),
+            ])),
+        )
+        .with_docs("A layer's architecture-specific definitions and optional default.\n");
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for LayerDefinition {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for LayerDefinition {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.variants)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for LayerDefinition {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Seq<LayerVariant>>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Seq<LayerVariant> as ::sidex::Decode>::decode(
+                                decoder,
+                            )?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                variants: __field_0
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `variants`"))?,
+            })
+        }
+    }
+    impl LayerDefinition {
+        #[doc = "Creates a new [`LayerDefinition`]."]
+        pub fn new(variants: ::sidex::types::Seq<LayerVariant>) -> Self {
+            Self { variants: variants }
+        }
+        #[doc = "Sets the value of `variants`."]
+        pub fn set_variants(&mut self, variants: ::sidex::types::Seq<LayerVariant>) -> &mut Self {
+            self.variants = variants;
+            self
+        }
+        #[doc = "Sets the value of `variants`."]
+        pub fn with_variants(mut self, variants: ::sidex::types::Seq<LayerVariant>) -> Self {
+            self.variants = variants;
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for LayerDefinition {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for LayerDefinition {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "One complete layer configuration. An architecture override replaces the default.\n"]
+    #[derive(Clone, Debug)]
+    pub struct LayerVariant {
+        #[doc = "Absent for the fallback definition.\n"]
+        pub architecture: ::std::option::Option<super::systems::Architecture>,
+        #[doc = ""]
+        pub config: super::layers::LayerConfig,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for LayerVariant {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::catalog::LayerVariant",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "architecture",
+                    ::sidex::shape::shape_of::<super::systems::Architecture>,
+                )
+                .with_docs("Absent for the fallback definition.\n")
+                .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "config",
+                    ::sidex::shape::shape_of::<super::layers::LayerConfig>,
+                ),
+            ])),
+        )
+        .with_docs(
+            "One complete layer configuration. An architecture override replaces the default.\n",
+        );
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for LayerVariant {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for LayerVariant {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => self
+                    .architecture
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                1usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.config)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for LayerVariant {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<super::systems::Architecture>::None;
+            let mut __field_1 = ::std::option::Option::<super::layers::LayerConfig>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <super::systems::Architecture as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
+                            <super::layers::LayerConfig as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                architecture: __field_0,
+                config: __field_1
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `config`"))?,
+            })
+        }
+    }
+    impl LayerVariant {
+        #[doc = "Creates a new [`LayerVariant`]."]
+        pub fn new(config: super::layers::LayerConfig) -> Self {
+            Self {
+                config: config,
+                architecture: ::std::default::Default::default(),
+            }
+        }
+        #[doc = "Sets the value of `architecture`."]
+        pub fn set_architecture(
+            &mut self,
+            architecture: ::std::option::Option<super::systems::Architecture>,
+        ) -> &mut Self {
+            self.architecture = architecture;
+            self
+        }
+        #[doc = "Sets the value of `architecture`."]
+        pub fn with_architecture(
+            mut self,
+            architecture: ::std::option::Option<super::systems::Architecture>,
+        ) -> Self {
+            self.architecture = architecture;
+            self
+        }
+        #[doc = "Sets the value of `config`."]
+        pub fn set_config(&mut self, config: super::layers::LayerConfig) -> &mut Self {
+            self.config = config;
+            self
+        }
+        #[doc = "Sets the value of `config`."]
+        pub fn with_config(mut self, config: super::layers::LayerConfig) -> Self {
+            self.config = config;
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for LayerVariant {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for LayerVariant {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+}
 pub mod envs {
     #![doc = "Inspection results and storage selection for tooling environments.\n"]
     #![allow(
@@ -3087,6 +4451,8 @@ pub mod layers {
         pub name: ::std::option::Option<::sidex::types::Str>,
         #[doc = "Description of the layer.\n"]
         pub description: ::std::option::Option<::sidex::types::Str>,
+        #[doc = "Optional group used when presenting a layer catalog.\n"]
+        pub category: ::std::option::Option<::sidex::types::Str>,
         #[doc = "URL for importing the layer.\n"]
         pub url: ::std::option::Option<::sidex::types::Str>,
         #[doc = "Parent layer.\n"]
@@ -3097,6 +4463,17 @@ pub mod layers {
         pub recipes: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
         #[doc = "Recipes to specifically exclude.\n"]
         pub exclude: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
+        #[doc = "Prerequisite rules available to recipe input bindings.\n"]
+        pub rules: ::std::option::Option<
+            ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+        >,
+        #[doc = "Artifact bindings by recipe reference and input name.\n"]
+        pub inputs: ::std::option::Option<
+            ::sidex::types::Map<
+                ::sidex::types::Str,
+                ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+            >,
+        >,
         #[doc = "Recipe parameters.\n"]
         pub parameters: ::std::option::Option<
             ::sidex::types::Map<
@@ -3121,6 +4498,12 @@ pub mod layers {
                     ::sidex::shape::shape_of::<::sidex::types::Str>,
                 )
                 .with_docs("Description of the layer.\n")
+                .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "category",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .with_docs("Optional group used when presenting a layer catalog.\n")
                 .optional(),
                 ::sidex::shape::FieldShape::new(
                     "url",
@@ -3148,6 +4531,25 @@ pub mod layers {
                     ::sidex::shape::shape_of::<::sidex::types::Seq<::sidex::types::Str>>,
                 )
                 .with_docs("Recipes to specifically exclude.\n")
+                .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "rules",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+                    >,
+                )
+                .with_docs("Prerequisite rules available to recipe input bindings.\n")
+                .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "inputs",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<
+                            ::sidex::types::Str,
+                            ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+                        >,
+                    >,
+                )
+                .with_docs("Artifact bindings by recipe reference and input name.\n")
                 .optional(),
                 ::sidex::shape::FieldShape::new(
                     "parameters",
@@ -3190,26 +4592,38 @@ pub mod layers {
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 2usize => self
-                    .url
+                    .category
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 3usize => self
-                    .parent
+                    .url
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 4usize => self
-                    .root
+                    .parent
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 5usize => self
-                    .recipes
+                    .root
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 6usize => self
-                    .exclude
+                    .recipes
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 7usize => self
+                    .exclude
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                8usize => self
+                    .rules
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                9usize => self
+                    .inputs
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                10usize => self
                     .parameters
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
@@ -3227,12 +4641,22 @@ pub mod layers {
             let mut __field_1 = ::std::option::Option::<::sidex::types::Str>::None;
             let mut __field_2 = ::std::option::Option::<::sidex::types::Str>::None;
             let mut __field_3 = ::std::option::Option::<::sidex::types::Str>::None;
-            let mut __field_4 = ::std::option::Option::<bool>::None;
-            let mut __field_5 =
-                ::std::option::Option::<::sidex::types::Seq<::sidex::types::Str>>::None;
+            let mut __field_4 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_5 = ::std::option::Option::<bool>::None;
             let mut __field_6 =
                 ::std::option::Option::<::sidex::types::Seq<::sidex::types::Str>>::None;
-            let mut __field_7 = ::std::option::Option::<
+            let mut __field_7 =
+                ::std::option::Option::<::sidex::types::Seq<::sidex::types::Str>>::None;
+            let mut __field_8 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+            >::None;
+            let mut __field_9 = ::std::option::Option::<
+                ::sidex::types::Map<
+                    ::sidex::types::Str,
+                    ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+                >,
+            >::None;
+            let mut __field_10 = ::std::option::Option::<
                 ::sidex::types::Map<
                     ::sidex::types::Str,
                     ::sidex::types::Map<::sidex::types::Str, super::recipes::ParameterValue>,
@@ -3261,15 +4685,13 @@ pub mod layers {
                         )
                     }
                     4usize => {
-                        __field_4 =
-                            ::std::option::Option::Some(<bool as ::sidex::Decode>::decode(decoder)?)
+                        __field_4 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
                     }
                     5usize => {
-                        __field_5 = ::std::option::Option::Some(<::sidex::types::Seq<
-                            ::sidex::types::Str,
-                        > as ::sidex::Decode>::decode(
-                            decoder
-                        )?)
+                        __field_5 =
+                            ::std::option::Option::Some(<bool as ::sidex::Decode>::decode(decoder)?)
                     }
                     6usize => {
                         __field_6 = ::std::option::Option::Some(<::sidex::types::Seq<
@@ -3279,7 +4701,30 @@ pub mod layers {
                         )?)
                     }
                     7usize => {
-                        __field_7 = ::std::option::Option::Some(<::sidex::types::Map<
+                        __field_7 = ::std::option::Option::Some(<::sidex::types::Seq<
+                            ::sidex::types::Str,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    8usize => {
+                        __field_8 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            super::rules::RuleInvocation,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    9usize => {
+                        __field_9 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    10usize => {
+                        __field_10 = ::std::option::Option::Some(<::sidex::types::Map<
                             ::sidex::types::Str,
                             ::sidex::types::Map<
                                 ::sidex::types::Str,
@@ -3296,12 +4741,15 @@ pub mod layers {
             ::std::result::Result::Ok(Self {
                 name: __field_0,
                 description: __field_1,
-                url: __field_2,
-                parent: __field_3,
-                root: __field_4,
-                recipes: __field_5,
-                exclude: __field_6,
-                parameters: __field_7,
+                category: __field_2,
+                url: __field_3,
+                parent: __field_4,
+                root: __field_5,
+                recipes: __field_6,
+                exclude: __field_7,
+                rules: __field_8,
+                inputs: __field_9,
+                parameters: __field_10,
             })
         }
     }
@@ -3311,11 +4759,14 @@ pub mod layers {
             Self {
                 name: ::std::default::Default::default(),
                 description: ::std::default::Default::default(),
+                category: ::std::default::Default::default(),
                 url: ::std::default::Default::default(),
                 parent: ::std::default::Default::default(),
                 root: ::std::default::Default::default(),
                 recipes: ::std::default::Default::default(),
                 exclude: ::std::default::Default::default(),
+                rules: ::std::default::Default::default(),
+                inputs: ::std::default::Default::default(),
                 parameters: ::std::default::Default::default(),
             }
         }
@@ -3343,6 +4794,22 @@ pub mod layers {
             description: ::std::option::Option<::sidex::types::Str>,
         ) -> Self {
             self.description = description;
+            self
+        }
+        #[doc = "Sets the value of `category`."]
+        pub fn set_category(
+            &mut self,
+            category: ::std::option::Option<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.category = category;
+            self
+        }
+        #[doc = "Sets the value of `category`."]
+        pub fn with_category(
+            mut self,
+            category: ::std::option::Option<::sidex::types::Str>,
+        ) -> Self {
+            self.category = category;
             self
         }
         #[doc = "Sets the value of `url`."]
@@ -3408,6 +4875,52 @@ pub mod layers {
             exclude: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
         ) -> Self {
             self.exclude = exclude;
+            self
+        }
+        #[doc = "Sets the value of `rules`."]
+        pub fn set_rules(
+            &mut self,
+            rules: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+            >,
+        ) -> &mut Self {
+            self.rules = rules;
+            self
+        }
+        #[doc = "Sets the value of `rules`."]
+        pub fn with_rules(
+            mut self,
+            rules: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+            >,
+        ) -> Self {
+            self.rules = rules;
+            self
+        }
+        #[doc = "Sets the value of `inputs`."]
+        pub fn set_inputs(
+            &mut self,
+            inputs: ::std::option::Option<
+                ::sidex::types::Map<
+                    ::sidex::types::Str,
+                    ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+                >,
+            >,
+        ) -> &mut Self {
+            self.inputs = inputs;
+            self
+        }
+        #[doc = "Sets the value of `inputs`."]
+        pub fn with_inputs(
+            mut self,
+            inputs: ::std::option::Option<
+                ::sidex::types::Map<
+                    ::sidex::types::Str,
+                    ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+                >,
+            >,
+        ) -> Self {
+            self.inputs = inputs;
             self
         }
         #[doc = "Sets the value of `parameters`."]
@@ -3482,6 +4995,17 @@ pub mod mixins {
         pub recipes: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
         #[doc = "Recipes to specifically exclude from this mixin.\n"]
         pub exclude: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
+        #[doc = "Prerequisite rules available to recipe input bindings.\n"]
+        pub rules: ::std::option::Option<
+            ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+        >,
+        #[doc = "Artifact bindings by recipe reference and input name.\n"]
+        pub inputs: ::std::option::Option<
+            ::sidex::types::Map<
+                ::sidex::types::Str,
+                ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+            >,
+        >,
         #[doc = "Recipe parameters.\n"]
         pub parameters: ::std::option::Option<
             ::sidex::types::Map<
@@ -3524,6 +5048,25 @@ pub mod mixins {
                     ::sidex::shape::shape_of::<::sidex::types::Seq<::sidex::types::Str>>,
                 )
                 .with_docs("Recipes to specifically exclude from this mixin.\n")
+                .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "rules",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+                    >,
+                )
+                .with_docs("Prerequisite rules available to recipe input bindings.\n")
+                .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "inputs",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<
+                            ::sidex::types::Str,
+                            ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+                        >,
+                    >,
+                )
+                .with_docs("Artifact bindings by recipe reference and input name.\n")
                 .optional(),
                 ::sidex::shape::FieldShape::new(
                     "parameters",
@@ -3578,6 +5121,14 @@ pub mod mixins {
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 5usize => self
+                    .rules
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                6usize => self
+                    .inputs
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                7usize => self
                     .parameters
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
@@ -3600,6 +5151,15 @@ pub mod mixins {
             let mut __field_4 =
                 ::std::option::Option::<::sidex::types::Seq<::sidex::types::Str>>::None;
             let mut __field_5 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+            >::None;
+            let mut __field_6 = ::std::option::Option::<
+                ::sidex::types::Map<
+                    ::sidex::types::Str,
+                    ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+                >,
+            >::None;
+            let mut __field_7 = ::std::option::Option::<
                 ::sidex::types::Map<
                     ::sidex::types::Str,
                     ::sidex::types::Map<::sidex::types::Str, super::recipes::ParameterValue>,
@@ -3641,6 +5201,22 @@ pub mod mixins {
                     5usize => {
                         __field_5 = ::std::option::Option::Some(<::sidex::types::Map<
                             ::sidex::types::Str,
+                            super::rules::RuleInvocation,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    6usize => {
+                        __field_6 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    7usize => {
+                        __field_7 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
                             ::sidex::types::Map<
                                 ::sidex::types::Str,
                                 super::recipes::ParameterValue,
@@ -3659,7 +5235,9 @@ pub mod mixins {
                 dependencies: __field_2,
                 recipes: __field_3,
                 exclude: __field_4,
-                parameters: __field_5,
+                rules: __field_5,
+                inputs: __field_6,
+                parameters: __field_7,
             })
         }
     }
@@ -3672,6 +5250,8 @@ pub mod mixins {
                 dependencies: ::std::default::Default::default(),
                 recipes: ::std::default::Default::default(),
                 exclude: ::std::default::Default::default(),
+                rules: ::std::default::Default::default(),
+                inputs: ::std::default::Default::default(),
                 parameters: ::std::default::Default::default(),
             }
         }
@@ -3747,6 +5327,52 @@ pub mod mixins {
             exclude: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
         ) -> Self {
             self.exclude = exclude;
+            self
+        }
+        #[doc = "Sets the value of `rules`."]
+        pub fn set_rules(
+            &mut self,
+            rules: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+            >,
+        ) -> &mut Self {
+            self.rules = rules;
+            self
+        }
+        #[doc = "Sets the value of `rules`."]
+        pub fn with_rules(
+            mut self,
+            rules: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+            >,
+        ) -> Self {
+            self.rules = rules;
+            self
+        }
+        #[doc = "Sets the value of `inputs`."]
+        pub fn set_inputs(
+            &mut self,
+            inputs: ::std::option::Option<
+                ::sidex::types::Map<
+                    ::sidex::types::Str,
+                    ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+                >,
+            >,
+        ) -> &mut Self {
+            self.inputs = inputs;
+            self
+        }
+        #[doc = "Sets the value of `inputs`."]
+        pub fn with_inputs(
+            mut self,
+            inputs: ::std::option::Option<
+                ::sidex::types::Map<
+                    ::sidex::types::Str,
+                    ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+                >,
+            >,
+        ) -> Self {
+            self.inputs = inputs;
             self
         }
         #[doc = "Sets the value of `parameters`."]
@@ -3997,10 +5623,24 @@ pub mod recipes {
     pub struct RecipeConfig {
         #[doc = "Description of the recipe.\n"]
         pub description: ::std::option::Option<::sidex::types::Str>,
+        #[doc = "Optional group used when presenting a recipe catalog.\n"]
+        pub category: ::std::option::Option<::sidex::types::Str>,
         #[doc = "Priority of the recipe.\n"]
         pub priority: ::std::option::Option<i64>,
         #[doc = "Dependencies of the recipe.\n"]
         pub dependencies: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
+        #[doc = "Required artifact inputs.\n"]
+        pub inputs: ::std::option::Option<
+            ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactInput>,
+        >,
+        #[doc = "Prerequisite rules available to this recipe's default input bindings.\n"]
+        pub rules: ::std::option::Option<
+            ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+        >,
+        #[doc = "Input bindings used when the enclosing layer supplies no artifact.\n"]
+        pub input_defaults: ::std::option::Option<
+            ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+        >,
         #[doc = "Parameter definitions of the recipe.\n"]
         pub parameters:
             ::std::option::Option<::sidex::types::Map<::sidex::types::Str, ParameterDef>>,
@@ -4016,6 +5656,12 @@ pub mod recipes {
                 )
                 .with_docs("Description of the recipe.\n")
                 .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "category",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .with_docs("Optional group used when presenting a recipe catalog.\n")
+                .optional(),
                 ::sidex::shape::FieldShape::new("priority", ::sidex::shape::shape_of::<i64>)
                     .with_docs("Priority of the recipe.\n")
                     .optional(),
@@ -4026,6 +5672,33 @@ pub mod recipes {
                 .with_docs("Dependencies of the recipe.\n")
                 .optional(),
                 ::sidex::shape::FieldShape::new(
+                    "inputs",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactInput>,
+                    >,
+                )
+                .with_docs("Required artifact inputs.\n")
+                .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "rules",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+                    >,
+                )
+                .with_docs(
+                    "Prerequisite rules available to this recipe's default input bindings.\n",
+                )
+                .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "input_defaults",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+                    >,
+                )
+                .with_docs("Input bindings used when the enclosing layer supplies no artifact.\n")
+                .optional()
+                .json_name("input-defaults"),
+                ::sidex::shape::FieldShape::new(
                     "parameters",
                     ::sidex::shape::shape_of::<
                         ::sidex::types::Map<::sidex::types::Str, ParameterDef>,
@@ -4035,7 +5708,14 @@ pub mod recipes {
                 .optional(),
             ])),
         )
-        .with_docs("Recipe configuration.\n");
+        .with_docs("Recipe configuration.\n")
+        .with_attrs(&[::sidex::shape::Attr::List {
+            path: "json",
+            args: &[::sidex::shape::Attr::Assign {
+                path: "rename_all",
+                value: ::sidex::shape::AttrValue::String("kebab-case"),
+            }],
+        }]);
     }
     #[automatically_derived]
     impl ::sidex::Encode for RecipeConfig {
@@ -4056,14 +5736,30 @@ pub mod recipes {
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 1usize => self
-                    .priority
+                    .category
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 2usize => self
-                    .dependencies
+                    .priority
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 3usize => self
+                    .dependencies
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                4usize => self
+                    .inputs
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                5usize => self
+                    .rules
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                6usize => self
+                    .input_defaults
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                7usize => self
                     .parameters
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
@@ -4078,10 +5774,20 @@ pub mod recipes {
             decoder: &mut dyn ::sidex::Decoder,
         ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
             let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
-            let mut __field_1 = ::std::option::Option::<i64>::None;
-            let mut __field_2 =
+            let mut __field_1 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_2 = ::std::option::Option::<i64>::None;
+            let mut __field_3 =
                 ::std::option::Option::<::sidex::types::Seq<::sidex::types::Str>>::None;
-            let mut __field_3 = ::std::option::Option::<
+            let mut __field_4 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactInput>,
+            >::None;
+            let mut __field_5 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+            >::None;
+            let mut __field_6 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+            >::None;
+            let mut __field_7 = ::std::option::Option::<
                 ::sidex::types::Map<::sidex::types::Str, ParameterDef>,
             >::None;
             decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
@@ -4092,18 +5798,47 @@ pub mod recipes {
                         )
                     }
                     1usize => {
-                        __field_1 =
-                            ::std::option::Option::Some(<i64 as ::sidex::Decode>::decode(decoder)?)
+                        __field_1 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
                     }
                     2usize => {
-                        __field_2 = ::std::option::Option::Some(<::sidex::types::Seq<
+                        __field_2 =
+                            ::std::option::Option::Some(<i64 as ::sidex::Decode>::decode(decoder)?)
+                    }
+                    3usize => {
+                        __field_3 = ::std::option::Option::Some(<::sidex::types::Seq<
                             ::sidex::types::Str,
                         > as ::sidex::Decode>::decode(
                             decoder
                         )?)
                     }
-                    3usize => {
-                        __field_3 = ::std::option::Option::Some(<::sidex::types::Map<
+                    4usize => {
+                        __field_4 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            super::rules::ArtifactInput,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    5usize => {
+                        __field_5 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            super::rules::RuleInvocation,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    6usize => {
+                        __field_6 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            super::rules::ArtifactSource,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    7usize => {
+                        __field_7 = ::std::option::Option::Some(<::sidex::types::Map<
                             ::sidex::types::Str,
                             ParameterDef,
                         > as ::sidex::Decode>::decode(
@@ -4116,9 +5851,13 @@ pub mod recipes {
             })?;
             ::std::result::Result::Ok(Self {
                 description: __field_0,
-                priority: __field_1,
-                dependencies: __field_2,
-                parameters: __field_3,
+                category: __field_1,
+                priority: __field_2,
+                dependencies: __field_3,
+                inputs: __field_4,
+                rules: __field_5,
+                input_defaults: __field_6,
+                parameters: __field_7,
             })
         }
     }
@@ -4127,8 +5866,12 @@ pub mod recipes {
         pub fn new() -> Self {
             Self {
                 description: ::std::default::Default::default(),
+                category: ::std::default::Default::default(),
                 priority: ::std::default::Default::default(),
                 dependencies: ::std::default::Default::default(),
+                inputs: ::std::default::Default::default(),
+                rules: ::std::default::Default::default(),
+                input_defaults: ::std::default::Default::default(),
                 parameters: ::std::default::Default::default(),
             }
         }
@@ -4146,6 +5889,22 @@ pub mod recipes {
             description: ::std::option::Option<::sidex::types::Str>,
         ) -> Self {
             self.description = description;
+            self
+        }
+        #[doc = "Sets the value of `category`."]
+        pub fn set_category(
+            &mut self,
+            category: ::std::option::Option<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.category = category;
+            self
+        }
+        #[doc = "Sets the value of `category`."]
+        pub fn with_category(
+            mut self,
+            category: ::std::option::Option<::sidex::types::Str>,
+        ) -> Self {
+            self.category = category;
             self
         }
         #[doc = "Sets the value of `priority`."]
@@ -4172,6 +5931,66 @@ pub mod recipes {
             dependencies: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
         ) -> Self {
             self.dependencies = dependencies;
+            self
+        }
+        #[doc = "Sets the value of `inputs`."]
+        pub fn set_inputs(
+            &mut self,
+            inputs: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactInput>,
+            >,
+        ) -> &mut Self {
+            self.inputs = inputs;
+            self
+        }
+        #[doc = "Sets the value of `inputs`."]
+        pub fn with_inputs(
+            mut self,
+            inputs: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactInput>,
+            >,
+        ) -> Self {
+            self.inputs = inputs;
+            self
+        }
+        #[doc = "Sets the value of `rules`."]
+        pub fn set_rules(
+            &mut self,
+            rules: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+            >,
+        ) -> &mut Self {
+            self.rules = rules;
+            self
+        }
+        #[doc = "Sets the value of `rules`."]
+        pub fn with_rules(
+            mut self,
+            rules: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+            >,
+        ) -> Self {
+            self.rules = rules;
+            self
+        }
+        #[doc = "Sets the value of `input_defaults`."]
+        pub fn set_input_defaults(
+            &mut self,
+            input_defaults: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+            >,
+        ) -> &mut Self {
+            self.input_defaults = input_defaults;
+            self
+        }
+        #[doc = "Sets the value of `input_defaults`."]
+        pub fn with_input_defaults(
+            mut self,
+            input_defaults: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+            >,
+        ) -> Self {
+            self.input_defaults = input_defaults;
             self
         }
         #[doc = "Sets the value of `parameters`."]
@@ -4220,6 +6039,8 @@ pub mod recipes {
     #[doc = "Recipe parameter definition.\n"]
     #[derive(Clone, Debug)]
     pub struct ParameterDef {
+        #[doc = "Description, including units and special values.\n"]
+        pub description: ::std::option::Option<::sidex::types::Str>,
         #[doc = "Optional default value of the parameter.\n"]
         pub default: ::std::option::Option<ParameterValue>,
     }
@@ -4228,6 +6049,12 @@ pub mod recipes {
         const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
             "::rugix_bakery::recipes::ParameterDef",
             ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "description",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .with_docs("Description, including units and special values.\n")
+                .optional(),
                 ::sidex::shape::FieldShape::new(
                     "default",
                     ::sidex::shape::shape_of::<ParameterValue>,
@@ -4253,6 +6080,10 @@ pub mod recipes {
         fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
             match index {
                 0usize => self
+                    .description
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                1usize => self
                     .default
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
@@ -4266,11 +6097,17 @@ pub mod recipes {
         fn decode(
             decoder: &mut dyn ::sidex::Decoder,
         ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
-            let mut __field_0 = ::std::option::Option::<ParameterValue>::None;
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 = ::std::option::Option::<ParameterValue>::None;
             decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
                 match index {
                     0usize => {
                         __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
                             <ParameterValue as ::sidex::Decode>::decode(decoder)?,
                         )
                     }
@@ -4278,15 +6115,35 @@ pub mod recipes {
                 }
                 ::std::result::Result::Ok(())
             })?;
-            ::std::result::Result::Ok(Self { default: __field_0 })
+            ::std::result::Result::Ok(Self {
+                description: __field_0,
+                default: __field_1,
+            })
         }
     }
     impl ParameterDef {
         #[doc = "Creates a new [`ParameterDef`]."]
         pub fn new() -> Self {
             Self {
+                description: ::std::default::Default::default(),
                 default: ::std::default::Default::default(),
             }
+        }
+        #[doc = "Sets the value of `description`."]
+        pub fn set_description(
+            &mut self,
+            description: ::std::option::Option<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.description = description;
+            self
+        }
+        #[doc = "Sets the value of `description`."]
+        pub fn with_description(
+            mut self,
+            description: ::std::option::Option<::sidex::types::Str>,
+        ) -> Self {
+            self.description = description;
+            self
         }
         #[doc = "Sets the value of `default`."]
         pub fn set_default(&mut self, default: ::std::option::Option<ParameterValue>) -> &mut Self {
@@ -5109,6 +6966,2141 @@ pub mod repositories {
         }
     }
 }
+pub mod rules {
+    #![doc = "Repository-defined artifact builds.\n"]
+    #![allow(
+        clippy::all,
+        clippy::pedantic,
+        clippy::nursery,
+        clippy::cargo,
+        dead_code
+    )]
+    #[doc = "A reusable operation or composition.\n"]
+    #[derive(Clone, Debug)]
+    pub struct RuleDefinition {
+        #[doc = "Description for users of this rule.\n"]
+        pub description: ::std::option::Option<::sidex::types::Str>,
+        #[doc = "Optional group used when presenting a rule catalog.\n"]
+        pub category: ::std::option::Option<::sidex::types::Str>,
+        #[doc = "Required artifact inputs.\n"]
+        pub inputs: ::std::option::Option<::sidex::types::Map<::sidex::types::Str, ArtifactInput>>,
+        #[doc = "Configurable parameters.\n"]
+        pub parameters: ::std::option::Option<
+            ::sidex::types::Map<::sidex::types::Str, super::recipes::ParameterDef>,
+        >,
+        #[doc = "Required sensitive input bindings. Secret changes invalidate cached outputs.\n"]
+        pub secrets: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
+        #[doc = "Implementation of the rule.\n"]
+        pub execution: RuleExecution,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for RuleDefinition {
+        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::rules::RuleDefinition" , :: sidex :: shape :: ShapeKind :: Record (:: sidex :: shape :: RecordShape :: new (& [:: sidex :: shape :: FieldShape :: new ("description" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Description for users of this rule.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("category" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Optional group used when presenting a rule catalog.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("inputs" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , ArtifactInput , > > ,) . with_docs ("Required artifact inputs.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("parameters" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , super :: recipes :: ParameterDef , > > ,) . with_docs ("Configurable parameters.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("secrets" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Seq < :: sidex :: types :: Str , > > ,) . with_docs ("Required sensitive input bindings. Secret changes invalidate cached outputs.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("execution" , :: sidex :: shape :: shape_of :: < RuleExecution > ,) . with_docs ("Implementation of the rule.\n")]))) . with_docs ("A reusable operation or composition.\n") . with_attrs (& [:: sidex :: shape :: Attr :: List { path : "json" , args : & [:: sidex :: shape :: Attr :: Assign { path : "rename_all" , value : :: sidex :: shape :: AttrValue :: String ("kebab-case") }] }]) ;
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for RuleDefinition {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for RuleDefinition {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => self
+                    .description
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                1usize => self
+                    .category
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                2usize => self
+                    .inputs
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                3usize => self
+                    .parameters
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                4usize => self
+                    .secrets
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                5usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.execution)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for RuleDefinition {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_2 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, ArtifactInput>,
+            >::None;
+            let mut __field_3 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, super::recipes::ParameterDef>,
+            >::None;
+            let mut __field_4 =
+                ::std::option::Option::<::sidex::types::Seq<::sidex::types::Str>>::None;
+            let mut __field_5 = ::std::option::Option::<RuleExecution>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    2usize => {
+                        __field_2 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            ArtifactInput,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    3usize => {
+                        __field_3 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            super::recipes::ParameterDef,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    4usize => {
+                        __field_4 = ::std::option::Option::Some(<::sidex::types::Seq<
+                            ::sidex::types::Str,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    5usize => {
+                        __field_5 = ::std::option::Option::Some(
+                            <RuleExecution as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                description: __field_0,
+                category: __field_1,
+                inputs: __field_2,
+                parameters: __field_3,
+                secrets: __field_4,
+                execution: __field_5
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `execution`"))?,
+            })
+        }
+    }
+    impl RuleDefinition {
+        #[doc = "Creates a new [`RuleDefinition`]."]
+        pub fn new(execution: RuleExecution) -> Self {
+            Self {
+                execution: execution,
+                description: ::std::default::Default::default(),
+                category: ::std::default::Default::default(),
+                inputs: ::std::default::Default::default(),
+                parameters: ::std::default::Default::default(),
+                secrets: ::std::default::Default::default(),
+            }
+        }
+        #[doc = "Sets the value of `description`."]
+        pub fn set_description(
+            &mut self,
+            description: ::std::option::Option<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.description = description;
+            self
+        }
+        #[doc = "Sets the value of `description`."]
+        pub fn with_description(
+            mut self,
+            description: ::std::option::Option<::sidex::types::Str>,
+        ) -> Self {
+            self.description = description;
+            self
+        }
+        #[doc = "Sets the value of `category`."]
+        pub fn set_category(
+            &mut self,
+            category: ::std::option::Option<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.category = category;
+            self
+        }
+        #[doc = "Sets the value of `category`."]
+        pub fn with_category(
+            mut self,
+            category: ::std::option::Option<::sidex::types::Str>,
+        ) -> Self {
+            self.category = category;
+            self
+        }
+        #[doc = "Sets the value of `inputs`."]
+        pub fn set_inputs(
+            &mut self,
+            inputs: ::std::option::Option<::sidex::types::Map<::sidex::types::Str, ArtifactInput>>,
+        ) -> &mut Self {
+            self.inputs = inputs;
+            self
+        }
+        #[doc = "Sets the value of `inputs`."]
+        pub fn with_inputs(
+            mut self,
+            inputs: ::std::option::Option<::sidex::types::Map<::sidex::types::Str, ArtifactInput>>,
+        ) -> Self {
+            self.inputs = inputs;
+            self
+        }
+        #[doc = "Sets the value of `parameters`."]
+        pub fn set_parameters(
+            &mut self,
+            parameters: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::recipes::ParameterDef>,
+            >,
+        ) -> &mut Self {
+            self.parameters = parameters;
+            self
+        }
+        #[doc = "Sets the value of `parameters`."]
+        pub fn with_parameters(
+            mut self,
+            parameters: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::recipes::ParameterDef>,
+            >,
+        ) -> Self {
+            self.parameters = parameters;
+            self
+        }
+        #[doc = "Sets the value of `secrets`."]
+        pub fn set_secrets(
+            &mut self,
+            secrets: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
+        ) -> &mut Self {
+            self.secrets = secrets;
+            self
+        }
+        #[doc = "Sets the value of `secrets`."]
+        pub fn with_secrets(
+            mut self,
+            secrets: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
+        ) -> Self {
+            self.secrets = secrets;
+            self
+        }
+        #[doc = "Sets the value of `execution`."]
+        pub fn set_execution(&mut self, execution: RuleExecution) -> &mut Self {
+            self.execution = execution;
+            self
+        }
+        #[doc = "Sets the value of `execution`."]
+        pub fn with_execution(mut self, execution: RuleExecution) -> Self {
+            self.execution = execution;
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for RuleDefinition {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for RuleDefinition {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "An artifact input with optional documentation.\n"]
+    #[derive(Clone, Debug)]
+    pub struct ArtifactInput {
+        #[doc = ""]
+        pub kind: ArtifactKind,
+        #[doc = ""]
+        pub description: ::std::option::Option<::sidex::types::Str>,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for ArtifactInput {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::rules::ArtifactInput",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new("kind", ::sidex::shape::shape_of::<ArtifactKind>),
+                ::sidex::shape::FieldShape::new(
+                    "description",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .optional(),
+            ])),
+        )
+        .with_docs("An artifact input with optional documentation.\n");
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for ArtifactInput {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for ArtifactInput {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.kind)),
+                1usize => self
+                    .description
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for ArtifactInput {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<ArtifactKind>::None;
+            let mut __field_1 = ::std::option::Option::<::sidex::types::Str>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <ArtifactKind as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                kind: __field_0.ok_or_else(|| ::sidex::DecodeError::new("missing field `kind`"))?,
+                description: __field_1,
+            })
+        }
+    }
+    impl ArtifactInput {
+        #[doc = "Creates a new [`ArtifactInput`]."]
+        pub fn new(kind: ArtifactKind) -> Self {
+            Self {
+                kind: kind,
+                description: ::std::default::Default::default(),
+            }
+        }
+        #[doc = "Sets the value of `kind`."]
+        pub fn set_kind(&mut self, kind: ArtifactKind) -> &mut Self {
+            self.kind = kind;
+            self
+        }
+        #[doc = "Sets the value of `kind`."]
+        pub fn with_kind(mut self, kind: ArtifactKind) -> Self {
+            self.kind = kind;
+            self
+        }
+        #[doc = "Sets the value of `description`."]
+        pub fn set_description(
+            &mut self,
+            description: ::std::option::Option<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.description = description;
+            self
+        }
+        #[doc = "Sets the value of `description`."]
+        pub fn with_description(
+            mut self,
+            description: ::std::option::Option<::sidex::types::Str>,
+        ) -> Self {
+            self.description = description;
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for ArtifactInput {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for ArtifactInput {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "An invocation of a repository-defined rule.\n"]
+    #[derive(Clone, Debug)]
+    pub struct RuleInvocation {
+        #[doc = "Local or repository-qualified rule name.\n"]
+        pub uses: ::sidex::types::Str,
+        #[doc = "Artifact input bindings.\n"]
+        pub inputs: ::std::option::Option<::sidex::types::Map<::sidex::types::Str, ArtifactSource>>,
+        #[doc = "Parameter bindings.\n"]
+        pub parameters:
+            ::std::option::Option<::sidex::types::Map<::sidex::types::Str, ParameterBinding>>,
+        #[doc = "Secret input bindings.\n"]
+        pub secrets:
+            ::std::option::Option<::sidex::types::Map<::sidex::types::Str, ArtifactSource>>,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for RuleInvocation {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::rules::RuleInvocation",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "uses",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .with_docs("Local or repository-qualified rule name.\n"),
+                ::sidex::shape::FieldShape::new(
+                    "inputs",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<::sidex::types::Str, ArtifactSource>,
+                    >,
+                )
+                .with_docs("Artifact input bindings.\n")
+                .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "parameters",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<::sidex::types::Str, ParameterBinding>,
+                    >,
+                )
+                .with_docs("Parameter bindings.\n")
+                .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "secrets",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<::sidex::types::Str, ArtifactSource>,
+                    >,
+                )
+                .with_docs("Secret input bindings.\n")
+                .optional(),
+            ])),
+        )
+        .with_docs("An invocation of a repository-defined rule.\n")
+        .with_attrs(&[::sidex::shape::Attr::List {
+            path: "json",
+            args: &[::sidex::shape::Attr::Assign {
+                path: "rename_all",
+                value: ::sidex::shape::AttrValue::String("kebab-case"),
+            }],
+        }]);
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for RuleInvocation {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for RuleInvocation {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.uses)),
+                1usize => self
+                    .inputs
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                2usize => self
+                    .parameters
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                3usize => self
+                    .secrets
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for RuleInvocation {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, ArtifactSource>,
+            >::None;
+            let mut __field_2 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, ParameterBinding>,
+            >::None;
+            let mut __field_3 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, ArtifactSource>,
+            >::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            ArtifactSource,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    2usize => {
+                        __field_2 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            ParameterBinding,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    3usize => {
+                        __field_3 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            ArtifactSource,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                uses: __field_0.ok_or_else(|| ::sidex::DecodeError::new("missing field `uses`"))?,
+                inputs: __field_1,
+                parameters: __field_2,
+                secrets: __field_3,
+            })
+        }
+    }
+    impl RuleInvocation {
+        #[doc = "Creates a new [`RuleInvocation`]."]
+        pub fn new(uses: impl ::std::convert::Into<::sidex::types::Str>) -> Self {
+            Self {
+                uses: uses.into(),
+                inputs: ::std::default::Default::default(),
+                parameters: ::std::default::Default::default(),
+                secrets: ::std::default::Default::default(),
+            }
+        }
+        #[doc = "Sets the value of `uses`."]
+        pub fn set_uses(
+            &mut self,
+            uses: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.uses = uses.into();
+            self
+        }
+        #[doc = "Sets the value of `uses`."]
+        pub fn with_uses(mut self, uses: impl ::std::convert::Into<::sidex::types::Str>) -> Self {
+            self.uses = uses.into();
+            self
+        }
+        #[doc = "Sets the value of `inputs`."]
+        pub fn set_inputs(
+            &mut self,
+            inputs: ::std::option::Option<::sidex::types::Map<::sidex::types::Str, ArtifactSource>>,
+        ) -> &mut Self {
+            self.inputs = inputs;
+            self
+        }
+        #[doc = "Sets the value of `inputs`."]
+        pub fn with_inputs(
+            mut self,
+            inputs: ::std::option::Option<::sidex::types::Map<::sidex::types::Str, ArtifactSource>>,
+        ) -> Self {
+            self.inputs = inputs;
+            self
+        }
+        #[doc = "Sets the value of `parameters`."]
+        pub fn set_parameters(
+            &mut self,
+            parameters: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, ParameterBinding>,
+            >,
+        ) -> &mut Self {
+            self.parameters = parameters;
+            self
+        }
+        #[doc = "Sets the value of `parameters`."]
+        pub fn with_parameters(
+            mut self,
+            parameters: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, ParameterBinding>,
+            >,
+        ) -> Self {
+            self.parameters = parameters;
+            self
+        }
+        #[doc = "Sets the value of `secrets`."]
+        pub fn set_secrets(
+            &mut self,
+            secrets: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, ArtifactSource>,
+            >,
+        ) -> &mut Self {
+            self.secrets = secrets;
+            self
+        }
+        #[doc = "Sets the value of `secrets`."]
+        pub fn with_secrets(
+            mut self,
+            secrets: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, ArtifactSource>,
+            >,
+        ) -> Self {
+            self.secrets = secrets;
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for RuleInvocation {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for RuleInvocation {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "Filesystem object accepted by an input or produced by an output.\n"]
+    #[derive(Clone, Debug, Copy, PartialEq, Eq)]
+    pub enum ArtifactKind {
+        #[doc = ""]
+        File,
+        #[doc = ""]
+        Directory,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for ArtifactKind {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::rules::ArtifactKind",
+            ::sidex::shape::ShapeKind::Variant(
+                ::sidex::shape::VariantShape::new(&[
+                    ::sidex::shape::CaseShape::new("File", ::std::option::Option::None)
+                        .json_name("file"),
+                    ::sidex::shape::CaseShape::new("Directory", ::std::option::Option::None)
+                        .json_name("directory"),
+                ])
+                .json_tagging(::sidex::formats::json::Tagging::External),
+            ),
+        )
+        .with_docs("Filesystem object accepted by an input or produced by an output.\n")
+        .with_attrs(&[
+            ::sidex::shape::Attr::List {
+                path: "json",
+                args: &[
+                    ::sidex::shape::Attr::Assign {
+                        path: "tagged",
+                        value: ::sidex::shape::AttrValue::Path("externally"),
+                    },
+                    ::sidex::shape::Attr::Assign {
+                        path: "rename_all",
+                        value: ::sidex::shape::AttrValue::String("kebab-case"),
+                    },
+                ],
+            },
+            ::sidex::shape::Attr::List {
+                path: "rust",
+                args: &[::sidex::shape::Attr::List {
+                    path: "derive",
+                    args: &[
+                        ::sidex::shape::Attr::Path("Copy"),
+                        ::sidex::shape::Attr::Path("PartialEq"),
+                        ::sidex::shape::Attr::Path("Eq"),
+                    ],
+                }],
+            },
+        ]);
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for ArtifactKind {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Variant(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::VariantView for ArtifactKind {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn case(&self) -> usize {
+            match *self {
+                Self::File => 0usize,
+                Self::Directory => 1usize,
+            }
+        }
+        fn payload(&self) -> ::std::option::Option<::sidex::View<'_>> {
+            match self {
+                Self::File => ::std::option::Option::None,
+                Self::Directory => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for ArtifactKind {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut out = ::std::option::Option::<Self>::None;
+            decoder.variant(<Self as ::sidex::Shaped>::SHAPE, &mut |case, decoder| {
+                out = ::std::option::Option::Some(match case {
+                    0usize => Self::File,
+                    1usize => Self::Directory,
+                    _ => {
+                        return ::std::result::Result::Err(::sidex::DecodeError::new(
+                            "unknown case",
+                        ));
+                    }
+                });
+                ::std::result::Result::Ok(())
+            })?;
+            out.ok_or_else(|| ::sidex::DecodeError::new("missing case"))
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for ArtifactKind {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for ArtifactKind {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "An artifact reference within a composition.\n"]
+    #[derive(Clone, Debug)]
+    pub enum ArtifactSource {
+        #[doc = "An input of the enclosing composition.\n"]
+        Input(::sidex::types::Str),
+        #[doc = "A file or directory relative to the repository containing this reference.\n"]
+        Path(::sidex::types::Str),
+        #[doc = "An output of another node in this composition.\n"]
+        Rule(RuleOutputSource),
+        #[doc = "Select an existing file or directory within a directory artifact.\n"]
+        Select(ArtifactSelection),
+        #[doc = "Assemble artifacts at explicit, non-overlapping relative paths.\n"]
+        Tree(::sidex::types::Map<::sidex::types::Str, ArtifactSource>),
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for ArtifactSource {
+        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::rules::ArtifactSource" , :: sidex :: shape :: ShapeKind :: Variant (:: sidex :: shape :: VariantShape :: new (& [:: sidex :: shape :: CaseShape :: new ("Input" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < :: sidex :: types :: Str >) ,) . with_docs ("An input of the enclosing composition.\n") . json_name ("input") , :: sidex :: shape :: CaseShape :: new ("Path" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < :: sidex :: types :: Str >) ,) . with_docs ("A file or directory relative to the repository containing this reference.\n") . json_name ("path") , :: sidex :: shape :: CaseShape :: new ("Rule" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < RuleOutputSource >) ,) . with_docs ("An output of another node in this composition.\n") . json_name ("rule") , :: sidex :: shape :: CaseShape :: new ("Select" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < ArtifactSelection >) ,) . with_docs ("Select an existing file or directory within a directory artifact.\n") . json_name ("select") , :: sidex :: shape :: CaseShape :: new ("Tree" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , ArtifactSource , > >) ,) . with_docs ("Assemble artifacts at explicit, non-overlapping relative paths.\n") . json_name ("tree")]) . json_tagging (:: sidex :: formats :: json :: Tagging :: External))) . with_docs ("An artifact reference within a composition.\n") . with_attrs (& [:: sidex :: shape :: Attr :: List { path : "json" , args : & [:: sidex :: shape :: Attr :: Assign { path : "tagged" , value : :: sidex :: shape :: AttrValue :: Path ("externally") } , :: sidex :: shape :: Attr :: Assign { path : "rename_all" , value : :: sidex :: shape :: AttrValue :: String ("kebab-case") }] }]) ;
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for ArtifactSource {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Variant(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::VariantView for ArtifactSource {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn case(&self) -> usize {
+            match *self {
+                Self::Input(_) => 0usize,
+                Self::Path(_) => 1usize,
+                Self::Rule(_) => 2usize,
+                Self::Select(_) => 3usize,
+                Self::Tree(_) => 4usize,
+            }
+        }
+        fn payload(&self) -> ::std::option::Option<::sidex::View<'_>> {
+            match self {
+                Self::Input(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+                Self::Path(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+                Self::Rule(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+                Self::Select(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+                Self::Tree(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for ArtifactSource {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut out = ::std::option::Option::<Self>::None;
+            decoder.variant(<Self as ::sidex::Shaped>::SHAPE, &mut |case, decoder| {
+                out =
+                    ::std::option::Option::Some(match case {
+                        0usize => {
+                            Self::Input(<::sidex::types::Str as ::sidex::Decode>::decode(decoder)?)
+                        }
+                        1usize => {
+                            Self::Path(<::sidex::types::Str as ::sidex::Decode>::decode(decoder)?)
+                        }
+                        2usize => {
+                            Self::Rule(<RuleOutputSource as ::sidex::Decode>::decode(decoder)?)
+                        }
+                        3usize => {
+                            Self::Select(<ArtifactSelection as ::sidex::Decode>::decode(decoder)?)
+                        }
+                        4usize => Self::Tree(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            ArtifactSource,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?),
+                        _ => {
+                            return ::std::result::Result::Err(::sidex::DecodeError::new(
+                                "unknown case",
+                            ));
+                        }
+                    });
+                ::std::result::Result::Ok(())
+            })?;
+            out.ok_or_else(|| ::sidex::DecodeError::new("missing case"))
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for ArtifactSource {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for ArtifactSource {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "A path within a directory artifact. Symlinks must resolve inside that directory.\n"]
+    #[derive(Clone, Debug)]
+    pub struct ArtifactSelection {
+        #[doc = ""]
+        pub source: ::std::boxed::Box<ArtifactSource>,
+        #[doc = ""]
+        pub path: ::sidex::types::Str,
+        #[doc = ""]
+        pub kind: ArtifactKind,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for ArtifactSelection {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::rules::ArtifactSelection",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "source",
+                    ::sidex::shape::shape_of::<::std::boxed::Box<ArtifactSource>>,
+                )
+                .with_attrs(&[::sidex::shape::Attr::List {
+                    path: "rust",
+                    args: &[::sidex::shape::Attr::Path("box")],
+                }]),
+                ::sidex::shape::FieldShape::new(
+                    "path",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                ),
+                ::sidex::shape::FieldShape::new("kind", ::sidex::shape::shape_of::<ArtifactKind>),
+            ])),
+        )
+        .with_docs(
+            "A path within a directory artifact. Symlinks must resolve inside that directory.\n",
+        );
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for ArtifactSelection {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for ArtifactSelection {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.source)),
+                1usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.path)),
+                2usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.kind)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for ArtifactSelection {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::std::boxed::Box<ArtifactSource>>::None;
+            let mut __field_1 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_2 = ::std::option::Option::<ArtifactKind>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::std::boxed::Box<ArtifactSource> as ::sidex::Decode>::decode(
+                                decoder,
+                            )?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    2usize => {
+                        __field_2 = ::std::option::Option::Some(
+                            <ArtifactKind as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                source: __field_0
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `source`"))?,
+                path: __field_1.ok_or_else(|| ::sidex::DecodeError::new("missing field `path`"))?,
+                kind: __field_2.ok_or_else(|| ::sidex::DecodeError::new("missing field `kind`"))?,
+            })
+        }
+    }
+    impl ArtifactSelection {
+        #[doc = "Creates a new [`ArtifactSelection`]."]
+        pub fn new(
+            source: ::std::boxed::Box<ArtifactSource>,
+            path: impl ::std::convert::Into<::sidex::types::Str>,
+            kind: ArtifactKind,
+        ) -> Self {
+            Self {
+                source: source,
+                path: path.into(),
+                kind: kind,
+            }
+        }
+        #[doc = "Sets the value of `source`."]
+        pub fn set_source(&mut self, source: ::std::boxed::Box<ArtifactSource>) -> &mut Self {
+            self.source = source;
+            self
+        }
+        #[doc = "Sets the value of `source`."]
+        pub fn with_source(mut self, source: ::std::boxed::Box<ArtifactSource>) -> Self {
+            self.source = source;
+            self
+        }
+        #[doc = "Sets the value of `path`."]
+        pub fn set_path(
+            &mut self,
+            path: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.path = path.into();
+            self
+        }
+        #[doc = "Sets the value of `path`."]
+        pub fn with_path(mut self, path: impl ::std::convert::Into<::sidex::types::Str>) -> Self {
+            self.path = path.into();
+            self
+        }
+        #[doc = "Sets the value of `kind`."]
+        pub fn set_kind(&mut self, kind: ArtifactKind) -> &mut Self {
+            self.kind = kind;
+            self
+        }
+        #[doc = "Sets the value of `kind`."]
+        pub fn with_kind(mut self, kind: ArtifactKind) -> Self {
+            self.kind = kind;
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for ArtifactSelection {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for ArtifactSelection {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "Reference to a node output.\n"]
+    #[derive(Clone, Debug)]
+    pub struct RuleOutputSource {
+        #[doc = ""]
+        pub node: ::sidex::types::Str,
+        #[doc = ""]
+        pub output: ::sidex::types::Str,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for RuleOutputSource {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::rules::RuleOutputSource",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "node",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                ),
+                ::sidex::shape::FieldShape::new(
+                    "output",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                ),
+            ])),
+        )
+        .with_docs("Reference to a node output.\n");
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for RuleOutputSource {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for RuleOutputSource {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.node)),
+                1usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.output)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for RuleOutputSource {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 = ::std::option::Option::<::sidex::types::Str>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                node: __field_0.ok_or_else(|| ::sidex::DecodeError::new("missing field `node`"))?,
+                output: __field_1
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `output`"))?,
+            })
+        }
+    }
+    impl RuleOutputSource {
+        #[doc = "Creates a new [`RuleOutputSource`]."]
+        pub fn new(
+            node: impl ::std::convert::Into<::sidex::types::Str>,
+            output: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> Self {
+            Self {
+                node: node.into(),
+                output: output.into(),
+            }
+        }
+        #[doc = "Sets the value of `node`."]
+        pub fn set_node(
+            &mut self,
+            node: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.node = node.into();
+            self
+        }
+        #[doc = "Sets the value of `node`."]
+        pub fn with_node(mut self, node: impl ::std::convert::Into<::sidex::types::Str>) -> Self {
+            self.node = node.into();
+            self
+        }
+        #[doc = "Sets the value of `output`."]
+        pub fn set_output(
+            &mut self,
+            output: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.output = output.into();
+            self
+        }
+        #[doc = "Sets the value of `output`."]
+        pub fn with_output(
+            mut self,
+            output: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> Self {
+            self.output = output.into();
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for RuleOutputSource {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for RuleOutputSource {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "A literal parameter value or a reference to an enclosing parameter.\n"]
+    #[derive(Clone, Debug)]
+    pub enum ParameterBinding {
+        #[doc = ""]
+        Reference(ParameterReference),
+        #[doc = ""]
+        Value(super::recipes::ParameterValue),
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for ParameterBinding {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::rules::ParameterBinding",
+            ::sidex::shape::ShapeKind::Variant(
+                ::sidex::shape::VariantShape::new(&[
+                    ::sidex::shape::CaseShape::new(
+                        "Reference",
+                        ::std::option::Option::Some(::sidex::shape::shape_of::<ParameterReference>),
+                    ),
+                    ::sidex::shape::CaseShape::new(
+                        "Value",
+                        ::std::option::Option::Some(
+                            ::sidex::shape::shape_of::<super::recipes::ParameterValue>,
+                        ),
+                    ),
+                ])
+                .json_tagging(::sidex::formats::json::Tagging::Implicit),
+            ),
+        )
+        .with_docs("A literal parameter value or a reference to an enclosing parameter.\n")
+        .with_attrs(&[::sidex::shape::Attr::List {
+            path: "json",
+            args: &[::sidex::shape::Attr::Assign {
+                path: "tagged",
+                value: ::sidex::shape::AttrValue::Path("implicitly"),
+            }],
+        }]);
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for ParameterBinding {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Variant(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::VariantView for ParameterBinding {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn case(&self) -> usize {
+            match *self {
+                Self::Reference(_) => 0usize,
+                Self::Value(_) => 1usize,
+            }
+        }
+        fn payload(&self) -> ::std::option::Option<::sidex::View<'_>> {
+            match self {
+                Self::Reference(value) => {
+                    ::std::option::Option::Some(::sidex::Encode::encode(value))
+                }
+                Self::Value(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for ParameterBinding {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut out = ::std::option::Option::<Self>::None;
+            decoder.variant(<Self as ::sidex::Shaped>::SHAPE, &mut |case, decoder| {
+                out = ::std::option::Option::Some(match case {
+                    0usize => {
+                        Self::Reference(<ParameterReference as ::sidex::Decode>::decode(decoder)?)
+                    }
+                    1usize => Self::Value(
+                        <super::recipes::ParameterValue as ::sidex::Decode>::decode(decoder)?,
+                    ),
+                    _ => {
+                        return ::std::result::Result::Err(::sidex::DecodeError::new(
+                            "unknown case",
+                        ));
+                    }
+                });
+                ::std::result::Result::Ok(())
+            })?;
+            out.ok_or_else(|| ::sidex::DecodeError::new("missing case"))
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for ParameterBinding {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for ParameterBinding {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "Reference to an enclosing parameter.\n"]
+    #[derive(Clone, Debug)]
+    pub struct ParameterReference {
+        #[doc = ""]
+        pub parameter: ::sidex::types::Str,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for ParameterReference {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::rules::ParameterReference",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "parameter",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                ),
+            ])),
+        )
+        .with_docs("Reference to an enclosing parameter.\n");
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for ParameterReference {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for ParameterReference {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.parameter)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for ParameterReference {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                parameter: __field_0
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `parameter`"))?,
+            })
+        }
+    }
+    impl ParameterReference {
+        #[doc = "Creates a new [`ParameterReference`]."]
+        pub fn new(parameter: impl ::std::convert::Into<::sidex::types::Str>) -> Self {
+            Self {
+                parameter: parameter.into(),
+            }
+        }
+        #[doc = "Sets the value of `parameter`."]
+        pub fn set_parameter(
+            &mut self,
+            parameter: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.parameter = parameter.into();
+            self
+        }
+        #[doc = "Sets the value of `parameter`."]
+        pub fn with_parameter(
+            mut self,
+            parameter: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> Self {
+            self.parameter = parameter.into();
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for ParameterReference {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for ParameterReference {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "Implementation of a reusable rule.\n"]
+    #[derive(Clone, Debug)]
+    pub enum RuleExecution {
+        #[doc = ""]
+        Run(RunRule),
+        #[doc = ""]
+        Graph(GraphRule),
+        #[doc = "Build an existing layer with its recipes.\n"]
+        Layer(LayerRule),
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for RuleExecution {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::rules::RuleExecution",
+            ::sidex::shape::ShapeKind::Variant(
+                ::sidex::shape::VariantShape::new(&[
+                    ::sidex::shape::CaseShape::new(
+                        "Run",
+                        ::std::option::Option::Some(::sidex::shape::shape_of::<RunRule>),
+                    )
+                    .json_name("run"),
+                    ::sidex::shape::CaseShape::new(
+                        "Graph",
+                        ::std::option::Option::Some(::sidex::shape::shape_of::<GraphRule>),
+                    )
+                    .json_name("graph"),
+                    ::sidex::shape::CaseShape::new(
+                        "Layer",
+                        ::std::option::Option::Some(::sidex::shape::shape_of::<LayerRule>),
+                    )
+                    .with_docs("Build an existing layer with its recipes.\n")
+                    .json_name("layer"),
+                ])
+                .json_tagging(::sidex::formats::json::Tagging::Internal {
+                    tag: "type",
+                    content: "content",
+                }),
+            ),
+        )
+        .with_docs("Implementation of a reusable rule.\n")
+        .with_attrs(&[::sidex::shape::Attr::List {
+            path: "json",
+            args: &[
+                ::sidex::shape::Attr::Assign {
+                    path: "tag",
+                    value: ::sidex::shape::AttrValue::String("type"),
+                },
+                ::sidex::shape::Attr::Assign {
+                    path: "rename_all",
+                    value: ::sidex::shape::AttrValue::String("kebab-case"),
+                },
+            ],
+        }]);
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for RuleExecution {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Variant(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::VariantView for RuleExecution {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn case(&self) -> usize {
+            match *self {
+                Self::Run(_) => 0usize,
+                Self::Graph(_) => 1usize,
+                Self::Layer(_) => 2usize,
+            }
+        }
+        fn payload(&self) -> ::std::option::Option<::sidex::View<'_>> {
+            match self {
+                Self::Run(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+                Self::Graph(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+                Self::Layer(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for RuleExecution {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut out = ::std::option::Option::<Self>::None;
+            decoder.variant(<Self as ::sidex::Shaped>::SHAPE, &mut |case, decoder| {
+                out = ::std::option::Option::Some(match case {
+                    0usize => Self::Run(<RunRule as ::sidex::Decode>::decode(decoder)?),
+                    1usize => Self::Graph(<GraphRule as ::sidex::Decode>::decode(decoder)?),
+                    2usize => Self::Layer(<LayerRule as ::sidex::Decode>::decode(decoder)?),
+                    _ => {
+                        return ::std::result::Result::Err(::sidex::DecodeError::new(
+                            "unknown case",
+                        ));
+                    }
+                });
+                ::std::result::Result::Ok(())
+            })?;
+            out.ok_or_else(|| ::sidex::DecodeError::new("missing case"))
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for RuleExecution {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for RuleExecution {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "A command executed in Bakery or a fresh tooling environment.\n"]
+    #[derive(Clone, Debug)]
+    pub struct RunRule {
+        #[doc = "Optional environment resolved relative to the defining repository. Defaults to Bakery.\n"]
+        pub env: ::std::option::Option<::sidex::types::Str>,
+        #[doc = "Command and literal arguments. No shell expansion is performed by Bakery.\n"]
+        pub command: ::sidex::types::Seq<::sidex::types::Str>,
+        #[doc = "Files and directories to publish from /run/rugix/bakery/work/outputs.\n"]
+        pub outputs: ::sidex::types::Map<::sidex::types::Str, RuleOutput>,
+        #[doc = "Reuse successful outputs. Defaults to true.\n"]
+        pub cache: ::std::option::Option<bool>,
+        #[doc = "Supply SOURCE_DATE_EPOCH and include it in the cache identity. Defaults to true.\n"]
+        pub uses_source_date_epoch: ::std::option::Option<bool>,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for RunRule {
+        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::rules::RunRule" , :: sidex :: shape :: ShapeKind :: Record (:: sidex :: shape :: RecordShape :: new (& [:: sidex :: shape :: FieldShape :: new ("env" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Optional environment resolved relative to the defining repository. Defaults to Bakery.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("command" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Seq < :: sidex :: types :: Str , > > ,) . with_docs ("Command and literal arguments. No shell expansion is performed by Bakery.\n") , :: sidex :: shape :: FieldShape :: new ("outputs" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , RuleOutput , > > ,) . with_docs ("Files and directories to publish from /run/rugix/bakery/work/outputs.\n") , :: sidex :: shape :: FieldShape :: new ("cache" , :: sidex :: shape :: shape_of :: < bool > ,) . with_docs ("Reuse successful outputs. Defaults to true.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("uses_source_date_epoch" , :: sidex :: shape :: shape_of :: < bool > ,) . with_docs ("Supply SOURCE_DATE_EPOCH and include it in the cache identity. Defaults to true.\n") . optional () . json_name ("uses-source-date-epoch")]))) . with_docs ("A command executed in Bakery or a fresh tooling environment.\n") . with_attrs (& [:: sidex :: shape :: Attr :: List { path : "json" , args : & [:: sidex :: shape :: Attr :: Assign { path : "rename_all" , value : :: sidex :: shape :: AttrValue :: String ("kebab-case") }] }]) ;
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for RunRule {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for RunRule {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => self
+                    .env
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                1usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.command)),
+                2usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.outputs)),
+                3usize => self
+                    .cache
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                4usize => self
+                    .uses_source_date_epoch
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for RunRule {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 =
+                ::std::option::Option::<::sidex::types::Seq<::sidex::types::Str>>::None;
+            let mut __field_2 =
+                ::std::option::Option::<::sidex::types::Map<::sidex::types::Str, RuleOutput>>::None;
+            let mut __field_3 = ::std::option::Option::<bool>::None;
+            let mut __field_4 = ::std::option::Option::<bool>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(<::sidex::types::Seq<
+                            ::sidex::types::Str,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    2usize => {
+                        __field_2 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            RuleOutput,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    3usize => {
+                        __field_3 =
+                            ::std::option::Option::Some(<bool as ::sidex::Decode>::decode(decoder)?)
+                    }
+                    4usize => {
+                        __field_4 =
+                            ::std::option::Option::Some(<bool as ::sidex::Decode>::decode(decoder)?)
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                env: __field_0,
+                command: __field_1
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `command`"))?,
+                outputs: __field_2
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `outputs`"))?,
+                cache: __field_3,
+                uses_source_date_epoch: __field_4,
+            })
+        }
+    }
+    impl RunRule {
+        #[doc = "Creates a new [`RunRule`]."]
+        pub fn new(
+            command: ::sidex::types::Seq<::sidex::types::Str>,
+            outputs: ::sidex::types::Map<::sidex::types::Str, RuleOutput>,
+        ) -> Self {
+            Self {
+                command: command,
+                outputs: outputs,
+                env: ::std::default::Default::default(),
+                cache: ::std::default::Default::default(),
+                uses_source_date_epoch: ::std::default::Default::default(),
+            }
+        }
+        #[doc = "Sets the value of `env`."]
+        pub fn set_env(&mut self, env: ::std::option::Option<::sidex::types::Str>) -> &mut Self {
+            self.env = env;
+            self
+        }
+        #[doc = "Sets the value of `env`."]
+        pub fn with_env(mut self, env: ::std::option::Option<::sidex::types::Str>) -> Self {
+            self.env = env;
+            self
+        }
+        #[doc = "Sets the value of `command`."]
+        pub fn set_command(
+            &mut self,
+            command: ::sidex::types::Seq<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.command = command;
+            self
+        }
+        #[doc = "Sets the value of `command`."]
+        pub fn with_command(mut self, command: ::sidex::types::Seq<::sidex::types::Str>) -> Self {
+            self.command = command;
+            self
+        }
+        #[doc = "Sets the value of `outputs`."]
+        pub fn set_outputs(
+            &mut self,
+            outputs: ::sidex::types::Map<::sidex::types::Str, RuleOutput>,
+        ) -> &mut Self {
+            self.outputs = outputs;
+            self
+        }
+        #[doc = "Sets the value of `outputs`."]
+        pub fn with_outputs(
+            mut self,
+            outputs: ::sidex::types::Map<::sidex::types::Str, RuleOutput>,
+        ) -> Self {
+            self.outputs = outputs;
+            self
+        }
+        #[doc = "Sets the value of `cache`."]
+        pub fn set_cache(&mut self, cache: ::std::option::Option<bool>) -> &mut Self {
+            self.cache = cache;
+            self
+        }
+        #[doc = "Sets the value of `cache`."]
+        pub fn with_cache(mut self, cache: ::std::option::Option<bool>) -> Self {
+            self.cache = cache;
+            self
+        }
+        #[doc = "Sets the value of `uses_source_date_epoch`."]
+        pub fn set_uses_source_date_epoch(
+            &mut self,
+            uses_source_date_epoch: ::std::option::Option<bool>,
+        ) -> &mut Self {
+            self.uses_source_date_epoch = uses_source_date_epoch;
+            self
+        }
+        #[doc = "Sets the value of `uses_source_date_epoch`."]
+        pub fn with_uses_source_date_epoch(
+            mut self,
+            uses_source_date_epoch: ::std::option::Option<bool>,
+        ) -> Self {
+            self.uses_source_date_epoch = uses_source_date_epoch;
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for RunRule {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for RunRule {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "A declared command output.\n"]
+    #[derive(Clone, Debug)]
+    pub struct RuleOutput {
+        #[doc = "Description for users of the output artifact.\n"]
+        pub description: ::std::option::Option<::sidex::types::Str>,
+        #[doc = ""]
+        pub kind: ArtifactKind,
+        #[doc = "Relative path within /run/rugix/bakery/work/outputs.\n"]
+        pub path: ::sidex::types::Str,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for RuleOutput {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::rules::RuleOutput",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "description",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .with_docs("Description for users of the output artifact.\n")
+                .optional(),
+                ::sidex::shape::FieldShape::new("kind", ::sidex::shape::shape_of::<ArtifactKind>),
+                ::sidex::shape::FieldShape::new(
+                    "path",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .with_docs("Relative path within /run/rugix/bakery/work/outputs.\n"),
+            ])),
+        )
+        .with_docs("A declared command output.\n");
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for RuleOutput {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for RuleOutput {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => self
+                    .description
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                1usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.kind)),
+                2usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.path)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for RuleOutput {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 = ::std::option::Option::<ArtifactKind>::None;
+            let mut __field_2 = ::std::option::Option::<::sidex::types::Str>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
+                            <ArtifactKind as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    2usize => {
+                        __field_2 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                description: __field_0,
+                kind: __field_1.ok_or_else(|| ::sidex::DecodeError::new("missing field `kind`"))?,
+                path: __field_2.ok_or_else(|| ::sidex::DecodeError::new("missing field `path`"))?,
+            })
+        }
+    }
+    impl RuleOutput {
+        #[doc = "Creates a new [`RuleOutput`]."]
+        pub fn new(
+            kind: ArtifactKind,
+            path: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> Self {
+            Self {
+                kind: kind,
+                path: path.into(),
+                description: ::std::default::Default::default(),
+            }
+        }
+        #[doc = "Sets the value of `description`."]
+        pub fn set_description(
+            &mut self,
+            description: ::std::option::Option<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.description = description;
+            self
+        }
+        #[doc = "Sets the value of `description`."]
+        pub fn with_description(
+            mut self,
+            description: ::std::option::Option<::sidex::types::Str>,
+        ) -> Self {
+            self.description = description;
+            self
+        }
+        #[doc = "Sets the value of `kind`."]
+        pub fn set_kind(&mut self, kind: ArtifactKind) -> &mut Self {
+            self.kind = kind;
+            self
+        }
+        #[doc = "Sets the value of `kind`."]
+        pub fn with_kind(mut self, kind: ArtifactKind) -> Self {
+            self.kind = kind;
+            self
+        }
+        #[doc = "Sets the value of `path`."]
+        pub fn set_path(
+            &mut self,
+            path: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.path = path.into();
+            self
+        }
+        #[doc = "Sets the value of `path`."]
+        pub fn with_path(mut self, path: impl ::std::convert::Into<::sidex::types::Str>) -> Self {
+            self.path = path.into();
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for RuleOutput {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for RuleOutput {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "A composition with the same interface as an executable rule.\n"]
+    #[derive(Clone, Debug)]
+    pub struct GraphRule {
+        #[doc = ""]
+        pub rules: ::sidex::types::Map<::sidex::types::Str, RuleInvocation>,
+        #[doc = ""]
+        pub outputs: ::sidex::types::Map<::sidex::types::Str, ArtifactSource>,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for GraphRule {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::rules::GraphRule",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "rules",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<::sidex::types::Str, RuleInvocation>,
+                    >,
+                ),
+                ::sidex::shape::FieldShape::new(
+                    "outputs",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<::sidex::types::Str, ArtifactSource>,
+                    >,
+                ),
+            ])),
+        )
+        .with_docs("A composition with the same interface as an executable rule.\n");
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for GraphRule {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for GraphRule {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.rules)),
+                1usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.outputs)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for GraphRule {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, RuleInvocation>,
+            >::None;
+            let mut __field_1 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, ArtifactSource>,
+            >::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            RuleInvocation,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            ArtifactSource,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                rules: __field_0
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `rules`"))?,
+                outputs: __field_1
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `outputs`"))?,
+            })
+        }
+    }
+    impl GraphRule {
+        #[doc = "Creates a new [`GraphRule`]."]
+        pub fn new(
+            rules: ::sidex::types::Map<::sidex::types::Str, RuleInvocation>,
+            outputs: ::sidex::types::Map<::sidex::types::Str, ArtifactSource>,
+        ) -> Self {
+            Self {
+                rules: rules,
+                outputs: outputs,
+            }
+        }
+        #[doc = "Sets the value of `rules`."]
+        pub fn set_rules(
+            &mut self,
+            rules: ::sidex::types::Map<::sidex::types::Str, RuleInvocation>,
+        ) -> &mut Self {
+            self.rules = rules;
+            self
+        }
+        #[doc = "Sets the value of `rules`."]
+        pub fn with_rules(
+            mut self,
+            rules: ::sidex::types::Map<::sidex::types::Str, RuleInvocation>,
+        ) -> Self {
+            self.rules = rules;
+            self
+        }
+        #[doc = "Sets the value of `outputs`."]
+        pub fn set_outputs(
+            &mut self,
+            outputs: ::sidex::types::Map<::sidex::types::Str, ArtifactSource>,
+        ) -> &mut Self {
+            self.outputs = outputs;
+            self
+        }
+        #[doc = "Sets the value of `outputs`."]
+        pub fn with_outputs(
+            mut self,
+            outputs: ::sidex::types::Map<::sidex::types::Str, ArtifactSource>,
+        ) -> Self {
+            self.outputs = outputs;
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for GraphRule {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for GraphRule {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "A layer executed as part of an artifact graph.\n"]
+    #[derive(Clone, Debug)]
+    pub struct LayerRule {
+        #[doc = "Layer name resolved from the rule's repository.\n"]
+        pub layer: ::sidex::types::Str,
+        #[doc = ""]
+        pub architecture: super::systems::Architecture,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for LayerRule {
+        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
+            "::rugix_bakery::rules::LayerRule",
+            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "layer",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .with_docs("Layer name resolved from the rule's repository.\n"),
+                ::sidex::shape::FieldShape::new(
+                    "architecture",
+                    ::sidex::shape::shape_of::<super::systems::Architecture>,
+                ),
+            ])),
+        )
+        .with_docs("A layer executed as part of an artifact graph.\n");
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for LayerRule {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for LayerRule {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.layer)),
+                1usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.architecture)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for LayerRule {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 = ::std::option::Option::<super::systems::Architecture>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
+                            <super::systems::Architecture as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                layer: __field_0
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `layer`"))?,
+                architecture: __field_1
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `architecture`"))?,
+            })
+        }
+    }
+    impl LayerRule {
+        #[doc = "Creates a new [`LayerRule`]."]
+        pub fn new(
+            layer: impl ::std::convert::Into<::sidex::types::Str>,
+            architecture: super::systems::Architecture,
+        ) -> Self {
+            Self {
+                layer: layer.into(),
+                architecture: architecture,
+            }
+        }
+        #[doc = "Sets the value of `layer`."]
+        pub fn set_layer(
+            &mut self,
+            layer: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.layer = layer.into();
+            self
+        }
+        #[doc = "Sets the value of `layer`."]
+        pub fn with_layer(mut self, layer: impl ::std::convert::Into<::sidex::types::Str>) -> Self {
+            self.layer = layer.into();
+            self
+        }
+        #[doc = "Sets the value of `architecture`."]
+        pub fn set_architecture(
+            &mut self,
+            architecture: super::systems::Architecture,
+        ) -> &mut Self {
+            self.architecture = architecture;
+            self
+        }
+        #[doc = "Sets the value of `architecture`."]
+        pub fn with_architecture(mut self, architecture: super::systems::Architecture) -> Self {
+            self.architecture = architecture;
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for LayerRule {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for LayerRule {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+}
 pub mod systems {
     #![doc = "System configuration.\n"]
     #![allow(
@@ -5131,6 +9123,8 @@ pub mod systems {
         pub target: ::std::option::Option<Target>,
         #[doc = "System image configuration.\n"]
         pub image: ::std::option::Option<SystemImageConfig>,
+        #[doc = "Repository-defined image assembly, receiving the existing layer build.\n"]
+        pub build: ::std::option::Option<super::rules::RuleInvocation>,
         #[doc = "Additional options.\n"]
         pub options: ::std::option::Option<SystemOptions>,
     }
@@ -5163,6 +9157,14 @@ pub mod systems {
                     ::sidex::shape::shape_of::<SystemImageConfig>,
                 )
                 .with_docs("System image configuration.\n")
+                .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "build",
+                    ::sidex::shape::shape_of::<super::rules::RuleInvocation>,
+                )
+                .with_docs(
+                    "Repository-defined image assembly, receiving the existing layer build.\n",
+                )
                 .optional(),
                 ::sidex::shape::FieldShape::new(
                     "options",
@@ -5202,6 +9204,10 @@ pub mod systems {
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 5usize => self
+                    .build
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                6usize => self
                     .options
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
@@ -5221,7 +9227,8 @@ pub mod systems {
             let mut __field_2 = ::std::option::Option::<Architecture>::None;
             let mut __field_3 = ::std::option::Option::<Target>::None;
             let mut __field_4 = ::std::option::Option::<SystemImageConfig>::None;
-            let mut __field_5 = ::std::option::Option::<SystemOptions>::None;
+            let mut __field_5 = ::std::option::Option::<super::rules::RuleInvocation>::None;
+            let mut __field_6 = ::std::option::Option::<SystemOptions>::None;
             decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
                 match index {
                     0usize => {
@@ -5253,6 +9260,11 @@ pub mod systems {
                     }
                     5usize => {
                         __field_5 = ::std::option::Option::Some(
+                            <super::rules::RuleInvocation as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    6usize => {
+                        __field_6 = ::std::option::Option::Some(
                             <SystemOptions as ::sidex::Decode>::decode(decoder)?,
                         )
                     }
@@ -5268,7 +9280,8 @@ pub mod systems {
                     .ok_or_else(|| ::sidex::DecodeError::new("missing field `architecture`"))?,
                 target: __field_3,
                 image: __field_4,
-                options: __field_5,
+                build: __field_5,
+                options: __field_6,
             })
         }
     }
@@ -5284,6 +9297,7 @@ pub mod systems {
                 mixins: ::std::default::Default::default(),
                 target: ::std::default::Default::default(),
                 image: ::std::default::Default::default(),
+                build: ::std::default::Default::default(),
                 options: ::std::default::Default::default(),
             }
         }
@@ -5344,6 +9358,22 @@ pub mod systems {
         #[doc = "Sets the value of `image`."]
         pub fn with_image(mut self, image: ::std::option::Option<SystemImageConfig>) -> Self {
             self.image = image;
+            self
+        }
+        #[doc = "Sets the value of `build`."]
+        pub fn set_build(
+            &mut self,
+            build: ::std::option::Option<super::rules::RuleInvocation>,
+        ) -> &mut Self {
+            self.build = build;
+            self
+        }
+        #[doc = "Sets the value of `build`."]
+        pub fn with_build(
+            mut self,
+            build: ::std::option::Option<super::rules::RuleInvocation>,
+        ) -> Self {
+            self.build = build;
             self
         }
         #[doc = "Sets the value of `options`."]

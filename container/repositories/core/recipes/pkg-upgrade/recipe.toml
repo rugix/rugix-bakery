@@ -1,3 +1,4 @@
-description = "upgrade all packages"
-priority = 899_900  # Execute before everything else but after `pkg-update`.
+description = "Upgrade installed packages to the versions available from configured repositories."
+category = "Package Management"
+priority = 899900
 dependencies = ["pkg-update"]

@@ -1,0 +1,13 @@
+//! Metadata supplied to repository-defined system assembly.
+
+import systems::Architecture
+
+/// Release metadata exposed as the context artifact during image assembly.
+#[json(rename_all = "kebab-case")]
+record BuildContext {
+    system: string,
+    architecture: Architecture,
+    source_date_epoch: u64,
+    release_id: string,
+    release_version: string,
+}

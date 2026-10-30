@@ -1,12 +1,12 @@
 //! Applies a set of recipes to a system.
 
 use sidex::types::{Map, Str};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::ffi::OsString;
 use std::fs;
 use std::io::{Read, Write};
 use std::ops::Deref;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 
@@ -14,8 +14,8 @@ use reportify::{bail, ResultExt};
 use rugix_cli::{cli_msg, StatusSegmentRef};
 use rugix_common::mount::{MountStack, Mounted};
 use tempfile::tempdir;
-use tracing::{error, info};
-use xscript::{cmd, vars, Cmd};
+use tracing::info;
+use xscript::{cmd, vars, Cmd, Run};
 
 use crate::cli::status::CliLog;
 use crate::config::layers::LayerConfig;
@@ -23,15 +23,17 @@ use crate::config::mixins::MixinConfig;
 use crate::config::recipes::ParameterValue;
 use crate::config::systems::Architecture;
 use crate::oven::archive;
-use crate::oven::layer::LayerContext;
-use crate::project::layers::Layer;
 use crate::project::library::Library;
-use crate::project::mixins::Mixin;
 use crate::project::recipes::{PackageManager, Recipe, StepKind};
 use crate::project::repositories::RepositoryIdx;
 use crate::project::ProjectRef;
-use crate::utils::caching::{mtime, mtime_recursive, ModificationTime};
 use crate::BakeryResult;
+
+/// Private recipe workspace and dependency registration path.
+struct LayerContext {
+    build_dir: PathBuf,
+    registrations: PathBuf,
+}
 
 struct Logger {
     cli_log: StatusSegmentRef<CliLog>,
@@ -81,116 +83,18 @@ impl Logger {
     }
 }
 
-pub fn customize(
-    project: &ProjectRef,
-    arch: Architecture,
-    layer: &Layer,
-    src: Option<&Path>,
-    target: &Path,
-    layer_path: &Path,
-    source_date_epoch: u64,
-    param_overrides: &super::ParameterOverrides,
-) -> BakeryResult<()> {
-    let config = layer.config(arch).unwrap();
-    customize_recipes(
-        project,
-        arch,
-        &layer.name,
-        layer.repo,
-        layer.modified,
-        RecipeFragment::from_layer(config),
-        src,
-        target,
-        layer_path,
-        source_date_epoch,
-        param_overrides,
-        false,
-    )
-    .map(|_| ())
-}
-
-pub fn customize_mixin(
-    project: &ProjectRef,
-    arch: Architecture,
-    mixin: &Mixin,
-    src: &Path,
-    target: &Path,
-    layer_path: &Path,
-    source_date_epoch: u64,
-    param_overrides: &super::ParameterOverrides,
-) -> BakeryResult<bool> {
-    let config = mixin.config(arch).unwrap();
-    customize_recipes(
-        project,
-        arch,
-        &format!("mixin:{}", mixin.name),
-        mixin.repo,
-        mixin.modified,
-        RecipeFragment::from_mixin(config),
-        Some(src),
-        target,
-        layer_path,
-        source_date_epoch,
-        param_overrides,
-        true,
-    )
-}
-
-fn customize_recipes(
+/// Apply a planned recipe schedule with resolved, read-only artifact inputs.
+pub(crate) fn customize(
     project: &ProjectRef,
     arch: Architecture,
     name: &str,
-    repo: RepositoryIdx,
-    modified: ModificationTime,
-    fragment: RecipeFragment<'_>,
+    jobs: &[RecipeJob],
+    inputs: &BTreeMap<Str, PathBuf>,
     src: Option<&Path>,
     target: &Path,
-    layer_path: &Path,
+    registrations: &Path,
     source_date_epoch: u64,
-    param_overrides: &super::ParameterOverrides,
-    allow_empty: bool,
-) -> BakeryResult<bool> {
-    let library = project.library()?;
-    // Collect the recipes to apply.
-    let jobs = recipe_schedule(repo, fragment, &library, param_overrides)?;
-    if jobs.is_empty() {
-        if allow_empty {
-            return Ok(false);
-        }
-        bail!("{name} must have recipes")
-    }
-    let mut last_modified = jobs
-        .iter()
-        .map(|job| job.recipe.modified)
-        .max()
-        .unwrap()
-        .max(modified);
-    if let Some(src) = src {
-        last_modified = last_modified.max(mtime(src).whatever("unable to determine mtime")?);
-    }
-    let mut force_run = false;
-    let used_files = project
-        .dir()
-        .join(layer_path.join("rebuild-if-changed.txt"));
-    if used_files.exists() {
-        for line in std::fs::read_to_string(used_files)
-            .whatever("unable to read used files")?
-            .lines()
-        {
-            if let Ok(modified) = mtime_recursive(&project.dir().join(line)) {
-                last_modified = last_modified.max(modified)
-            } else {
-                error!("error determining modification time for {line}");
-                force_run = true;
-            }
-        }
-    }
-    if target.exists()
-        && last_modified < mtime(target).whatever("unable to read `mtime` of target")?
-        && !force_run
-    {
-        return Ok(true);
-    }
+) -> BakeryResult<()> {
     let bundle_dir = tempdir().whatever("unable to create temporary directory")?;
     let bundle_dir = bundle_dir.path();
     if let Some(src) = src {
@@ -201,25 +105,26 @@ fn customize_recipes(
         std::fs::create_dir_all(&bundle_dir).whatever("unable ot create layer directory")?;
     }
     let layer_ctx = LayerContext {
-        project: project.clone(),
         build_dir: bundle_dir.to_path_buf(),
-        output_dir: layer_path.to_path_buf(),
+        registrations: registrations.to_path_buf(),
     };
     let root_dir = bundle_dir.join("roots/system");
     std::fs::create_dir_all(&root_dir).ok();
-    let logger = Logger::new(name, layer_path)?;
+    let output_dir = target.parent().expect("layer archive has a parent");
+    let logger = Logger::new(name, output_dir)?;
     if let Err(error) = apply_recipes(
         &layer_ctx,
         &logger,
         project,
         arch,
-        &jobs,
+        jobs,
+        inputs,
         &root_dir,
         source_date_epoch,
     ) {
         let last_lines = logger.current_lines();
 
-        cli_msg!("Log: {:?}", layer_path.join("build.log"));
+        cli_msg!("Log: {:?}", output_dir.join("build.log"));
         for line in last_lines.lines() {
             cli_msg!("> {line}")
         }
@@ -248,23 +153,24 @@ fn customize_recipes(
     info!("packing system files");
     archive::create(bundle_dir, target, Some(source_date_epoch as i64))
         .whatever("failed to package system files")?;
-    Ok(true)
+    Ok(())
 }
 
-struct RecipeJob {
-    recipe: Arc<Recipe>,
-    parameters: HashMap<String, String>,
+#[derive(Debug)]
+pub(crate) struct RecipeJob {
+    pub recipe: Arc<Recipe>,
+    pub parameters: HashMap<String, ParameterValue>,
 }
 
 #[derive(Clone, Copy)]
-struct RecipeFragment<'a> {
+pub(crate) struct RecipeFragment<'a> {
     recipes: Option<&'a [Str]>,
     exclude: Option<&'a [Str]>,
     parameters: Option<&'a Map<Str, Map<Str, ParameterValue>>>,
 }
 
 impl<'a> RecipeFragment<'a> {
-    fn from_layer(config: &'a LayerConfig) -> Self {
+    pub(crate) fn from_layer(config: &'a LayerConfig) -> Self {
         Self {
             recipes: config.recipes.as_deref(),
             exclude: config.exclude.as_deref(),
@@ -272,7 +178,7 @@ impl<'a> RecipeFragment<'a> {
         }
     }
 
-    fn from_mixin(config: &'a MixinConfig) -> Self {
+    pub(crate) fn from_mixin(config: &'a MixinConfig) -> Self {
         Self {
             recipes: config.recipes.as_deref(),
             exclude: config.exclude.as_deref(),
@@ -281,7 +187,7 @@ impl<'a> RecipeFragment<'a> {
     }
 }
 
-fn recipe_schedule(
+pub(crate) fn recipe_schedule(
     repo: RepositoryIdx,
     fragment: RecipeFragment<'_>,
     library: &Library,
@@ -323,7 +229,8 @@ fn recipe_schedule(
         })
         .transpose()?
         .unwrap_or_default();
-    // Parameter files belong to the project, even when the fragment comes from a dependency.
+    // Parameter files belong to the project, even when the fragment comes from a
+    // dependency.
     let mut overrides = HashMap::new();
     for (name, params) in param_overrides {
         let Some(recipe) = library.lookup(library.repositories.root_repository, name) else {
@@ -359,17 +266,17 @@ fn recipe_schedule(
             if let Some(p) = &recipe.config.parameters {
                 for (name, def) in p {
                     if let Some(value) = override_params.and_then(|p| p.get(name.as_str())) {
-                        parameters.insert(name.to_string(), value.to_string());
+                        parameters.insert(name.to_string(), value.clone());
                         continue;
                     }
                     if let Some(params) = recipe_params {
                         if let Some(value) = params.get(name) {
-                            parameters.insert(name.to_string(), value.to_string());
+                            parameters.insert(name.to_string(), value.clone());
                             continue;
                         }
                     }
                     if let Some(default) = &def.default {
-                        parameters.insert(name.to_string(), default.to_string());
+                        parameters.insert(name.to_string(), default.clone());
                         continue;
                     }
                     bail!("unable to find value for parameter `{name}`");
@@ -378,7 +285,27 @@ fn recipe_schedule(
             Ok(RecipeJob { recipe, parameters })
         })
         .collect::<Result<Vec<_>, _>>()?;
-    recipes.sort_by_key(|job| -job.recipe.config.priority.unwrap_or_default());
+    recipes.sort_by(|left, right| {
+        right
+            .recipe
+            .config
+            .priority
+            .unwrap_or_default()
+            .cmp(&left.recipe.config.priority.unwrap_or_default())
+            .then_with(|| {
+                library.repositories[left.recipe.repository]
+                    .source
+                    .id
+                    .as_str()
+                    .cmp(
+                        library.repositories[right.recipe.repository]
+                            .source
+                            .id
+                            .as_str(),
+                    )
+            })
+            .then_with(|| left.recipe.name.deref().cmp(right.recipe.name.deref()))
+    });
     Ok(recipes)
 }
 
@@ -436,6 +363,7 @@ fn apply_recipes(
     project: &ProjectRef,
     arch: Architecture,
     jobs: &[RecipeJob],
+    inputs: &BTreeMap<Str, PathBuf>,
     root_dir_path: &Path,
     source_date_epoch: u64,
 ) -> BakeryResult<()> {
@@ -479,6 +407,9 @@ fn apply_recipes(
 
     for (idx, job) in jobs.iter().enumerate() {
         let recipe = &job.recipe;
+        let input_dir = tempdir().whatever("unable to create recipe input mount point")?;
+        let input_source = &inputs[Str::from(idx.to_string()).as_str()];
+        let _input_mount = mount_inputs(input_source, input_dir.path())?;
         info!(
             "[{:>2}/{}] {} {:?}",
             idx + 1,
@@ -488,7 +419,10 @@ fn apply_recipes(
                 .description
                 .as_deref()
                 .unwrap_or(recipe.name.deref()),
-            &job.parameters,
+            job.parameters
+                .iter()
+                .map(|(name, value)| (name, value.to_string()))
+                .collect::<BTreeMap<_, _>>(),
         );
 
         for step in &recipe.steps {
@@ -549,6 +483,10 @@ fn apply_recipes(
                     let _mounted_build_env =
                         Mounted::bind_recursive("/run/rugix/bakery", &build_env_path)
                             .whatever("unable to bind mount recipe")?;
+                    let recipe_inputs = root_dir_path.join("run/rugix/bakery/recipe-inputs");
+                    fs::create_dir_all(&recipe_inputs)
+                        .whatever("unable to create recipe input directory")?;
+                    let _recipe_inputs = mount_inputs(input_source, &recipe_inputs)?;
                     let script = format!("/run/rugix/bakery/recipe/steps/{}", step.filename);
                     let mut vars = vars! {
                         DEBIAN_FRONTEND = "noninteractive",
@@ -559,7 +497,9 @@ fn apply_recipes(
                         RUGIX_ROOT_DIR = "/",
                         RUGIX_PROJECT_DIR = "/run/rugix/bakery/project",
                         RUGIX_ARCH = arch.as_str(),
-                        LAYER_REBUILD_IF_CHANGED = Path::new("/run/rugix/bakery/project").join(&layer_ctx.output_dir).join("rebuild-if-changed.txt"),
+                        RUGIX_REBUILD_IF_CHANGED = Path::new("/run/rugix/bakery/project").join(&layer_ctx.registrations),
+                        LAYER_REBUILD_IF_CHANGED = Path::new("/run/rugix/bakery/project").join(&layer_ctx.registrations),
+                        RECIPE_INPUTS_DIR = "/run/rugix/bakery/recipe-inputs",
                         RECIPE_DIR = "/run/rugix/bakery/recipe",
                         RECIPE_STEP_PATH = &script,
                         SOURCE_DATE_EPOCH = source_date_epoch.to_string(),
@@ -568,7 +508,10 @@ fn apply_recipes(
                         LANGUAGE = "C",
                     };
                     for (name, value) in &job.parameters {
-                        vars.set(format!("RECIPE_PARAM_{}", name.to_uppercase()), value);
+                        vars.set(
+                            format!("RECIPE_PARAM_{}", name.to_uppercase()),
+                            value.to_string(),
+                        );
                     }
                     run_cmd(
                         logger,
@@ -590,13 +533,18 @@ fn apply_recipes(
                         RUGIX_CACHE_DIR = Path::new("/run/rugix/bakery/cache").join(project.local_id().as_str()),
                         RUGIX_PROJECT_DIR = project.dir(),
                         RUGIX_ARCH = arch.as_str(),
-                        LAYER_REBUILD_IF_CHANGED = project.dir().join(&layer_ctx.output_dir).join("rebuild-if-changed.txt"),
+                        RUGIX_REBUILD_IF_CHANGED = project.dir().join(&layer_ctx.registrations),
+                        LAYER_REBUILD_IF_CHANGED = project.dir().join(&layer_ctx.registrations),
+                        RECIPE_INPUTS_DIR = input_dir.path(),
                         RECIPE_DIR = &recipe.path,
                         RECIPE_STEP_PATH = &script,
                         SOURCE_DATE_EPOCH = source_date_epoch.to_string(),
                     };
                     for (name, value) in &job.parameters {
-                        vars.set(format!("RECIPE_PARAM_{}", name.to_uppercase()), value);
+                        vars.set(
+                            format!("RECIPE_PARAM_{}", name.to_uppercase()),
+                            value.to_string(),
+                        );
                     }
                     run_cmd(logger, Cmd::new(&script).with_vars(vars))?;
                 }
@@ -605,6 +553,26 @@ fn apply_recipes(
     }
 
     Ok(())
+}
+
+/// Preserve inherited restrictions when exposing assembled recipe inputs.
+fn mount_inputs(source: &Path, destination: &Path) -> BakeryResult<Mounted> {
+    let mounted = Mounted::bind(source, destination).whatever("unable to mount recipe inputs")?;
+    let options = crate::envs::BindMount {
+        source: source.to_owned(),
+        target: destination.to_owned(),
+        read_only: true,
+    }
+    .options()?;
+    xscript::run!([
+        "mount",
+        "-o",
+        format!("remount,bind,{options}"),
+        "--",
+        destination
+    ])
+    .whatever("unable to make recipe inputs read-only")?;
+    Ok(mounted)
 }
 
 #[cfg(test)]
@@ -676,10 +644,10 @@ layer_only = "layer"
                     .iter()
                     .find(|job| Arc::ptr_eq(&job.recipe, &library.recipes[recipe]))
                     .unwrap();
-                assert_eq!(job.parameters["value"], expected);
-                assert_eq!(job.parameters["untouched"], "default");
+                assert_eq!(job.parameters["value"].to_string(), expected);
+                assert_eq!(job.parameters["untouched"].to_string(), "default");
                 assert_eq!(
-                    job.parameters["layer_only"],
+                    job.parameters["layer_only"].to_string(),
                     if name == "core/ssh" {
                         "layer"
                     } else {
@@ -708,7 +676,7 @@ layer_only = "layer"
         .unwrap();
         for job in jobs {
             assert_eq!(
-                job.parameters["value"],
+                job.parameters["value"].to_string(),
                 if job.recipe.repository == root {
                     "project"
                 } else {
