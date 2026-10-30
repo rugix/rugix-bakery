@@ -57,16 +57,9 @@ fn default_mbr_layout(squashfs_options: Option<&SquashfsOptions>) -> ImageLayout
                             .map(Filesystem::Squashfs)
                             .unwrap_or(Filesystem::Ext4(
                                 Ext4Options::new().with_additional_options(Some(
-                                    [
-                                        "-O",
-                                        "^has_journal",
-                                        "-E",
-                                        "hash_seed=035cb65d-0a86-404a-bad7-19c88d05e400",
-                                        "-U",
-                                        "12341234-a4ec-4304-a70f-c549ea829da9",
-                                    ]
-                                    .map(sidex::types::Str::from)
-                                    .into(),
+                                    // Keep the overlay's lower filesystem unchanged on read-only
+                                    // mounts.
+                                    ["-O", "^has_journal"].map(sidex::types::Str::from).into(),
                                 )),
                             )),
                     ))
@@ -106,16 +99,9 @@ fn default_gpt_layout(squashfs_options: Option<&SquashfsOptions>) -> ImageLayout
                             .map(Filesystem::Squashfs)
                             .unwrap_or(Filesystem::Ext4(
                                 Ext4Options::new().with_additional_options(Some(
-                                    [
-                                        "-O",
-                                        "^has_journal",
-                                        "-E",
-                                        "hash_seed=035cb65d-0a86-404a-bad7-19c88d05e400",
-                                        "-U",
-                                        "12341234-a4ec-4304-a70f-c549ea829da9",
-                                    ]
-                                    .map(sidex::types::Str::from)
-                                    .into(),
+                                    // Keep the overlay's lower filesystem unchanged on read-only
+                                    // mounts.
+                                    ["-O", "^has_journal"].map(sidex::types::Str::from).into(),
                                 )),
                             )),
                     ))
