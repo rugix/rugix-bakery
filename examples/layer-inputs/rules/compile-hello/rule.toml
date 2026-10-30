@@ -1,9 +1,0 @@
-[inputs]
-source = "directory"
-[execution]
-type = "run"
-env = "compiler"
-command = ["cc", "-static", "-O2", "/run/rugix/bakery/work/inputs/source/main.c", "-o", "/run/rugix/bakery/work/outputs/hello"]
-[execution.outputs.binary]
-kind = "file"
-path = "hello"

@@ -1,10 +1,11 @@
-description = "Install the compiled application"
-[inputs]
-hello = "file"
+description = "Install the example Debian package."
 
-[rules.hello]
-uses = "compile-hello"
+[inputs]
+package = "file"
+
+[rules.package]
+uses = "cargo-deb"
 inputs.source = { file = "application" }
 
 [input-defaults]
-hello = { rule = { node = "hello", output = "binary" } }
+package = { rule = { node = "package", output = "package.deb" } }
