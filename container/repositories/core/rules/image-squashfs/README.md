@@ -5,10 +5,10 @@ SquashFS determines the image size from its compressed contents. The rule uses
 
 The build source epoch fixes the filesystem creation time and clamps file timestamps.
 It defaults to zero. The rule uses one compression worker and reproducible
-SquashFS construction. Identical input contents and metadata, parameters, source epoch, and Bakery tooling
+SquashFS construction. Identical input contents and metadata, parameters, source epoch, and Rugix Bakery tooling
 produce identical image bytes.
 
-Additional `mkfs-options` use shell-style quoting to separate arguments. Bakery
+Additional `mkfs-options` use shell-style quoting to separate arguments. Rugix Bakery
 does not perform shell expansion. Options that request random values or current
 timestamps override the rule's reproducible defaults.
 

@@ -1,4 +1,4 @@
-Resolve a Bakery `ImageLayout` into an unpopulated disk. This rule supports
+Resolve a Rugix Bakery `ImageLayout` into an unpopulated disk. This rule supports
 GPT, MBR with extended partitions, and raw firmware written before partitions.
 It preserves the layout model used by system image configuration and BSPs.
 
@@ -8,14 +8,14 @@ a partition with `root = "system"` reads its size estimate from
 `roots/system`, while a blob with `file = "bsp/firmware.bin"` reads that file
 from the layer input.
 
-A partition with an explicit size keeps that capacity. Otherwise, Bakery
+A partition with an explicit size keeps that capacity. Otherwise, Rugix Bakery
 estimates capacity from its tree, with a minimum of 64 MiB and 20% overhead.
 The output contains partition tables and raw firmware, with empty partition
 regions. Disk and partition identifiers derive from the layout and resolved
 geometry. Raw firmware reservations must not overlap, exceed their reserved
 capacity, or overwrite partition table metadata.
 
-For example, this Bakery `ImageLayout` describes one ext4 root partition:
+For example, this Rugix Bakery `ImageLayout` describes one ext4 root partition:
 
 ```toml title="layouts/device.toml"
 type = "gpt"

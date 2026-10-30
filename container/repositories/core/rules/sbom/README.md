@@ -16,5 +16,5 @@ inputs.context = { input = "context" }
 
 Document creation times use the source date. Document identifiers derive from
 the inventory after timestamp normalization. Syft's version and package
-catalogers come from the Bakery runtime and contribute to its cache identity.
+catalogers come from the Rugix Bakery runtime and contribute to its cache identity.
 The standard system pipeline publishes both inventory formats.

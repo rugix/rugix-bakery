@@ -1,4 +1,4 @@
-description = "Resolve a Bakery image layout into an unpopulated disk image."
+description = "Resolve a Rugix Bakery image layout into an unpopulated disk image."
 category = "Image Assembly"
 
 [inputs.layout]

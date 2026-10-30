@@ -15,7 +15,7 @@ parameters.architecture = "amd64"
 The supported boot flows are GRUB EFI, Raspberry Pi tryboot, and Raspberry Pi
 U-Boot. The `bsp` and `unknown` targets retain the supplied trees without
 installing a predefined boot flow. Bootloader binaries and firmware come from
-the Bakery runtime, which contributes to the rule's cache identity.
+the Rugix Bakery runtime, which contributes to the rule's cache identity.
 
 Use these output trees when resolving dynamic partition capacities. Once the
 partition table exists, `core/prepare-boot` patches the root partition reference.

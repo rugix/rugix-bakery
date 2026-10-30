@@ -7,7 +7,7 @@ description = "Root filesystem tree to scan."
 
 [inputs.context]
 kind = "file"
-description = "Bakery build context containing system and release identity."
+description = "Rugix Bakery build context containing system and release identity."
 
 [execution]
 type = "run"

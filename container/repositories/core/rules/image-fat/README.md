@@ -14,10 +14,10 @@ set `volume-id` when another component needs a particular ID.
 
 The rule formats with invariant metadata and copies entries in sorted order.
 The build source epoch fixes copied-entry timestamps, using UTC. It defaults to zero;
-FAT timestamps cannot precede 1980. Identical inputs, parameters, source epoch, and Bakery
+FAT timestamps cannot precede 1980. Identical inputs, parameters, source epoch, and Rugix Bakery
 tooling produce identical image bytes.
 
-Additional `mkfs-options` use shell-style quoting to separate arguments. Bakery
+Additional `mkfs-options` use shell-style quoting to separate arguments. Rugix Bakery
 does not perform shell expansion. Options that request random values or current
 timestamps override the rule's reproducible defaults.
 

@@ -2,7 +2,7 @@
 
 The manifest chooses payload paths, slot names, and encodings. The rule does not
 impose a boot scheme or partition layout. It uses Rugix Bundler installed in
-Bakery; the Bakery container identity contributes to the build's cache identity.
+Rugix Bakery; the Rugix Bakery container identity contributes to the build's cache identity.
 
 ## Example
 
