@@ -7831,7 +7831,7 @@ pub mod rules {
         #[doc = "An input of the enclosing composition.\n"]
         Input(::sidex::types::Str),
         #[doc = "A file or directory relative to the repository containing this reference.\n"]
-        File(::sidex::types::Str),
+        Path(::sidex::types::Str),
         #[doc = "An output of another node in this composition.\n"]
         Rule(RuleOutputSource),
         #[doc = "Select an existing file or directory within a directory artifact.\n"]
@@ -7841,7 +7841,7 @@ pub mod rules {
     }
     #[automatically_derived]
     impl ::sidex::Shaped for ArtifactSource {
-        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::rules::ArtifactSource" , :: sidex :: shape :: ShapeKind :: Variant (:: sidex :: shape :: VariantShape :: new (& [:: sidex :: shape :: CaseShape :: new ("Input" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < :: sidex :: types :: Str >) ,) . with_docs ("An input of the enclosing composition.\n") . json_name ("input") , :: sidex :: shape :: CaseShape :: new ("File" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < :: sidex :: types :: Str >) ,) . with_docs ("A file or directory relative to the repository containing this reference.\n") . json_name ("file") , :: sidex :: shape :: CaseShape :: new ("Rule" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < RuleOutputSource >) ,) . with_docs ("An output of another node in this composition.\n") . json_name ("rule") , :: sidex :: shape :: CaseShape :: new ("Select" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < ArtifactSelection >) ,) . with_docs ("Select an existing file or directory within a directory artifact.\n") . json_name ("select") , :: sidex :: shape :: CaseShape :: new ("Tree" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , ArtifactSource , > >) ,) . with_docs ("Assemble artifacts at explicit, non-overlapping relative paths.\n") . json_name ("tree")]) . json_tagging (:: sidex :: formats :: json :: Tagging :: External))) . with_docs ("An artifact reference within a composition.\n") . with_attrs (& [:: sidex :: shape :: Attr :: List { path : "json" , args : & [:: sidex :: shape :: Attr :: Assign { path : "tagged" , value : :: sidex :: shape :: AttrValue :: Path ("externally") } , :: sidex :: shape :: Attr :: Assign { path : "rename_all" , value : :: sidex :: shape :: AttrValue :: String ("kebab-case") }] }]) ;
+        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::rules::ArtifactSource" , :: sidex :: shape :: ShapeKind :: Variant (:: sidex :: shape :: VariantShape :: new (& [:: sidex :: shape :: CaseShape :: new ("Input" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < :: sidex :: types :: Str >) ,) . with_docs ("An input of the enclosing composition.\n") . json_name ("input") , :: sidex :: shape :: CaseShape :: new ("Path" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < :: sidex :: types :: Str >) ,) . with_docs ("A file or directory relative to the repository containing this reference.\n") . json_name ("path") , :: sidex :: shape :: CaseShape :: new ("Rule" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < RuleOutputSource >) ,) . with_docs ("An output of another node in this composition.\n") . json_name ("rule") , :: sidex :: shape :: CaseShape :: new ("Select" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < ArtifactSelection >) ,) . with_docs ("Select an existing file or directory within a directory artifact.\n") . json_name ("select") , :: sidex :: shape :: CaseShape :: new ("Tree" , :: std :: option :: Option :: Some (:: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , ArtifactSource , > >) ,) . with_docs ("Assemble artifacts at explicit, non-overlapping relative paths.\n") . json_name ("tree")]) . json_tagging (:: sidex :: formats :: json :: Tagging :: External))) . with_docs ("An artifact reference within a composition.\n") . with_attrs (& [:: sidex :: shape :: Attr :: List { path : "json" , args : & [:: sidex :: shape :: Attr :: Assign { path : "tagged" , value : :: sidex :: shape :: AttrValue :: Path ("externally") } , :: sidex :: shape :: Attr :: Assign { path : "rename_all" , value : :: sidex :: shape :: AttrValue :: String ("kebab-case") }] }]) ;
     }
     #[automatically_derived]
     impl ::sidex::Encode for ArtifactSource {
@@ -7858,7 +7858,7 @@ pub mod rules {
         fn case(&self) -> usize {
             match *self {
                 Self::Input(_) => 0usize,
-                Self::File(_) => 1usize,
+                Self::Path(_) => 1usize,
                 Self::Rule(_) => 2usize,
                 Self::Select(_) => 3usize,
                 Self::Tree(_) => 4usize,
@@ -7867,7 +7867,7 @@ pub mod rules {
         fn payload(&self) -> ::std::option::Option<::sidex::View<'_>> {
             match self {
                 Self::Input(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
-                Self::File(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
+                Self::Path(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
                 Self::Rule(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
                 Self::Select(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
                 Self::Tree(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
@@ -7888,7 +7888,7 @@ pub mod rules {
                             Self::Input(<::sidex::types::Str as ::sidex::Decode>::decode(decoder)?)
                         }
                         1usize => {
-                            Self::File(<::sidex::types::Str as ::sidex::Decode>::decode(decoder)?)
+                            Self::Path(<::sidex::types::Str as ::sidex::Decode>::decode(decoder)?)
                         }
                         2usize => {
                             Self::Rule(<RuleOutputSource as ::sidex::Decode>::decode(decoder)?)

@@ -30,9 +30,9 @@ creating that filesystem. An invocation binds the layout and its prepared trees:
 
 ```toml
 uses = "core/image-layout"
-inputs.layout = { file = "layouts/device.toml" }
-inputs.roots = { file = "prepared-roots" }
-inputs.layer = { file = "prepared-layer" }
+inputs.layout = { path = "layouts/device.toml" }
+inputs.roots = { path = "prepared-roots" }
+inputs.layer = { path = "prepared-layer" }
 ```
 
 Use `core/assemble-disk` to populate the partitions with separately built

@@ -205,8 +205,8 @@ def test_dynamic_fat_layout_counts_hardlink_copies(env_project: BakeryBuilder) -
         'type = "gpt"\npartitions = [{ root = "data", filesystem = { type = "fat32" } }]\n'
     )
     (project / "layout-rule.toml").write_text(
-        'uses = "core/image-layout"\ninputs.layout = { file = "layout.toml" }\n'
-        'inputs.roots = { tree = { data = { file = "fat-tree" } } }\n'
+        'uses = "core/image-layout"\ninputs.layout = { path = "layout.toml" }\n'
+        'inputs.roots = { tree = { data = { path = "fat-tree" } } }\n'
         "inputs.layer = { tree = {} }\n"
     )
     env_project.run(["bake", "rule", "layout-rule.toml", "build/layout"])
@@ -244,7 +244,7 @@ filesystem = { type = "ext4" }
         '[execution.outputs.efi]\nkind = "file"\npath = "efi"\n'
     )
     (project / "extract.toml").write_text(
-        'uses = "extract"\ninputs.image = { file = "build/device/filesystems/partition-1.img" }\n'
+        'uses = "extract"\ninputs.image = { path = "build/device/filesystems/partition-1.img" }\n'
     )
     env_project.run(["bake", "rule", "extract.toml", "build/extracted"])
     assert (project / "build/extracted/efi").read_bytes().startswith(b"MZ")
@@ -270,7 +270,7 @@ def test_small_fat_partition_dereferences_boot_links(
         '[execution.outputs.kernel]\nkind = "file"\npath = "kernel"\n'
     )
     (project / "extract.toml").write_text(
-        'uses = "extract"\ninputs.image = { file = "build/device/filesystems/partition-2.img" }\n'
+        'uses = "extract"\ninputs.image = { path = "build/device/filesystems/partition-2.img" }\n'
     )
     env_project.run(["bake", "rule", "extract.toml", "build/extracted"])
     assert (project / "build/extracted/kernel").read_bytes() == b"data"

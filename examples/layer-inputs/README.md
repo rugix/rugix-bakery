@@ -30,9 +30,26 @@ information, and runtime dependency metadata. Its packaging settings live in
 
 ## Build and Inspect the Filesystem
 
-The `install-hello` recipe defines a local `rules.package` invocation and uses
-its `package.deb` output as the default for its `package` input. Bakery builds
-the package before the recipe's install step runs, then exposes it at
+The `install-hello` recipe declares a `package` input and a `build-package` node
+that produces it:
+
+```toml
+[inputs]
+package = "file"
+
+[rules.build-package]
+uses = "cargo-deb"
+inputs.source = { path = "application" }
+
+[input-defaults]
+package = { rule = { node = "build-package", output = "package.deb" } }
+```
+
+The `path` binding supplies the existing `application` directory as the rule's
+`source` input. The default binds the node's `package.deb` output to the recipe's
+`package` input. Node names and input names are independent.
+
+Bakery builds the package before the recipe's install step runs, then exposes it at
 `$RECIPE_INPUTS_DIR/package`. The step runs `dpkg -i` inside the layer, so the
 installed package is also recorded in Debian's package database.
 
@@ -55,7 +72,7 @@ For example, override the recipe input in `layers/demo.toml`:
 
 ```toml
 [inputs.install-hello]
-package = { file = "prebuilt/rugix-hello.deb" }
+package = { path = "prebuilt/rugix-hello.deb" }
 ```
 
 Bakery then skips the recipe's package-building rule. The package path is

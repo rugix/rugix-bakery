@@ -1,2 +1,2 @@
 uses = "cargo-deb"
-inputs.source = { file = "application" }
+inputs.source = { path = "application" }

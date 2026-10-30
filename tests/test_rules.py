@@ -63,7 +63,7 @@ token = { rule = { node = "copy", output = "token" } }
     (project / "source").write_text("input\n")
     (project / "vendor/envs/tools/included.txt").write_text("vendor\n")
     (project / "invocation.toml").write_text(
-        'uses = "vendor/pair"\ninputs.source = { file = "source" }\n'
+        'uses = "vendor/pair"\ninputs.source = { path = "source" }\n'
     )
 
 
@@ -158,7 +158,7 @@ def test_secret_cache_invalidation(
     original = b"private-test-material-first"
     secret.write_bytes(original)
     invocation = project / "invocation.toml"
-    invocation.write_text(invocation.read_text() + 'secrets.key = { file = "key" }\n')
+    invocation.write_text(invocation.read_text() + 'secrets.key = { path = "key" }\n')
     token = (build(env_project) / "token").read_bytes()
     assert (build(env_project) / "token").read_bytes() == token
     timestamp = secret.stat().st_mtime_ns

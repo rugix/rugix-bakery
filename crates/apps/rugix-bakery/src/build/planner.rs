@@ -399,7 +399,7 @@ impl Planner {
                     self.input(scope, name)
                 }
             }
-            ArtifactSource::File(path) => {
+            ArtifactSource::Path(path) => {
                 Artifact::from_path(&self.repositories[scope.repository].source.dir.join(path))
             }
             ArtifactSource::Rule(reference) => {
@@ -718,8 +718,8 @@ path = "../escape"
 "#,
         );
         for invocation in [
-            "uses = \"vendor/copy\"\ninputs.typo = { file = \".\" }",
-            "uses = \"vendor/copy\"\ninputs.source = { file = \".\" }",
+            "uses = \"vendor/copy\"\ninputs.typo = { path = \".\" }",
+            "uses = \"vendor/copy\"\ninputs.source = { path = \".\" }",
         ] {
             let invocation = crate::config::parse_config(invocation).unwrap();
             assert!(Planner::new(repositories.clone())

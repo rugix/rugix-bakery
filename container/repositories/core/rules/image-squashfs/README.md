@@ -18,7 +18,7 @@ For example, package application files with XZ compression:
 
 ```toml
 uses = "core/image-squashfs"
-inputs.tree = { file = "application-tree" }
+inputs.tree = { path = "application-tree" }
 parameters.compression = "xz"
 ```
 

@@ -49,7 +49,7 @@ parameters.ratio = { parameter = "ratio" }
 application = { rule = { node = "application", output = "application" } }
 token = { rule = { node = "application", output = "token" } }
 settings = { rule = { node = "application", output = "settings" } }
-source = { file = "source" }
+source = { path = "source" }
 """
     )
     script = recipe / "steps/00-run.sh"
@@ -142,14 +142,14 @@ def test_layer_overrides_recipe_defaults(env_project: BakeryBuilder) -> None:
     prepare_recipe_rules(project)
     layer = project / "layers/device.toml"
     with layer.open("a") as config:
-        config.write('[inputs."vendor/install-app"]\nsource = { file = "source" }\n')
+        config.write('[inputs."vendor/install-app"]\nsource = { path = "source" }\n')
     assert (build_rule(env_project) / "rootfs/etc/application").read_text() == (
         "baseapplication"
     )
     (project / "prebuilt").write_text("prebuilt")
     with layer.open("a") as config:
         for name in ("application", "token", "settings"):
-            config.write(f'{name} = {{ file = "prebuilt" }}\n')
+            config.write(f'{name} = {{ path = "prebuilt" }}\n')
     (project / "vendor/rules/app/rule.toml").unlink()
     output = build_rule(env_project)
     assert (output / "rootfs/etc/application").read_text() == "prebuilt"
@@ -163,7 +163,7 @@ def test_forwarded_inputs_override_recipe_defaults(env_project: BakeryBuilder) -
     wrapper = project / "rules/device/rule.toml"
     wrapper.write_text('[inputs]\nsource = "file"\n' + wrapper.read_text())
     (project / "invocation.toml").write_text(
-        'uses = "device"\ninputs.source = { file = "source" }\n'
+        'uses = "device"\ninputs.source = { path = "source" }\n'
     )
     assert (build_rule(env_project) / "rootfs/etc/application").read_text() == (
         "baseapplication"
@@ -224,11 +224,11 @@ def test_recipe_default_validation(env_project: BakeryBuilder, problem: str) -> 
     recipe = project / "vendor/recipes/install-app/recipe.toml"
     text = recipe.read_text()
     if problem == "unknown-default":
-        text += 'typo = { file = "source" }\n'
+        text += 'typo = { path = "source" }\n'
     elif problem == "kind":
         text = text.replace(
             'application = { rule = { node = "application", output = "application" } }',
-            'application = { file = "." }',
+            'application = { path = "." }',
         )
     elif problem == "input-cycle":
         text = text.replace(
@@ -240,7 +240,7 @@ def test_recipe_default_validation(env_project: BakeryBuilder, problem: str) -> 
         )
     elif problem == "rule-cycle":
         text = text.replace(
-            'source = { file = "source" }',
+            'source = { path = "source" }',
             'source = { rule = { node = "application", output = "application" } }',
         )
     else:

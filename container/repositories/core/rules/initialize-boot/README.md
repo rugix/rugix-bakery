@@ -6,8 +6,8 @@ For example:
 
 ```toml
 uses = "core/initialize-boot"
-inputs.boot = { file = "prepared-boot" }
-inputs.config = { file = "prepared-config" }
+inputs.boot = { path = "prepared-boot" }
+inputs.config = { path = "prepared-config" }
 parameters.target = "generic-grub-efi"
 parameters.architecture = "amd64"
 parameters.source-date-epoch = 1792972800

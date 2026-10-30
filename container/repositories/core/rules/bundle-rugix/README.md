@@ -12,8 +12,8 @@ explains manifest fields and payload encodings:
 
 ```toml
 uses = "core/bundle-rugix"
-inputs.manifest = { file = "release/rugix-bundle.toml" }
-inputs.payloads = { file = "release/payloads" }
+inputs.manifest = { path = "release/rugix-bundle.toml" }
+inputs.payloads = { path = "release/payloads" }
 ```
 
 Save the invocation as `build-rule.toml` in the project. Run

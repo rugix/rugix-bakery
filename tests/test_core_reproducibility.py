@@ -34,7 +34,7 @@ def test_core_rule_reproducibility(
     project = env_project.project_dir
     (project / "data").write_bytes(hashlib.shake_256(b"payload").digest(128 * 1024))
     (project / "layout").write_text('type = "gpt"\npartitions = [{ name = "data" }]\n')
-    inputs = 'inputs.tree = { file = "tree" }\n'
+    inputs = 'inputs.tree = { path = "tree" }\n'
     (project / "invocation.toml").write_text(
         f'uses = "core/{rule}"\n' + inputs + "[parameters]\n" + parameters
     )
@@ -124,7 +124,7 @@ def test_core_rule_reproducibility(
             + '\n[execution.outputs.tree]\nkind = "directory"\npath = "tree"\n'
         )
         (project / "invocation.toml").write_text(
-            'uses = "extract"\ninputs.image = { file = "build/result/image" }\n'
+            'uses = "extract"\ninputs.image = { path = "build/result/image" }\n'
         )
         env_project.run(["bake", "rule", "invocation.toml", "build/extracted"])
         extracted = project / "build/extracted/tree"

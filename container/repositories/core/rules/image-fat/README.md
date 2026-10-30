@@ -27,7 +27,7 @@ For example, package an existing boot tree:
 
 ```toml
 uses = "core/image-fat"
-inputs.tree = { file = "boot-tree" }
+inputs.tree = { path = "boot-tree" }
 parameters.label = "BOOT"
 parameters.volume-id = "1234abcd"
 ```

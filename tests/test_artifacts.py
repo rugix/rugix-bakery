@@ -39,8 +39,8 @@ def test_selected_tree_preserves_artifacts_and_cache(
     invocation(
         project,
         'tree = { tree = { "configuration/settings.txt" = { select = { '
-        'source = { file = "source-tree" }, path = "settings", kind = "file" } }, '
-        '"assets" = { select = { source = { file = "source-tree" }, '
+        'source = { path = "source-tree" }, path = "settings", kind = "file" } }, '
+        '"assets" = { select = { source = { path = "source-tree" }, '
         'path = "nested", kind = "directory" } } } }\n',
     )
     env_project.run(["bake", "rule", "invocation.toml", "build/result"])
@@ -86,19 +86,19 @@ def test_selected_tree_preserves_artifacts_and_cache(
 @pytest.mark.parametrize(
     "source",
     [
-        '{ tree = { "../escape" = { file = "source-tree/settings" } } }',
+        '{ tree = { "../escape" = { path = "source-tree/settings" } } }',
         (
-            '{ tree = { "dir" = { file = "source-tree" }, '
-            '"dir/file" = { file = "source-tree/settings" } } }'
+            '{ tree = { "dir" = { path = "source-tree" }, '
+            '"dir/file" = { path = "source-tree/settings" } } }'
         ),
         (
-            '{ tree = { "a/b" = { file = "source-tree" }, '
-            '"a//b" = { file = "source-tree" } } }'
+            '{ tree = { "a/b" = { path = "source-tree" }, '
+            '"a//b" = { path = "source-tree" } } }'
         ),
-        '{ select = { source = { file = "source-tree" }, path = "../outside", kind = "file" } }',
-        '{ select = { source = { file = "source-tree" }, path = "escape", kind = "file" } }',
-        '{ select = { source = { file = "source-tree" }, path = "settings", kind = "directory" } }',
-        '{ select = { source = { file = "source-tree/settings" }, path = "child", kind = "file" } }',
+        '{ select = { source = { path = "source-tree" }, path = "../outside", kind = "file" } }',
+        '{ select = { source = { path = "source-tree" }, path = "escape", kind = "file" } }',
+        '{ select = { source = { path = "source-tree" }, path = "settings", kind = "directory" } }',
+        '{ select = { source = { path = "source-tree/settings" }, path = "child", kind = "file" } }',
     ],
 )
 def test_invalid_artifact_paths_do_not_publish(
@@ -145,7 +145,7 @@ def test_filesystem_rules_accept_generic_trees(
     (project / "settings").write_text("arbitrary application data\n")
     (project / "invocation.toml").write_text(
         f'uses = "core/{name}"\n'
-        'inputs.tree = { tree = { "configuration/settings.txt" = { file = "settings" } } }\n'
+        'inputs.tree = { tree = { "configuration/settings.txt" = { path = "settings" } } }\n'
         "[parameters]\n" + parameters
     )
     env_project.run(["bake", "rule", "invocation.toml", "build/image"])
@@ -159,7 +159,7 @@ def test_filesystem_rules_accept_generic_trees(
         + '\n[execution.outputs.value]\nkind = "file"\npath = "value"\n'
     )
     (project / "invocation.toml").write_text(
-        'uses = "extract"\ninputs.image = { file = "build/image/image" }\n'
+        'uses = "extract"\ninputs.image = { path = "build/image/image" }\n'
     )
     env_project.run(["bake", "rule", "invocation.toml", "build/extracted"])
     assert (
@@ -182,7 +182,7 @@ def test_filesystem_sizing(env_project: BakeryBuilder, name: str, content: str) 
             (directory / f"long-configuration-filename-{number:04}.txt").write_text(
                 "setting"
             )
-    invocation = f'uses = "core/{name}"\ninputs.tree = {{ file = "tree" }}\n'
+    invocation = f'uses = "core/{name}"\ninputs.tree = {{ path = "tree" }}\n'
     if content == "fixed":
         invocation += "parameters.size = 67108864\n"
     (project / "invocation.toml").write_text(invocation)
@@ -212,7 +212,7 @@ def test_filesystem_sizing(env_project: BakeryBuilder, name: str, content: str) 
         + '\n[execution.outputs.digest]\nkind = "file"\npath = "digest"\n'
     )
     (project / "invocation.toml").write_text(
-        'uses = "digest"\ninputs.image = { file = "build/image/image" }\n'
+        'uses = "digest"\ninputs.image = { path = "build/image/image" }\n'
     )
     env_project.run(["bake", "rule", "invocation.toml", "build/digest"])
     with (directory / "large-application-data.bin").open("rb") as data:

@@ -78,7 +78,7 @@ recipes = ["vendor/install-app"]
 [rules.application]
 uses = "vendor/app"
 inputs.parent = { input = "rootfs" }
-inputs.source = { file = "source" }
+inputs.source = { path = "source" }
 parameters.architecture = { parameter = "architecture" }
 [inputs."vendor/install-app"]
 application = { rule = { node = "application", output = "application" } }
@@ -177,7 +177,7 @@ def test_layer_input_validation(env_project: BakeryBuilder, problem: str) -> Non
             config.read_text()
             .replace('uses = "vendor/app"', 'uses = "device"')
             .replace('inputs.parent = { input = "rootfs" }\n', "")
-            .replace('inputs.source = { file = "source" }\n', "")
+            .replace('inputs.source = { path = "source" }\n', "")
             .replace('parameters.architecture = { parameter = "architecture" }\n', "")
             .replace('output = "application"', 'output = "archive"')
             .replace('output = "token"', 'output = "archive"')
@@ -193,7 +193,7 @@ def test_layer_input_validation(env_project: BakeryBuilder, problem: str) -> Non
             )
         )
     else:
-        config.write_text(config.read_text() + 'typo = { file = "source" }\n')
+        config.write_text(config.read_text() + 'typo = { path = "source" }\n')
     with pytest.raises(subprocess.CalledProcessError):
         build_rule(env_project)
     assert not (project / ".rugix/layers").exists()
@@ -211,7 +211,7 @@ def test_mixin_rule_inputs(env_project: BakeryBuilder) -> None:
 [rules.addon]
 uses = "vendor/app"
 inputs.parent = { input = "rootfs" }
-inputs.source = { file = "addon" }
+inputs.source = { path = "addon" }
 [inputs."vendor/install-app"]
 application = { rule = { node = "addon", output = "application" } }
 token = { rule = { node = "addon", output = "token" } }
@@ -300,7 +300,7 @@ def test_install_step_directory_inputs(env_project: BakeryBuilder) -> None:
     prepare(project, use_env=False)
     (project / "layers/device.toml").write_text(
         'root = true\nrecipes = ["bootstrap", "configure"]\n'
-        '[inputs.configure]\nsettings = { file = "settings" }\n'
+        '[inputs.configure]\nsettings = { path = "settings" }\n'
     )
     settings = project / "settings"
     settings.mkdir()
@@ -376,14 +376,14 @@ path = "archive"
 type = "graph"
 [execution.rules.first]
 uses = "device"
-inputs.source = { file = "source" }
-inputs.wait = { file = "source" }
+inputs.source = { path = "source" }
+inputs.wait = { path = "source" }
 [execution.rules.snapshot]
 uses = "snapshot"
 inputs.archive = { rule = { node = "first", output = "archive" } }
 [execution.rules.second]
 uses = "device"
-inputs.source = { file = "source" }
+inputs.source = { path = "source" }
 inputs.wait = { rule = { node = "snapshot", output = "archive" } }
 [execution.outputs]
 first = { rule = { node = "first", output = "archive" } }

@@ -3,9 +3,9 @@ description = "Install the example Debian package."
 [inputs]
 package = "file"
 
-[rules.package]
+[rules.build-package]
 uses = "cargo-deb"
-inputs.source = { file = "application" }
+inputs.source = { path = "application" }
 
 [input-defaults]
-package = { rule = { node = "package", output = "package.deb" } }
+package = { rule = { node = "build-package", output = "package.deb" } }

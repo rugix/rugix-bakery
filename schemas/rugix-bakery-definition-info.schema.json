@@ -328,13 +328,13 @@
         {
           "type": "object",
           "properties": {
-            "file": {
+            "path": {
               "type": "string"
             }
           },
           "additionalProperties": false,
           "required": [
-            "file"
+            "path"
           ]
         },
         {

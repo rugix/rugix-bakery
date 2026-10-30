@@ -19,8 +19,8 @@ def test_bundle_rule_uses_bakery_tooling(env_project: BakeryBuilder) -> None:
         'block-encoding = { chunker = "casync-64", deduplicate = true }\n'
     )
     (project / "invocation.toml").write_text(
-        'uses = "core/bundle-rugix"\ninputs.manifest = { file = "manifest.toml" }\n'
-        'inputs.payloads = { tree = { "data.bin" = { file = "data.bin" } } }\n'
+        'uses = "core/bundle-rugix"\ninputs.manifest = { path = "manifest.toml" }\n'
+        'inputs.payloads = { tree = { "data.bin" = { path = "data.bin" } } }\n'
     )
     env_project.run(["bake", "rule", "invocation.toml", "build/release"])
     bundle = project / "build/release/bundle"

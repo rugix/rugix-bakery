@@ -60,7 +60,7 @@ variant ArtifactSource {
     /// An input of the enclosing composition.
     Input: string,
     /// A file or directory relative to the repository containing this reference.
-    File: string,
+    Path: string,
     /// An output of another node in this composition.
     Rule: RuleOutputSource,
     /// Select an existing file or directory within a directory artifact.

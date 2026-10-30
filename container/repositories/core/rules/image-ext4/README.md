@@ -23,7 +23,7 @@ For example, package a prepared root filesystem:
 
 ```toml
 uses = "core/image-ext4"
-inputs.tree = { file = "prepared-root" }
+inputs.tree = { path = "prepared-root" }
 parameters.label = "system"
 ```
 

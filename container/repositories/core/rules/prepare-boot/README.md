@@ -5,8 +5,8 @@ For example:
 
 ```toml
 uses = "core/prepare-boot"
-inputs.image = { file = "layout.img" }
-inputs.boot = { file = "initialized-boot" }
+inputs.image = { path = "layout.img" }
+inputs.boot = { path = "initialized-boot" }
 parameters.target = "rpi-tryboot"
 parameters.source-date-epoch = 1792972800
 ```

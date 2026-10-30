@@ -7,7 +7,7 @@ For example:
 
 ```toml
 uses = "core/archive-tree"
-inputs.tree = { file = "prepared-root" }
+inputs.tree = { path = "prepared-root" }
 parameters.source-date-epoch = 1792972800
 ```
 
