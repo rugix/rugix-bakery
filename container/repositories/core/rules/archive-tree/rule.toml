@@ -5,9 +5,9 @@ category = "Image Assembly"
 kind = "directory"
 description = "Directory tree including ownership, links, ACLs, and extended attributes."
 
-[parameters.source-date-epoch]
-default = 0
-description = "Upper bound for modification timestamps, as Unix seconds."
+[parameters.clamp-mtime]
+default = ""
+description = "Optional RFC 3339 upper bound for modification times. Defaults to the build source date."
 
 [execution]
 type = "run"

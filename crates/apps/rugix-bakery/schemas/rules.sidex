@@ -20,15 +20,8 @@ record RuleDefinition {
     execution: RuleExecution,
 }
 
-/// A compact artifact kind or a documented input.
-#[json(tagged = implicitly)]
-variant ArtifactInput {
-    Kind: ArtifactKind,
-    Definition: ArtifactInputDefinition,
-}
-
-/// An artifact input with documentation.
-record ArtifactInputDefinition {
+/// An artifact input with optional documentation.
+record ArtifactInput {
     kind: ArtifactKind,
     description?: string,
 }
@@ -115,6 +108,8 @@ record RunRule {
     outputs: [string: RuleOutput],
     /// Reuse successful outputs. Defaults to true.
     cache?: bool,
+    /// Supply SOURCE_DATE_EPOCH and include it in the cache identity. Defaults to true.
+    uses_source_date_epoch?: bool,
 }
 
 /// A declared command output.

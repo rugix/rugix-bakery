@@ -7232,123 +7232,18 @@ pub mod rules {
             ::sidex::serde::deserialize(deserializer)
         }
     }
-    #[doc = "A compact artifact kind or a documented input.\n"]
+    #[doc = "An artifact input with optional documentation.\n"]
     #[derive(Clone, Debug)]
-    pub enum ArtifactInput {
-        #[doc = ""]
-        Kind(ArtifactKind),
-        #[doc = ""]
-        Definition(ArtifactInputDefinition),
-    }
-    #[automatically_derived]
-    impl ::sidex::Shaped for ArtifactInput {
-        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
-            "::rugix_bakery::rules::ArtifactInput",
-            ::sidex::shape::ShapeKind::Variant(
-                ::sidex::shape::VariantShape::new(&[
-                    ::sidex::shape::CaseShape::new(
-                        "Kind",
-                        ::std::option::Option::Some(::sidex::shape::shape_of::<ArtifactKind>),
-                    ),
-                    ::sidex::shape::CaseShape::new(
-                        "Definition",
-                        ::std::option::Option::Some(
-                            ::sidex::shape::shape_of::<ArtifactInputDefinition>,
-                        ),
-                    ),
-                ])
-                .json_tagging(::sidex::formats::json::Tagging::Implicit),
-            ),
-        )
-        .with_docs("A compact artifact kind or a documented input.\n")
-        .with_attrs(&[::sidex::shape::Attr::List {
-            path: "json",
-            args: &[::sidex::shape::Attr::Assign {
-                path: "tagged",
-                value: ::sidex::shape::AttrValue::Path("implicitly"),
-            }],
-        }]);
-    }
-    #[automatically_derived]
-    impl ::sidex::Encode for ArtifactInput {
-        fn encode(&self) -> ::sidex::View<'_> {
-            ::sidex::View::Variant(self)
-        }
-    }
-    #[automatically_derived]
-    #[allow(deprecated)]
-    impl ::sidex::encode::VariantView for ArtifactInput {
-        fn shape(&self) -> &'static ::sidex::Shape {
-            <Self as ::sidex::Shaped>::SHAPE
-        }
-        fn case(&self) -> usize {
-            match *self {
-                Self::Kind(_) => 0usize,
-                Self::Definition(_) => 1usize,
-            }
-        }
-        fn payload(&self) -> ::std::option::Option<::sidex::View<'_>> {
-            match self {
-                Self::Kind(value) => ::std::option::Option::Some(::sidex::Encode::encode(value)),
-                Self::Definition(value) => {
-                    ::std::option::Option::Some(::sidex::Encode::encode(value))
-                }
-            }
-        }
-    }
-    #[automatically_derived]
-    #[allow(deprecated)]
-    impl ::sidex::Decode for ArtifactInput {
-        fn decode(
-            decoder: &mut dyn ::sidex::Decoder,
-        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
-            let mut out = ::std::option::Option::<Self>::None;
-            decoder.variant(<Self as ::sidex::Shaped>::SHAPE, &mut |case, decoder| {
-                out = ::std::option::Option::Some(match case {
-                    0usize => Self::Kind(<ArtifactKind as ::sidex::Decode>::decode(decoder)?),
-                    1usize => Self::Definition(
-                        <ArtifactInputDefinition as ::sidex::Decode>::decode(decoder)?,
-                    ),
-                    _ => {
-                        return ::std::result::Result::Err(::sidex::DecodeError::new(
-                            "unknown case",
-                        ));
-                    }
-                });
-                ::std::result::Result::Ok(())
-            })?;
-            out.ok_or_else(|| ::sidex::DecodeError::new("missing case"))
-        }
-    }
-    #[automatically_derived]
-    impl ::serde::Serialize for ArtifactInput {
-        fn serialize<__S: ::serde::Serializer>(
-            &self,
-            serializer: __S,
-        ) -> ::std::result::Result<__S::Ok, __S::Error> {
-            ::sidex::serde::serialize(self, serializer)
-        }
-    }
-    #[automatically_derived]
-    impl<'de> ::serde::Deserialize<'de> for ArtifactInput {
-        fn deserialize<__D: ::serde::Deserializer<'de>>(
-            deserializer: __D,
-        ) -> ::std::result::Result<Self, __D::Error> {
-            ::sidex::serde::deserialize(deserializer)
-        }
-    }
-    #[doc = "An artifact input with documentation.\n"]
-    #[derive(Clone, Debug)]
-    pub struct ArtifactInputDefinition {
+    pub struct ArtifactInput {
         #[doc = ""]
         pub kind: ArtifactKind,
         #[doc = ""]
         pub description: ::std::option::Option<::sidex::types::Str>,
     }
     #[automatically_derived]
-    impl ::sidex::Shaped for ArtifactInputDefinition {
+    impl ::sidex::Shaped for ArtifactInput {
         const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
-            "::rugix_bakery::rules::ArtifactInputDefinition",
+            "::rugix_bakery::rules::ArtifactInput",
             ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
                 ::sidex::shape::FieldShape::new("kind", ::sidex::shape::shape_of::<ArtifactKind>),
                 ::sidex::shape::FieldShape::new(
@@ -7358,17 +7253,17 @@ pub mod rules {
                 .optional(),
             ])),
         )
-        .with_docs("An artifact input with documentation.\n");
+        .with_docs("An artifact input with optional documentation.\n");
     }
     #[automatically_derived]
-    impl ::sidex::Encode for ArtifactInputDefinition {
+    impl ::sidex::Encode for ArtifactInput {
         fn encode(&self) -> ::sidex::View<'_> {
             ::sidex::View::Record(self)
         }
     }
     #[automatically_derived]
     #[allow(deprecated)]
-    impl ::sidex::encode::RecordView for ArtifactInputDefinition {
+    impl ::sidex::encode::RecordView for ArtifactInput {
         fn shape(&self) -> &'static ::sidex::Shape {
             <Self as ::sidex::Shaped>::SHAPE
         }
@@ -7385,7 +7280,7 @@ pub mod rules {
     }
     #[automatically_derived]
     #[allow(deprecated)]
-    impl ::sidex::Decode for ArtifactInputDefinition {
+    impl ::sidex::Decode for ArtifactInput {
         fn decode(
             decoder: &mut dyn ::sidex::Decoder,
         ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
@@ -7413,8 +7308,8 @@ pub mod rules {
             })
         }
     }
-    impl ArtifactInputDefinition {
-        #[doc = "Creates a new [`ArtifactInputDefinition`]."]
+    impl ArtifactInput {
+        #[doc = "Creates a new [`ArtifactInput`]."]
         pub fn new(kind: ArtifactKind) -> Self {
             Self {
                 kind: kind,
@@ -7449,7 +7344,7 @@ pub mod rules {
         }
     }
     #[automatically_derived]
-    impl ::serde::Serialize for ArtifactInputDefinition {
+    impl ::serde::Serialize for ArtifactInput {
         fn serialize<__S: ::serde::Serializer>(
             &self,
             serializer: __S,
@@ -7458,7 +7353,7 @@ pub mod rules {
         }
     }
     #[automatically_derived]
-    impl<'de> ::serde::Deserialize<'de> for ArtifactInputDefinition {
+    impl<'de> ::serde::Deserialize<'de> for ArtifactInput {
         fn deserialize<__D: ::serde::Deserializer<'de>>(
             deserializer: __D,
         ) -> ::std::result::Result<Self, __D::Error> {
@@ -8565,10 +8460,12 @@ pub mod rules {
         pub outputs: ::sidex::types::Map<::sidex::types::Str, RuleOutput>,
         #[doc = "Reuse successful outputs. Defaults to true.\n"]
         pub cache: ::std::option::Option<bool>,
+        #[doc = "Supply SOURCE_DATE_EPOCH and include it in the cache identity. Defaults to true.\n"]
+        pub uses_source_date_epoch: ::std::option::Option<bool>,
     }
     #[automatically_derived]
     impl ::sidex::Shaped for RunRule {
-        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::rules::RunRule" , :: sidex :: shape :: ShapeKind :: Record (:: sidex :: shape :: RecordShape :: new (& [:: sidex :: shape :: FieldShape :: new ("env" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Optional environment resolved relative to the defining repository. Defaults to Bakery.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("command" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Seq < :: sidex :: types :: Str , > > ,) . with_docs ("Command and literal arguments. No shell expansion is performed by Bakery.\n") , :: sidex :: shape :: FieldShape :: new ("outputs" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , RuleOutput , > > ,) . with_docs ("Files and directories to publish from /run/rugix/bakery/work/outputs.\n") , :: sidex :: shape :: FieldShape :: new ("cache" , :: sidex :: shape :: shape_of :: < bool > ,) . with_docs ("Reuse successful outputs. Defaults to true.\n") . optional ()]))) . with_docs ("A command executed in Bakery or a fresh tooling environment.\n") . with_attrs (& [:: sidex :: shape :: Attr :: List { path : "json" , args : & [:: sidex :: shape :: Attr :: Assign { path : "rename_all" , value : :: sidex :: shape :: AttrValue :: String ("kebab-case") }] }]) ;
+        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::rules::RunRule" , :: sidex :: shape :: ShapeKind :: Record (:: sidex :: shape :: RecordShape :: new (& [:: sidex :: shape :: FieldShape :: new ("env" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Optional environment resolved relative to the defining repository. Defaults to Bakery.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("command" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Seq < :: sidex :: types :: Str , > > ,) . with_docs ("Command and literal arguments. No shell expansion is performed by Bakery.\n") , :: sidex :: shape :: FieldShape :: new ("outputs" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , RuleOutput , > > ,) . with_docs ("Files and directories to publish from /run/rugix/bakery/work/outputs.\n") , :: sidex :: shape :: FieldShape :: new ("cache" , :: sidex :: shape :: shape_of :: < bool > ,) . with_docs ("Reuse successful outputs. Defaults to true.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("uses_source_date_epoch" , :: sidex :: shape :: shape_of :: < bool > ,) . with_docs ("Supply SOURCE_DATE_EPOCH and include it in the cache identity. Defaults to true.\n") . optional () . json_name ("uses-source-date-epoch")]))) . with_docs ("A command executed in Bakery or a fresh tooling environment.\n") . with_attrs (& [:: sidex :: shape :: Attr :: List { path : "json" , args : & [:: sidex :: shape :: Attr :: Assign { path : "rename_all" , value : :: sidex :: shape :: AttrValue :: String ("kebab-case") }] }]) ;
     }
     #[automatically_derived]
     impl ::sidex::Encode for RunRule {
@@ -8594,6 +8491,10 @@ pub mod rules {
                     .cache
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
+                4usize => self
+                    .uses_source_date_epoch
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
                 _ => ::std::option::Option::None,
             }
         }
@@ -8610,6 +8511,7 @@ pub mod rules {
             let mut __field_2 =
                 ::std::option::Option::<::sidex::types::Map<::sidex::types::Str, RuleOutput>>::None;
             let mut __field_3 = ::std::option::Option::<bool>::None;
+            let mut __field_4 = ::std::option::Option::<bool>::None;
             decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
                 match index {
                     0usize => {
@@ -8636,6 +8538,10 @@ pub mod rules {
                         __field_3 =
                             ::std::option::Option::Some(<bool as ::sidex::Decode>::decode(decoder)?)
                     }
+                    4usize => {
+                        __field_4 =
+                            ::std::option::Option::Some(<bool as ::sidex::Decode>::decode(decoder)?)
+                    }
                     _ => {}
                 }
                 ::std::result::Result::Ok(())
@@ -8647,6 +8553,7 @@ pub mod rules {
                 outputs: __field_2
                     .ok_or_else(|| ::sidex::DecodeError::new("missing field `outputs`"))?,
                 cache: __field_3,
+                uses_source_date_epoch: __field_4,
             })
         }
     }
@@ -8661,6 +8568,7 @@ pub mod rules {
                 outputs: outputs,
                 env: ::std::default::Default::default(),
                 cache: ::std::default::Default::default(),
+                uses_source_date_epoch: ::std::default::Default::default(),
             }
         }
         #[doc = "Sets the value of `env`."]
@@ -8710,6 +8618,22 @@ pub mod rules {
         #[doc = "Sets the value of `cache`."]
         pub fn with_cache(mut self, cache: ::std::option::Option<bool>) -> Self {
             self.cache = cache;
+            self
+        }
+        #[doc = "Sets the value of `uses_source_date_epoch`."]
+        pub fn set_uses_source_date_epoch(
+            &mut self,
+            uses_source_date_epoch: ::std::option::Option<bool>,
+        ) -> &mut Self {
+            self.uses_source_date_epoch = uses_source_date_epoch;
+            self
+        }
+        #[doc = "Sets the value of `uses_source_date_epoch`."]
+        pub fn with_uses_source_date_epoch(
+            mut self,
+            uses_source_date_epoch: ::std::option::Option<bool>,
+        ) -> Self {
+            self.uses_source_date_epoch = uses_source_date_epoch;
             self
         }
     }

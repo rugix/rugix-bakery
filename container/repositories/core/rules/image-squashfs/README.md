@@ -3,9 +3,9 @@
 SquashFS determines the image size from its compressed contents. The rule uses
 `mksquashfs` without appending to an existing image.
 
-`source-date-epoch` fixes the filesystem creation time and clamps file timestamps.
+The build source epoch fixes the filesystem creation time and clamps file timestamps.
 It defaults to zero. The rule uses one compression worker and reproducible
-SquashFS construction. Identical tree metadata, parameters, and Bakery tooling
+SquashFS construction. Identical input contents and metadata, parameters, source epoch, and Bakery tooling
 produce identical image bytes.
 
 Additional `mkfs-options` use shell-style quoting to separate arguments. Bakery
@@ -25,3 +25,6 @@ parameters.compression = "xz"
 Save the invocation as `build-rule.toml` in the project. Run
 `./run-bakery bake rule build-rule.toml build/result`; exported artifacts appear
 under their output names in `build/result`.
+
+For this rule, the source epoch must be between `0` and `4294967295` Unix seconds
+(inclusive), as required by the filesystem tooling.

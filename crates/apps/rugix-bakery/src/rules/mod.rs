@@ -70,6 +70,11 @@ fn command(program: &str) -> Command {
     command
 }
 
+/// Read the source epoch supplied by the build executor.
+fn source_date_epoch() -> BakeryResult<u64> {
+    Ok(crate::build::ExecutionContext::resolve(None)?.source_date_epoch)
+}
+
 fn epoch_command(program: &str, epoch: u64) -> BakeryResult<Command> {
     if epoch > u64::from(u32::MAX) {
         bail!("source-date-epoch must be between 0 and 4294967295");

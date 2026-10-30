@@ -13,8 +13,8 @@ tree does not fit. The default volume ID comes from tree paths and file contents
 set `volume-id` when another component needs a particular ID.
 
 The rule formats with invariant metadata and copies entries in sorted order.
-`source-date-epoch` fixes copied-entry timestamps, using UTC. It defaults to zero;
-FAT timestamps cannot precede 1980. Identical inputs, parameters, and Bakery
+The build source epoch fixes copied-entry timestamps, using UTC. It defaults to zero;
+FAT timestamps cannot precede 1980. Identical inputs, parameters, source epoch, and Bakery
 tooling produce identical image bytes.
 
 Additional `mkfs-options` use shell-style quoting to separate arguments. Bakery
@@ -35,3 +35,6 @@ parameters.volume-id = "1234abcd"
 Save the invocation as `build-rule.toml` in the project. Run
 `./run-bakery bake rule build-rule.toml build/result`; exported artifacts appear
 under their output names in `build/result`.
+
+For this rule, the source epoch must be between `0` and `4294967295` Unix seconds
+(inclusive), as required by the filesystem tooling.

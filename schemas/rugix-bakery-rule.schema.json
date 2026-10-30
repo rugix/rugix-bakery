@@ -78,29 +78,20 @@
       ]
     },
     "rugix_bakery.rules.ArtifactInput": {
-      "description": "A compact artifact kind or a documented input.",
-      "anyOf": [
-        {
-          "enum": [
-            "file",
-            "directory"
-          ]
+      "type": "object",
+      "description": "An artifact input with optional documentation.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/rugix_bakery.rules.ArtifactKind"
         },
-        {
-          "type": "object",
-          "properties": {
-            "kind": {
-              "$ref": "#/$defs/rugix_bakery.rules.ArtifactKind"
-            },
-            "description": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "kind"
-          ]
+        "description": {
+          "type": "string"
         }
-      ]
+      },
+      "required": [
+        "kind"
+      ],
+      "unevaluatedProperties": false
     },
     "rugix_bakery.rules.ArtifactKind": {
       "enum": [
@@ -264,6 +255,9 @@
               }
             },
             "cache": {
+              "type": "boolean"
+            },
+            "uses-source-date-epoch": {
               "type": "boolean"
             }
           },

@@ -7,26 +7,27 @@ use std::path::{Path, PathBuf};
 
 use reportify::{bail, ResultExt};
 use sha2::{Digest, Sha256};
-use sidex::types::Str;
+use sidex::types::{Map, Str};
 use tempfile::TempDir;
-use tracing::info;
 
 use crate::config::envs::EnvStorage;
-use crate::config::rules::ArtifactKind;
+use crate::config::rules::{ArtifactKind, RuleOutput};
 use crate::envs::{BindMount, BuiltEnv, EnvStore};
 use crate::project::envs::EnvDefinition;
 use crate::BakeryResult;
 
 use super::artifacts::Artifacts;
 use super::cache::artifact_hash;
-use super::dependencies::ProjectDependencies;
+use super::layers::LayerTask;
+use super::results::Results;
 use super::secrets::SecretFingerprints;
-use super::{runtime, Plan, RunTask, Task};
+use super::{runtime, ExecutionContext, Plan, RunTask, Task};
 
 /// One build session. Uncached outputs remain alive until publication.
 pub struct Executor {
     project: PathBuf,
-    cache: PathBuf,
+    context: ExecutionContext,
+    cache: Results,
     env_cache: PathBuf,
     images: HashMap<PathBuf, BuiltEnv>,
     storage: EnvStorage,
@@ -40,11 +41,13 @@ impl Executor {
         cache: &Path,
         env_cache: &Path,
         storage: EnvStorage,
+        context: ExecutionContext,
     ) -> BakeryResult<Self> {
-        fs::create_dir_all(cache).whatever("unable to create rule cache")?;
+        let results = Results::new(cache, project)?;
         Ok(Self {
             project: fs::canonicalize(project).whatever("unable to resolve project directory")?,
-            cache: fs::canonicalize(cache).whatever("unable to resolve rule cache")?,
+            context,
+            cache: results,
             env_cache: env_cache.to_owned(),
             images: HashMap::new(),
             storage,
@@ -54,7 +57,10 @@ impl Executor {
     }
 
     /// Use the standard project-owned result cache and shared tooling environment store.
-    pub fn for_project(project: &crate::project::ProjectRef) -> BakeryResult<Self> {
+    pub fn for_project(
+        project: &crate::project::ProjectRef,
+        context: ExecutionContext,
+    ) -> BakeryResult<Self> {
         let env_cache = Path::new("/run/rugix/bakery/cache")
             .join(project.local_id().as_str())
             .join("envs");
@@ -63,11 +69,13 @@ impl Executor {
             &project.dir().join(".rugix/rules"),
             &env_cache,
             EnvStorage::Auto,
+            context,
         )
     }
 
     /// Preserve a standalone artifact whose path must outlive this session.
     pub fn keep_artifact(&mut self, artifact: &Path) {
+        self.cache.keep_artifact(artifact);
         if let Some(index) = self
             .temporary
             .iter()
@@ -84,7 +92,7 @@ impl Executor {
             .create(true)
             .truncate(false)
             .write(true)
-            .open(self.cache.join("build.lock"))
+            .open(self.cache.root().join("build.lock"))
             .whatever("unable to open build lock")?;
         lock.lock().whatever("unable to lock rule cache")?;
         let bakery_identity = if plan
@@ -120,43 +128,16 @@ impl Executor {
                 Task::Run(task) => {
                     self.execute_run(task, &results, bakery_identity, project_mounts)?
                 }
-                Task::Layer(task) => {
-                    let inputs = self.artifacts.resolve_all(&task.inputs, &results)?;
-                    let mut hashes = BTreeMap::new();
-                    for (name, path) in &inputs {
-                        hashes.insert(name.clone(), self.artifacts.hash(path)?);
-                    }
-                    let temporary = if bakery_identity.is_none() {
-                        let directory = self.project.join(".rugix/layers");
-                        fs::create_dir_all(&directory)
-                            .whatever("unable to create layer workspace directory")?;
-                        Some(
-                            tempfile::tempdir_in(directory)
-                                .whatever("unable to create layer workspace")?,
-                        )
-                    } else {
-                        None
-                    };
-                    let workspace = temporary.as_ref().map(|directory| {
-                        directory
-                            .path()
-                            .strip_prefix(&self.project)
-                            .expect("layer workspace is inside the project")
-                    });
-                    let outputs = task.execute(&inputs, &hashes, bakery_identity, workspace)?;
-                    if let Some(temporary) = temporary {
-                        self.temporary.push(temporary);
-                    }
-                    outputs
-                }
+                Task::Layer(task) => self.execute_layer(task, &results, bakery_identity)?,
                 Task::Release(task) => {
                     let inputs = self.artifacts.resolve_all(
                         &BTreeMap::from([("archive".into(), task.archive.clone())]),
                         &results,
                     )?;
-                    let temporary = tempfile::tempdir_in(&self.cache)
+                    let temporary = tempfile::tempdir_in(self.cache.root())
                         .whatever("unable to create release workspace")?;
-                    let outputs = task.execute(&inputs["archive"], temporary.path())?;
+                    let outputs =
+                        task.execute(&inputs["archive"], temporary.path(), self.context)?;
                     self.temporary.push(temporary);
                     outputs
                 }
@@ -191,7 +172,7 @@ impl Executor {
             bakery_identity.map(|id| format!("bakery:{id}"))
         };
         let mut key = Sha256::new();
-        key.update(b"rugix-artifact-build-v4\0");
+        key.update(b"rugix-artifact-build-v5\0");
         push(
             &mut key,
             "runtime",
@@ -212,7 +193,7 @@ impl Executor {
         }
         let cached = task.run.cache.unwrap_or(true) && identity.is_some();
         if cached && !secrets.is_empty() {
-            let fingerprints = SecretFingerprints::open(&self.cache)?;
+            let fingerprints = SecretFingerprints::open(self.cache.root())?;
             for (name, path) in &secrets {
                 push(
                     &mut key,
@@ -221,131 +202,140 @@ impl Executor {
                 );
             }
         }
+        let source_date_epoch = task
+            .run
+            .uses_source_date_epoch
+            .unwrap_or(true)
+            .then(|| self.context.source_date_epoch.to_string());
+        if let Some(epoch) = &source_date_epoch {
+            push(&mut key, "source-date-epoch", epoch);
+        }
         let key = hex::encode(key.finalize());
-        let dependency_record = self.cache.join("dependencies").join(format!("{key}.json"));
-        let reusable = if cached {
-            match ProjectDependencies::load(&dependency_record)? {
-                Some(dependencies) if dependencies.is_current(&self.project)? => {
-                    let destination = self.cache.join(dependencies.cache_key(&key)?);
-                    destination.is_dir().then_some(destination)
-                }
-                _ => None,
-            }
-        } else {
-            None
-        };
-        let outputs = if let Some(destination) = reusable {
-            info!("Reusing rule {:?}.", task.name);
-            validate_outputs(task, &destination)?
-        } else {
-            info!("Building rule {:?}.", task.name);
-            let temporary = tempfile::Builder::new()
-                .prefix("rule-")
-                .tempdir_in(&self.cache)
-                .whatever("unable to create rule workspace")?;
-            let output_dir = temporary.path().join("outputs");
-            fs::create_dir(&output_dir).whatever("unable to create rule output directory")?;
-            let parameter_file = temporary.path().join("parameters.json");
-            fs::write(
-                &parameter_file,
-                serde_json::to_vec(&task.parameters)
-                    .whatever("unable to encode rule parameters")?,
-            )
-            .whatever("unable to write rule parameters")?;
-            let registrations = temporary.path().join("rebuild-if-changed.txt");
-            fs::write(&registrations, "").whatever("unable to create dependency registrations")?;
-            let workspace = temporary.path().join("workspace");
-            for directory in ["inputs", "secrets"] {
-                fs::create_dir_all(workspace.join(directory))
-                    .whatever("unable to create rule workspace")?;
-            }
-            let mut mounts = vec![mount(&workspace, "/run/rugix/bakery/work", false)];
-            mounts.extend_from_slice(project_mounts);
-            mounts.extend([
-                mount(
-                    &registrations,
-                    "/run/rugix/bakery/work/rebuild-if-changed.txt",
-                    false,
-                ),
-                mount(&directory, "/run/rugix/bakery/work/rule", true),
-                mount(&output_dir, "/run/rugix/bakery/work/outputs", false),
-                mount(
+        let images = &self.images;
+        self.cache.execute(
+            &format!("rule {:?}", task.name),
+            cached.then_some(key.as_str()),
+            &task.run.outputs,
+            |workspace| {
+                let output_dir = &workspace.outputs;
+                let parameter_file = workspace.path().join("parameters.json");
+                fs::write(
                     &parameter_file,
-                    "/run/rugix/bakery/work/parameters.json",
-                    true,
-                ),
-            ]);
-            for (name, path) in &inputs {
-                mounts.push(mount(
-                    path,
-                    &format!("/run/rugix/bakery/work/inputs/{name}"),
-                    true,
-                ));
-            }
-            for (name, path) in &secrets {
-                mounts.push(mount(
-                    path,
-                    &format!("/run/rugix/bakery/work/secrets/{name}"),
-                    true,
-                ));
-            }
-            let command: Vec<OsString> = task.run.command.iter().map(OsString::from).collect();
-            let environment = [
-                ("RUGIX_PROJECT_DIR", "/run/rugix/bakery/work/project"),
-                (
-                    "RUGIX_REBUILD_IF_CHANGED",
-                    "/run/rugix/bakery/work/rebuild-if-changed.txt",
-                ),
-            ];
-            let status = match &task.env {
-                Some(env) => self.images[env].run_with_env(&command, &mounts, &environment)?,
-                None => runtime::run(&command, &mounts, &environment)?,
-            };
-            if !status.success() {
-                bail!("build rule {:?} failed", task.name);
-            }
-            let outputs = validate_outputs(task, &output_dir)?;
-            let dependencies = ProjectDependencies::capture(&self.project, &registrations)?;
-            if cached {
-                let destination = self.cache.join(dependencies.cache_key(&key)?);
-                if !destination.is_dir() {
-                    fs::rename(&output_dir, &destination)
-                        .whatever("unable to publish cached rule outputs")?;
+                    serde_json::to_vec(&task.parameters)
+                        .whatever("unable to encode rule parameters")?,
+                )
+                .whatever("unable to write rule parameters")?;
+                let registrations = &workspace.registrations;
+                let workspace = workspace.path().join("workspace");
+                for directory in ["inputs", "secrets"] {
+                    fs::create_dir_all(workspace.join(directory))
+                        .whatever("unable to create rule workspace")?;
                 }
-                let outputs = validate_outputs(task, &destination)?;
-                dependencies.save(&dependency_record)?;
-                outputs
-            } else {
-                self.temporary.push(temporary);
-                outputs
-            }
-        };
-
-        Ok(outputs)
+                let mut mounts = vec![mount(&workspace, "/run/rugix/bakery/work", false)];
+                mounts.extend_from_slice(project_mounts);
+                mounts.extend([
+                    mount(
+                        &registrations,
+                        "/run/rugix/bakery/work/rebuild-if-changed.txt",
+                        false,
+                    ),
+                    mount(&directory, "/run/rugix/bakery/work/rule", true),
+                    mount(&output_dir, "/run/rugix/bakery/work/outputs", false),
+                    mount(
+                        &parameter_file,
+                        "/run/rugix/bakery/work/parameters.json",
+                        true,
+                    ),
+                ]);
+                for (name, path) in &inputs {
+                    mounts.push(mount(
+                        path,
+                        &format!("/run/rugix/bakery/work/inputs/{name}"),
+                        true,
+                    ));
+                }
+                for (name, path) in &secrets {
+                    mounts.push(mount(
+                        path,
+                        &format!("/run/rugix/bakery/work/secrets/{name}"),
+                        true,
+                    ));
+                }
+                let command: Vec<OsString> = task.run.command.iter().map(OsString::from).collect();
+                let environment = [
+                    ("RUGIX_PROJECT_DIR", Some("/run/rugix/bakery/work/project")),
+                    (
+                        "RUGIX_REBUILD_IF_CHANGED",
+                        Some("/run/rugix/bakery/work/rebuild-if-changed.txt"),
+                    ),
+                    ("SOURCE_DATE_EPOCH", source_date_epoch.as_deref()),
+                ];
+                let status = match &task.env {
+                    Some(env) => images[env].run_with_env(&command, &mounts, &environment)?,
+                    None => runtime::run(&command, &mounts, &environment)?,
+                };
+                if !status.success() {
+                    bail!("build rule {:?} failed", task.name);
+                }
+                Ok(())
+            },
+        )
     }
-}
 
-/// Reject missing outputs, incompatible kinds, and symlinks escaping /outputs.
-fn validate_outputs(task: &RunTask, root: &Path) -> BakeryResult<BTreeMap<Str, PathBuf>> {
-    let root = fs::canonicalize(root).whatever("unable to resolve rule outputs")?;
-    let mut outputs = BTreeMap::new();
-    for (name, output) in &task.run.outputs {
-        let path = fs::canonicalize(root.join(&output.path))
-            .whatever_with(|_| format!("rule {:?} did not produce output {name:?}", task.name))?;
-        if !path.starts_with(&root) {
-            bail!("rule output {name:?} escapes its output directory");
+    /// Fingerprint a layer's resolved definition and execute it through the shared cache.
+    fn execute_layer(
+        &mut self,
+        task: &LayerTask,
+        results: &[BTreeMap<Str, PathBuf>],
+        runtime: Option<&str>,
+    ) -> BakeryResult<BTreeMap<Str, PathBuf>> {
+        let inputs = self.artifacts.resolve_all(&task.inputs, results)?;
+        let mut key = Sha256::new();
+        key.update(b"rugix-layer-build-v3\0");
+        push(&mut key, "definition", &task.identity);
+        push(
+            &mut key,
+            "runtime",
+            runtime.unwrap_or("unidentified-bakery"),
+        );
+        let epoch = self.context.source_date_epoch;
+        push(&mut key, "source-date-epoch", &epoch.to_string());
+        for (name, path) in &inputs {
+            push(&mut key, name, &self.artifacts.hash(path)?);
         }
-        let metadata = fs::metadata(&path).whatever("unable to inspect rule output")?;
-        let matches = match output.kind {
-            ArtifactKind::File => metadata.is_file(),
-            ArtifactKind::Directory => metadata.is_dir(),
-        };
-        if !matches {
-            bail!("rule output {name:?} has an incompatible artifact kind");
+        for (index, job) in task.jobs.iter().enumerate() {
+            push(
+                &mut key,
+                &format!("recipe-path:{index}"),
+                &job.recipe.path.to_string_lossy(),
+            );
+            let directory = fs::canonicalize(&job.recipe.path)
+                .whatever("unable to resolve recipe implementation")?;
+            push(
+                &mut key,
+                &format!("recipe:{index}"),
+                &artifact_hash(&directory)?,
+            );
+            let parameters: BTreeMap<_, _> = job.parameters.iter().collect();
+            push(
+                &mut key,
+                &format!("parameters:{index}"),
+                &serde_json::to_string(&parameters)
+                    .whatever("unable to encode recipe parameters")?,
+            );
         }
-        outputs.insert(name.clone(), path);
+        let key = hex::encode(key.finalize());
+        let outputs = Map::from_iter([(
+            "archive".into(),
+            RuleOutput::new(ArtifactKind::File, "archive.tar"),
+        )]);
+        self.cache.execute(
+            &format!("layer {:?}", task.name),
+            runtime.map(|_| key.as_str()),
+            &outputs,
+            |workspace| task.execute(&inputs, &workspace.outputs, &workspace.registrations, epoch),
+        )
     }
-    Ok(outputs)
 }
 
 /// Length-prefix digest fields to avoid concatenation ambiguities.

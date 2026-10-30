@@ -5,7 +5,7 @@ use std::path::Path;
 
 use reportify::bail;
 
-use crate::build::{self, Artifact, Executor, Planner};
+use crate::build::{self, Artifact, ExecutionContext, Executor, Planner};
 use crate::config::systems::SystemConfig;
 use crate::oven::system::ReleaseInfo;
 use crate::project::ProjectRef;
@@ -22,16 +22,10 @@ pub fn assemble(
     release: &ReleaseInfo,
     system: &str,
     output: &Path,
-    source_date_epoch: Option<u64>,
+    context: ExecutionContext,
 ) -> BakeryResult<()> {
-    let inputs = planner.release(
-        &layer,
-        config.architecture,
-        release,
-        system,
-        source_date_epoch,
-    );
-    let context = inputs["context"].clone();
+    let inputs = planner.release(&layer, config.architecture, release, system);
+    let context_artifact = inputs["context"].clone();
     let mut outputs = if let Some(invocation) = &config.build {
         planner.invocation(invocation, inputs)?
     } else {
@@ -41,13 +35,13 @@ pub fn assemble(
         bail!("system assembly must export an image artifact");
     }
     if outputs
-        .insert("build-context.json".into(), context)
+        .insert("build-context.json".into(), context_artifact)
         .is_some()
     {
         bail!("assembly output build-context.json is reserved for release metadata");
     }
     let plan = planner.finish(outputs);
-    let mut executor = Executor::for_project(project)?;
+    let mut executor = Executor::for_project(project, context)?;
     let artifacts = executor.execute(&plan)?;
     if !artifacts["image"].is_file() {
         bail!("system assembly image must be a file");

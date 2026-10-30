@@ -17,10 +17,6 @@ default = 131072
 description = "Additional mksquashfs arguments, separated with shell-style quoting."
 default = ""
 
-[parameters.source-date-epoch]
-description = "Filesystem creation time and upper bound for file timestamps, as Unix seconds (0..4294967295)."
-default = 0
-
 [execution]
 type = "run"
 command = ["rugix-bakery", "internal", "exec-rule", "image-squashfs"]

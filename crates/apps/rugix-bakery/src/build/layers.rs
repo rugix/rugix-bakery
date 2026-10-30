@@ -1,7 +1,6 @@
 //! Plan layer and mixin nodes and execute their existing recipe schedules.
 
 use std::collections::BTreeMap;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use reportify::{bail, whatever, ResultExt};
@@ -18,28 +17,34 @@ use crate::project::ProjectRef;
 use crate::utils::caching::Hasher;
 use crate::BakeryResult;
 
-use super::cache::artifact_hash;
 use super::planner::Scope;
 use super::{validate_name, Artifact, ArtifactLocation, Plan, Planner, Task};
+
+/// Named directory outputs shared by layers, extraction, and release preparation.
+pub(crate) const LAYER_DIRECTORIES: [(&str, &str); 5] = [
+    ("rootfs", "roots/system"),
+    ("boot", "roots/boot"),
+    ("config", "roots/config"),
+    ("artifacts", "artifacts"),
+    ("bsp", "bsp"),
+];
 
 #[derive(Clone)]
 pub(crate) struct LayerOptions {
     pub project: ProjectRef,
-    pub source_date_epoch: u64,
-    pub explicit_source_date_epoch: Option<u64>,
     pub parameters: ParameterOverrides,
 }
 
 /// One layer import or customization, scheduled after its artifact prerequisites.
 #[derive(Debug)]
 pub struct LayerTask {
-    name: String,
-    identity: String,
+    pub(crate) name: String,
+    pub(crate) identity: String,
     architecture: Architecture,
-    jobs: Vec<RecipeJob>,
+    pub(crate) jobs: Vec<RecipeJob>,
     url: Option<String>,
     pub inputs: BTreeMap<Str, Artifact>,
-    options: LayerOptions,
+    pub(crate) options: LayerOptions,
 }
 
 impl std::fmt::Debug for LayerOptions {
@@ -52,17 +57,9 @@ impl std::fmt::Debug for LayerOptions {
 
 impl Planner {
     /// Enable existing layers in this graph without loading unrelated layer files yet.
-    pub fn with_layers(
-        mut self,
-        project: &ProjectRef,
-        source_date_epoch: Option<u64>,
-        parameters: &ParameterOverrides,
-    ) -> Self {
+    pub fn with_layers(mut self, project: &ProjectRef, parameters: &ParameterOverrides) -> Self {
         self.layer_options = Some(LayerOptions {
             project: project.clone(),
-            source_date_epoch: source_date_epoch
-                .unwrap_or_else(|| jiff::Timestamp::now().as_second() as u64),
-            explicit_source_date_epoch: source_date_epoch,
             parameters: parameters.clone(),
         });
         self
@@ -360,7 +357,7 @@ impl Planner {
                         job.recipe.name
                     )
                 })?;
-                if artifact.kind != kind.kind() {
+                if artifact.kind != kind.kind {
                     bail!(
                         "input {name:?} for recipe {} has an incompatible artifact kind",
                         job.recipe.name
@@ -394,55 +391,24 @@ impl Planner {
 }
 
 impl LayerTask {
-    /// Retain archive compatibility while input identities select an immutable cache
-    /// variant.
+    /// Produce the layer archive; the executor owns cache reuse and publication.
     pub fn execute(
         &self,
         inputs: &BTreeMap<Str, PathBuf>,
-        hashes: &BTreeMap<Str, String>,
-        runtime: Option<&str>,
-        workspace: Option<&Path>,
-    ) -> BakeryResult<BTreeMap<Str, PathBuf>> {
-        let mut identity = Hasher::new();
-        identity.push("layer-graph-v1", &self.identity);
-        identity.push("runtime", runtime.unwrap_or("unidentified-bakery"));
-        if let Some(epoch) = self.options.explicit_source_date_epoch {
-            identity.push("source-date-epoch", epoch.to_string());
-        }
-        for (name, hash) in hashes {
-            identity.push(name, hash);
-        }
-        for (index, job) in self.jobs.iter().enumerate() {
-            let directory = fs::canonicalize(&job.recipe.path)
-                .whatever("unable to resolve recipe implementation")?;
-            identity.push(&format!("recipe:{index}"), artifact_hash(&directory)?);
-            let parameters: BTreeMap<_, _> = job.parameters.iter().collect();
-            identity.push(
-                &format!("parameters:{index}"),
-                serde_json::to_vec(&parameters).whatever("unable to encode recipe parameters")?,
-            );
-        }
-        // Uncached tasks need distinct paths even when their declared inputs match.
-        // The executor retains their workspaces until all outputs are published.
-        let relative = workspace
-            .map(Path::to_owned)
-            .unwrap_or_else(|| PathBuf::from(".rugix/layers").join(identity.finalize()));
-        let target = self
-            .options
-            .project
-            .dir()
-            .join(&relative)
-            .join("system.tar");
-        fs::create_dir_all(target.parent().expect("layer archive has a parent"))
-            .whatever("unable to create layer cache")?;
+        output_dir: &Path,
+        registrations: &Path,
+        source_date_epoch: u64,
+    ) -> BakeryResult<()> {
+        let target = output_dir.join("archive.tar");
         if let Some(url) = &self.url {
-            if runtime.is_none() || !target.is_file() {
-                crate::oven::extract(&self.options.project, url, &target)?;
-            }
+            crate::oven::extract(&self.options.project, url, &target)?;
         } else {
             if let Err(error) = crate::utils::emulation::prepare(self.architecture) {
                 tracing::debug!(?error, "automatic target emulation is unavailable");
             }
+            let registrations = registrations
+                .strip_prefix(self.options.project.dir())
+                .whatever("layer dependency registrations must be inside the project")?;
             customize::customize(
                 &self.options.project,
                 self.architecture,
@@ -451,12 +417,11 @@ impl LayerTask {
                 inputs,
                 inputs.get("parent").map(PathBuf::as_path),
                 &target,
-                &relative,
-                self.options.source_date_epoch,
-                runtime.is_some(),
+                registrations,
+                source_date_epoch,
             )?;
         }
-        Ok(BTreeMap::from([("archive".into(), target)]))
+        Ok(())
     }
 }
 
@@ -474,13 +439,7 @@ fn layer_outputs(task: usize) -> BTreeMap<Str, Artifact> {
         source: ArtifactLocation::Unpack(Box::new(archive.clone())),
     };
     let mut outputs = BTreeMap::from([("archive".into(), archive)]);
-    for (name, path) in [
-        ("rootfs", "roots/system"),
-        ("boot", "roots/boot"),
-        ("config", "roots/config"),
-        ("artifacts", "artifacts"),
-        ("bsp", "bsp"),
-    ] {
+    for (name, path) in LAYER_DIRECTORIES {
         outputs.insert(
             name.into(),
             Artifact {

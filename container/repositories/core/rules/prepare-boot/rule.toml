@@ -13,10 +13,6 @@ description = "Boot filesystem source tree."
 default = "unknown"
 description = "Rugix boot target: rpi-tryboot, rpi-uboot, generic-grub-efi, bsp, or unknown."
 
-[parameters.source-date-epoch]
-default = 0
-description = "Upper bound for generated boot timestamps, as Unix seconds."
-
 [execution]
 type = "run"
 command = ["rugix-bakery", "internal", "exec-rule", "prepare-boot"]

@@ -13,15 +13,18 @@ use crate::BakeryResult;
 
 mod artifacts;
 mod cache;
+mod context;
 pub mod dependencies;
 mod execute;
 mod graph;
 mod layers;
 mod planner;
 mod release;
+mod results;
 mod runtime;
 mod secrets;
 
+pub use context::ExecutionContext;
 pub use execute::Executor;
 pub use planner::{validate_name, Artifact, ArtifactLocation, Plan, Planner, RunTask, Task};
 
@@ -30,12 +33,14 @@ pub fn build_invocation(
     project: &crate::project::ProjectRef,
     invocation: &Path,
     output: &Path,
+    source_date_epoch: Option<u64>,
 ) -> BakeryResult<()> {
+    let context = ExecutionContext::resolve(source_date_epoch)?;
     let invocation = crate::config::load_config(invocation)?;
     let plan = Planner::new(project.repositories()?)?
-        .with_layers(project, None, &crate::oven::ParameterOverrides::new())
+        .with_layers(project, &crate::oven::ParameterOverrides::new())
         .plan(&invocation, BTreeMap::new(), BTreeMap::new())?;
-    let mut executor = Executor::for_project(project)?;
+    let mut executor = Executor::for_project(project, context)?;
     let artifacts = executor.execute(&plan)?;
     publish(&artifacts, output, project.dir())
 }

@@ -34,8 +34,8 @@ The `install-hello` recipe declares a `package` input and a `build-package` node
 that produces it:
 
 ```toml
-[inputs]
-package = "file"
+[inputs.package]
+kind = "file"
 
 [rules.build-package]
 uses = "cargo-deb"

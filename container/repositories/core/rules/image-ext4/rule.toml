@@ -29,10 +29,6 @@ default = 0
 description = "Additional mkfs.ext4 arguments, separated with shell-style quoting."
 default = ""
 
-[parameters.source-date-epoch]
-description = "Filesystem creation, access, and change time and upper bound for modification times, as Unix seconds (0..4294967295)."
-default = 0
-
 [execution]
 type = "run"
 command = ["rugix-bakery", "internal", "exec-rule", "image-ext4"]

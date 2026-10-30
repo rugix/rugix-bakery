@@ -109,13 +109,7 @@ impl Artifacts {
                     let temporary = tempfile::tempdir_in(&self.trees)
                         .whatever("unable to create layer extraction workspace")?;
                     crate::oven::archive::extract(&archive, temporary.path())?;
-                    for path in [
-                        "roots/system",
-                        "roots/boot",
-                        "roots/config",
-                        "artifacts",
-                        "bsp",
-                    ] {
+                    for (_, path) in super::layers::LAYER_DIRECTORIES {
                         let path = temporary.path().join(path);
                         if !path.exists() {
                             fs::create_dir_all(&path)

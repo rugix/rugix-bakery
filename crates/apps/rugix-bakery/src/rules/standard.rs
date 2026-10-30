@@ -77,8 +77,8 @@ pub fn initialize_boot() -> BakeryResult<()> {
         File::create(config.join(".rugix/bootstrap"))
             .whatever("unable to create bootstrap marker")?;
     }
-    clamp_tree(boot, p.source_date_epoch)?;
-    clamp_tree(config, p.source_date_epoch)
+    clamp_tree(boot, super::source_date_epoch()?)?;
+    clamp_tree(config, super::source_date_epoch()?)
 }
 
 /// Patch an initialized boot tree with its resolved root partition reference.
@@ -87,7 +87,6 @@ pub fn prepare_boot() -> BakeryResult<()> {
     #[serde(rename_all = "kebab-case")]
     struct Parameters {
         target: Target,
-        source_date_epoch: u64,
     }
     let p: Parameters = parameters()?;
     let boot = Path::new("/run/rugix/bakery/work/outputs/boot");
@@ -121,7 +120,7 @@ pub fn prepare_boot() -> BakeryResult<()> {
                 .whatever("unable to patch Raspberry Pi boot configuration")?;
         }
     }
-    clamp_tree(boot, p.source_date_epoch)
+    clamp_tree(boot, super::source_date_epoch()?)
 }
 
 /// Populate a disk skeleton from numbered filesystem artifacts without loop devices.
@@ -176,13 +175,21 @@ pub fn archive_tree() -> BakeryResult<()> {
     #[derive(Deserialize)]
     #[serde(rename_all = "kebab-case")]
     struct Parameters {
-        source_date_epoch: i64,
+        clamp_mtime: String,
     }
     let p: Parameters = parameters()?;
+    let epoch = if p.clamp_mtime.is_empty() {
+        super::source_date_epoch()? as i64
+    } else {
+        p.clamp_mtime
+            .parse::<jiff::Timestamp>()
+            .whatever("invalid clamp-mtime timestamp")?
+            .as_second()
+    };
     crate::oven::archive::create(
         Path::new("/run/rugix/bakery/work/inputs/tree"),
         Path::new("/run/rugix/bakery/work/outputs/tree.tar"),
-        Some(p.source_date_epoch),
+        Some(epoch),
     )
 }
 
@@ -191,7 +198,6 @@ pub fn archive_tree() -> BakeryResult<()> {
 struct BootParameters {
     target: Target,
     architecture: Architecture,
-    source_date_epoch: u64,
 }
 
 /// Generated boot metadata must have stable identities before downstream caching.

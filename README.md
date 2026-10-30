@@ -54,7 +54,7 @@ Inspect them without building their artifacts:
 
 Each command supports `--json`. Use `list --repository core --json` to export
 a complete catalog for reference generation. See the
-[definition catalog guide](https://rugix.org/docs/bakery/next/definition-catalogs/)
+[definition catalog guide](https://rugix.org/docs/bakery/next/reference/definition-catalogs/)
 for the metadata format and documentation workflow.
 
 ## Using Rugix Ctrl with Other Build Systems

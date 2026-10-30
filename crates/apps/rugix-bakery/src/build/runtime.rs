@@ -38,10 +38,20 @@ pub fn identity() -> BakeryResult<Option<String>> {
 pub fn run(
     arguments: &[OsString],
     mounts: &[BindMount],
-    environment: &[(&str, &str)],
+    environment: &[(&str, Option<&str>)],
 ) -> BakeryResult<ExitStatus> {
-    let mut command = Command::new("unshare");
-    command.envs(environment.iter().copied());
+    let mut command = Command::new("rugix-isolate");
+    command.args(["--supervise", "--", "unshare"]);
+    for (name, value) in environment {
+        match value {
+            Some(value) => {
+                command.env(name, value);
+            }
+            None => {
+                command.env_remove(name);
+            }
+        }
+    }
     command.args([
         "--mount",
         "--propagation",

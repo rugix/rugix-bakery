@@ -87,16 +87,6 @@ impl ProjectConfig {
     }
 }
 
-impl rules::ArtifactInput {
-    /// Artifact kind accepted by either input notation.
-    pub fn kind(&self) -> rules::ArtifactKind {
-        match self {
-            Self::Kind(kind) => *kind,
-            Self::Definition(definition) => definition.kind,
-        }
-    }
-}
-
 impl Filesystem {
     /// Name of the filesystem.
     pub fn name(&self) -> &'static str {

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import tarfile
 from pathlib import Path
@@ -32,7 +33,7 @@ printf boot-context > "$RUGIX_LAYER_DIR/roots/boot/marker"
     recipe = project / "vendor/recipes/install-app"
     (recipe / "steps").mkdir(parents=True)
     (recipe / "recipe.toml").write_text(
-        '[inputs]\napplication = "file"\ntoken = "file"\n'
+        '[inputs]\napplication = { kind = "file" }\ntoken = { kind = "file" }\n'
     )
     script = recipe / "steps/00-run.sh"
     script.write_text(
@@ -48,8 +49,8 @@ cp "$RECIPE_INPUTS_DIR/token" "$RUGIX_ROOT_DIR/etc/token"
     rule.mkdir(parents=True)
     (rule / "rule.toml").write_text(
         """[inputs]
-parent = "directory"
-source = "file"
+parent = { kind = "directory" }
+source = { kind = "file" }
 [parameters.architecture]
 default = "unused"
 [execution]
@@ -95,9 +96,9 @@ token = { rule = { node = "application", output = "token" } }
     rule.mkdir()
     (rule / "rule.toml").write_text(
         """[inputs]
-rootfs = "directory"
-boot = "directory"
-context = "file"
+rootfs = { kind = "directory" }
+boot = { kind = "directory" }
+context = { kind = "file" }
 [execution]
 type = "graph"
 [execution.rules.filesystem]
@@ -196,7 +197,7 @@ def test_layer_input_validation(env_project: BakeryBuilder, problem: str) -> Non
         config.write_text(config.read_text() + 'typo = { path = "source" }\n')
     with pytest.raises(subprocess.CalledProcessError):
         build_rule(env_project)
-    assert not (project / ".rugix/layers").exists()
+    assert not (project / ".rugix/rules").exists()
     assert not (project / "build/layer").exists()
 
 
@@ -264,7 +265,7 @@ def test_unidentified_layer_runtime(env_project: BakeryBuilder) -> None:
     token = (build_rule(env_project) / "rootfs/etc/token").read_bytes()
     assert (build_rule(env_project) / "rootfs/etc/token").read_bytes() != token
     env_project.run(["bake", "layer", "device", "--arch", "amd64"])
-    archive = next((project / ".rugix/layers").glob("*/system.tar"))
+    archive = next((project / ".rugix/rules").glob("task-*/outputs/archive.tar"))
     with tarfile.open(archive) as layer:
         entry = layer.extractfile("./roots/system/etc/token")
         assert entry is not None and len(entry.read()) == 32
@@ -321,7 +322,7 @@ done
     )
     bootstrap.chmod(0o755)
     (project / "recipes/configure/recipe.toml").write_text(
-        '[inputs]\nsettings = "directory"\n'
+        '[inputs]\nsettings = { kind = "directory" }\n'
     )
     configure = project / "recipes/configure/steps/00-install.sh"
     configure.write_text(
@@ -345,7 +346,7 @@ def test_uncached_layer_outputs_remain_immutable(env_project: BakeryBuilder) -> 
     prepare(project, use_env=False)
     (project / "layers/device.toml").write_text('root = true\nrecipes = ["base"]\n')
     recipe = project / "recipes/base/recipe.toml"
-    recipe.write_text('[inputs]\nsource = "file"\n')
+    recipe.write_text('[inputs]\nsource = { kind = "file" }\n')
     script = project / "recipes/base/steps/00-run.sh"
     script.write_text(
         script.read_text()
@@ -353,14 +354,14 @@ def test_uncached_layer_outputs_remain_immutable(env_project: BakeryBuilder) -> 
         + 'head -c 32 /dev/urandom > "$RUGIX_ROOT_DIR/etc/token"\n'
     )
     (project / "rules/device/rule.toml").write_text(
-        '[inputs]\nsource = "file"\nwait = "file"\n'
+        '[inputs]\nsource = { kind = "file" }\nwait = { kind = "file" }\n'
         '[execution]\ntype = "layer"\nlayer = "device"\narchitecture = "amd64"\n'
     )
     snapshot = project / "rules/snapshot"
     snapshot.mkdir()
     (snapshot / "rule.toml").write_text(
         """[inputs]
-archive = "file"
+archive = { kind = "file" }
 [execution]
 type = "run"
 command = ["/bin/cp", "/run/rugix/bakery/work/inputs/archive", "/run/rugix/bakery/work/outputs/archive"]
@@ -401,3 +402,45 @@ snapshot = { rule = { node = "snapshot", output = "archive" } }
     output = build_rule(env_project)
     assert (output / "first").read_bytes() == (output / "snapshot").read_bytes()
     assert (output / "first").read_bytes() != (output / "second").read_bytes()
+
+
+def test_identical_recipe_names_affect_layer_cache(env_project: BakeryBuilder) -> None:
+    """Switching identical recipe directories rebuilds when recipe paths are observable."""
+    project = env_project.project_dir
+    (project / "layers/unfinished.toml").unlink()
+    first = project / "recipes/first"
+    (first / "steps").mkdir(parents=True)
+    (first / "recipe.toml").write_text(
+        'description = "Identical recipe implementations."\n'
+    )
+    script = first / "steps/00-run.sh"
+    script.write_text(
+        '#!/bin/sh\nset -eu\nmkdir -p "$RUGIX_ROOT_DIR/etc"\n'
+        'basename "$RECIPE_DIR" > "$RUGIX_ROOT_DIR/etc/recipe-name"\n'
+        'head -c 32 /dev/urandom > "$RUGIX_ROOT_DIR/etc/recipe-token"\n'
+    )
+    script.chmod(0o755)
+    shutil.copytree(first, project / "recipes/second")
+    layer = project / "layers/identity.toml"
+    rule = project / "rules/identity"
+    rule.mkdir(parents=True)
+    (rule / "rule.toml").write_text(
+        '[execution]\ntype = "layer"\nlayer = "identity"\narchitecture = "amd64"\n'
+    )
+    (project / "invocation.toml").write_text('uses = "identity"\n')
+
+    def bake(recipe: str) -> tuple[str, bytes]:
+        layer.write_text(f'root = true\nrecipes = ["{recipe}"]\n')
+        env_project.run(["bake", "rule", "invocation.toml", "build/identity"])
+        rootfs = project / "build/identity/rootfs"
+        return (
+            (rootfs / "etc/recipe-name").read_text(),
+            (rootfs / "etc/recipe-token").read_bytes(),
+        )
+
+    name, token = bake("first")
+    assert name == "first\n"
+    name, other = bake("second")
+    assert name == "second\n"
+    assert other != token
+    assert bake("first") == ("first\n", token)

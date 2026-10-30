@@ -25,10 +25,10 @@ def prepare_recipe_rules(project: Path, *, use_env: bool = False) -> None:
     recipe = project / "vendor/recipes/install-app"
     (recipe / "recipe.toml").write_text(
         """[inputs]
-application = "file"
-token = "file"
-settings = "file"
-source = "file"
+application = { kind = "file" }
+token = { kind = "file" }
+settings = { kind = "file" }
+source = { kind = "file" }
 [parameters.mode]
 default = "recipe"
 [parameters.enabled]
@@ -161,7 +161,7 @@ def test_forwarded_inputs_override_recipe_defaults(env_project: BakeryBuilder) -
     project = env_project.project_dir
     prepare_recipe_rules(project)
     wrapper = project / "rules/device/rule.toml"
-    wrapper.write_text('[inputs]\nsource = "file"\n' + wrapper.read_text())
+    wrapper.write_text('[inputs]\nsource = { kind = "file" }\n' + wrapper.read_text())
     (project / "invocation.toml").write_text(
         'uses = "device"\ninputs.source = { path = "source" }\n'
     )
@@ -257,5 +257,5 @@ def test_recipe_default_validation(env_project: BakeryBuilder, problem: str) -> 
     recipe.write_text(text)
     with pytest.raises(subprocess.CalledProcessError):
         build_rule(env_project)
-    assert not (project / ".rugix/layers").exists()
+    assert not (project / ".rugix/rules").exists()
     assert not (project / "build/layer").exists()

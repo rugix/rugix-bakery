@@ -38,7 +38,7 @@ head -c 32 /dev/urandom > /run/rugix/bakery/work/outputs/token
     consumer = project / "vendor/rules/consume"
     consumer.mkdir()
     (consumer / "rule.toml").write_text(
-        '[inputs]\nsource = "file"\n'
+        '[inputs]\nsource = { kind = "file" }\n'
         '[execution]\ntype = "run"\n'
         'command = ["/bin/sh", "/run/rugix/bakery/work/rule/run.sh"]\n'
         '[execution.outputs.result]\nkind = "file"\npath = "result"\n'
@@ -51,7 +51,7 @@ head -c 32 /dev/urandom > /run/rugix/bakery/work/outputs/token
     graph = project / "vendor/rules/pair/rule.toml"
     graph.write_text(
         """[inputs]
-source = "file"
+source = { kind = "file" }
 [execution]
 type = "graph"
 [execution.rules.copy]
@@ -181,10 +181,16 @@ echo token > /run/rugix/bakery/work/outputs/token
 
 
 def test_layer_project_dependencies(env_project: BakeryBuilder) -> None:
-    """Existing recipe registrations share content tracking and reset after rebuilding."""
+    """Layer results are immutable, track discovered inputs, and recover after failure."""
     project = env_project.project_dir
     (project / "layers/unfinished.toml").unlink()
     (project / "layers/root.toml").write_text('root = true\nrecipes = ["populate"]\n')
+    rule = project / "rules/root"
+    rule.mkdir(parents=True)
+    (rule / "rule.toml").write_text(
+        '[execution]\ntype = "layer"\nlayer = "root"\narchitecture = "amd64"\n'
+    )
+    (project / "layer.toml").write_text('uses = "root"\n')
     recipe = project / "recipes/populate"
     (recipe / "steps").mkdir(parents=True)
     (recipe / "recipe.toml").write_text('description = "Test project dependencies"\n')
@@ -193,7 +199,12 @@ def test_layer_project_dependencies(env_project: BakeryBuilder) -> None:
         """#!/bin/sh
 set -eu
 test "$LAYER_REBUILD_IF_CHANGED" = "$RUGIX_REBUILD_IF_CHANGED"
-printf '%s\\n' choice >> "$LAYER_REBUILD_IF_CHANGED"
+printf '%s\\n' choice fail >> "$LAYER_REBUILD_IF_CHANGED"
+if [ -f "$RUGIX_PROJECT_DIR/fail" ]; then
+    printf '%s\\n' abandoned >> "$RUGIX_REBUILD_IF_CHANGED"
+    echo test-layer-failure
+    exit 37
+fi
 choice=$(cat "$RUGIX_PROJECT_DIR/choice")
 printf '%s\\n' "$choice" >> "$RUGIX_REBUILD_IF_CHANGED"
 mkdir -p "$RUGIX_ROOT_DIR/etc"
@@ -205,10 +216,11 @@ head -c 32 /dev/urandom > "$RUGIX_ROOT_DIR/etc/token"
     (project / "choice").write_text("file a")
     (project / "file a").write_text("aaaa")
     (project / "file b").write_text("bbbb")
+    archive = project / "build/layer/archive"
+    cache = project / ".rugix/rules"
 
     def bake() -> tuple[bytes, bytes]:
-        env_project.run(["bake", "layer", "root", "--arch", "amd64"])
-        archive = next((project / ".rugix/layers").glob("*/system.tar"))
+        env_project.run(["bake", "rule", "layer.toml", "build/layer"])
         with tarfile.open(archive) as layer:
             result = layer.extractfile("./roots/system/etc/result")
             token = layer.extractfile("./roots/system/etc/token")
@@ -217,15 +229,36 @@ head -c 32 /dev/urandom > "$RUGIX_ROOT_DIR/etc/token"
 
     result, token = bake()
     assert result == b"aaaa"
+    assert not (project / ".rugix/layers").exists()
+    original_archive = next(cache.glob("*/archive.tar"))
+    original_bytes = original_archive.read_bytes()
     assert bake()[1] == token
     original = (project / "file a").stat()
     (project / "file a").write_text("AAAA")
     os.utime(project / "file a", ns=(original.st_atime_ns, original.st_mtime_ns))
     assert bake()[0] == b"AAAA"
+    assert original_archive.read_bytes() == original_bytes
     (project / "choice").write_text("file b")
     result, token = bake()
     assert result == b"bbbb"
     (project / "file a").write_text("no longer used")
+    assert bake()[1] == token
+
+    published = archive.read_bytes()
+    cached_archives = {path: path.read_bytes() for path in cache.glob("*/archive.tar")}
+    (project / "fail").touch()
+    with pytest.raises(subprocess.CalledProcessError):
+        bake()
+    assert archive.read_bytes() == published
+    assert {
+        path: path.read_bytes() for path in cache.glob("*/archive.tar")
+    } == cached_archives
+    assert any(
+        "test-layer-failure" in path.read_text()
+        for path in cache.glob("task-*/outputs/build.log")
+    )
+    (project / "fail").unlink()
+    (project / "abandoned").touch()
     assert bake()[1] == token
 
 

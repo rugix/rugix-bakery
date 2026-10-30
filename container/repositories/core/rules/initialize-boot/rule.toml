@@ -17,10 +17,6 @@ description = "Rugix boot target: rpi-tryboot, rpi-uboot, generic-grub-efi, bsp,
 default = "amd64"
 description = "Target architecture."
 
-[parameters.source-date-epoch]
-default = 0
-description = "Upper bound for generated boot timestamps, as Unix seconds."
-
 [execution]
 type = "run"
 command = ["rugix-bakery", "internal", "exec-rule", "initialize-boot"]

@@ -1,6 +1,6 @@
 //! Functionality for baking layers and images.
 
-use crate::build::{Artifact, Executor, Planner};
+use crate::build::{Artifact, ExecutionContext, Executor, Planner};
 use sidex::types::Str;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
@@ -18,14 +18,13 @@ use xscript::{run, Run};
 
 use crate::config::recipes::ParameterValue;
 use crate::config::systems::{Architecture, SystemConfig};
-use crate::project::library::{LayerIdx, Library, MixinIdx};
+use crate::project::library::{Library, MixinIdx};
 use crate::project::ProjectRef;
 use crate::utils::caching::{download, Hasher};
 use crate::BakeryResult;
 
 mod build;
 pub mod customize;
-pub mod layer;
 mod pipeline;
 pub mod system;
 pub mod targets;
@@ -77,6 +76,7 @@ pub fn bake_system(
     mixin_selection: &MixinSelection,
     bundle_options: Option<&BundleOpts>,
 ) -> BakeryResult<()> {
+    let context = ExecutionContext::resolve(source_date_epoch)?;
     let system_config = project
         .config()
         .get_system_config(system)
@@ -90,11 +90,7 @@ pub fn bake_system(
     }
     info!("baking image `{system}`");
     let layer_bakery = LayerBakery::new(project, system_config.architecture, param_overrides);
-    let mut planner = Planner::new(project.repositories()?)?.with_layers(
-        project,
-        source_date_epoch,
-        param_overrides,
-    );
+    let mut planner = Planner::new(project.repositories()?)?.with_layers(project, param_overrides);
     let baked_layer =
         layer_bakery.plan_system_layer(&mut planner, system_config, mixin_selection)?;
     build::assemble(
@@ -106,7 +102,7 @@ pub fn bake_system(
         release_info,
         system,
         output,
-        source_date_epoch,
+        context,
     )
 }
 
@@ -129,14 +125,6 @@ impl<'p> LayerBakery<'p> {
         }
     }
 
-    pub fn bake_root(&self, layer: &str, source_date_epoch: Option<u64>) -> BakeryResult<PathBuf> {
-        let library = self.project.library()?;
-        let index = library
-            .lookup_layer(library.repositories.root_repository, layer)
-            .ok_or_else(|| whatever!("unable to find layer {layer:?}"))?;
-        self.bake(index, source_date_epoch)
-    }
-
     fn plan_system_layer(
         &self,
         planner: &mut Planner,
@@ -157,17 +145,14 @@ impl<'p> LayerBakery<'p> {
         Ok(outputs)
     }
 
-    pub fn bake(&self, layer: LayerIdx, source_date_epoch: Option<u64>) -> BakeryResult<PathBuf> {
-        let library = self.project.library()?;
-        let layer = &library.layers[layer];
-        let mut planner = Planner::new(self.project.repositories()?)?.with_layers(
-            self.project,
-            source_date_epoch,
-            self.param_overrides,
-        );
+    pub fn bake_root(&self, layer: &str, source_date_epoch: Option<u64>) -> BakeryResult<PathBuf> {
+        let context = ExecutionContext::resolve(source_date_epoch)?;
+        let repository = self.project.repositories()?.root_repository;
+        let mut planner = Planner::new(self.project.repositories()?)?
+            .with_layers(self.project, self.param_overrides);
         let outputs = planner.layer(
-            layer.repo,
-            &layer.name,
+            repository,
+            layer,
             self.arch,
             BTreeMap::new(),
             BTreeMap::new(),
@@ -176,7 +161,7 @@ impl<'p> LayerBakery<'p> {
             "archive".into(),
             outputs["archive"].clone(),
         )]));
-        let mut executor = Executor::for_project(self.project)?;
+        let mut executor = Executor::for_project(self.project, context)?;
         let archive = executor.execute(&plan)?["archive"].clone();
         executor.keep_artifact(&archive);
         Ok(archive)
@@ -414,80 +399,28 @@ pub fn bake_bundle(
     rugix_bundle::bundle_hash(output).whatever("unable to hash assembled update bundle")
 }
 
-fn rpi_bundle_config(opts: &BundleOpts, is_gpt: bool) -> BundleManifest {
+/// Standard boot and system payloads differ only in the system partition number.
+fn standard_bundle_config(opts: &BundleOpts, system_partition: u32) -> BundleManifest {
     let compression = if opts.disable_compression {
         None
     } else {
         Some(manifest::Compression::Xz(manifest::XzCompression::new()))
     };
-    manifest::BundleManifest::new(
-        manifest::UpdateType::Full,
-        (vec![
+    let payloads = [("boot", 2), ("system", system_partition)]
+        .into_iter()
+        .map(|(slot, partition)| {
             manifest::Payload::new(
-                manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig {
-                    slot: "boot".to_owned().into(),
-                }),
-                "partition-2.img".to_owned(),
+                manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig { slot: slot.into() }),
+                format!("partition-{partition}.img"),
             )
             .with_block_encoding(Some(
                 manifest::BlockEncoding::new(opts.chunker_algorithm())
                     .with_deduplicate(Some(true))
                     .with_compression(compression.clone()),
-            )),
-            manifest::Payload::new(
-                manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig {
-                    slot: "system".to_owned().into(),
-                }),
-                if is_gpt {
-                    "partition-4.img".to_owned()
-                } else {
-                    "partition-5.img".to_owned()
-                },
-            )
-            .with_block_encoding(Some(
-                manifest::BlockEncoding::new(opts.chunker_algorithm())
-                    .with_deduplicate(Some(true))
-                    .with_compression(compression.clone()),
-            )),
-        ])
-        .into(),
-    )
-}
-
-fn efi_bundle_config(opts: &BundleOpts) -> BundleManifest {
-    let compression = if opts.disable_compression {
-        None
-    } else {
-        Some(manifest::Compression::Xz(manifest::XzCompression::new()))
-    };
-    manifest::BundleManifest::new(
-        manifest::UpdateType::Full,
-        (vec![
-            manifest::Payload::new(
-                manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig {
-                    slot: "boot".to_owned().into(),
-                }),
-                "partition-2.img".to_owned(),
-            )
-            .with_block_encoding(Some(
-                manifest::BlockEncoding::new(opts.chunker_algorithm())
-                    .with_deduplicate(Some(true))
-                    .with_compression(compression.clone()),
-            )),
-            manifest::Payload::new(
-                manifest::DeliveryConfig::Slot(manifest::SlotDeliveryConfig {
-                    slot: "system".to_owned().into(),
-                }),
-                "partition-4.img".to_owned(),
-            )
-            .with_block_encoding(Some(
-                manifest::BlockEncoding::new(opts.chunker_algorithm())
-                    .with_deduplicate(Some(true))
-                    .with_compression(compression),
-            )),
-        ])
-        .into(),
-    )
+            ))
+        })
+        .collect::<Vec<_>>();
+    manifest::BundleManifest::new(manifest::UpdateType::Full, payloads.into())
 }
 
 fn bsp_bundle_config(system_path: &Path, opts: &BundleOpts) -> BakeryResult<BundleManifest> {

@@ -175,16 +175,17 @@ def test_standard_bundle_uses_graph_payloads(env_project: BakeryBuilder) -> None
     assert digest(project / "export.rugixb") == digest(output / "system.rugixb")
 
 
-def test_implicit_release_date_survives_noop_builds(
+def test_default_source_date_survives_noop_builds(
     env_project: BakeryBuilder, capfd: pytest.CaptureFixture[str]
 ) -> None:
-    """An unchanged layer retains its implicit release date and cached image artifacts."""
+    """The default source date is zero and unchanged builds reuse cached image artifacts."""
     project = env_project.project_dir
     prepare(project)
     env_project.run(["bake", "image", "device"])
     output = project / "build/device"
     original = digest(output / "system.img")
     context = (output / "build-context.json").read_bytes()
+    assert json.loads(context)["source-date-epoch"] == 0
     capfd.readouterr()
     time.sleep(2)
     env_project.run(["bake", "image", "device"])
@@ -239,7 +240,7 @@ filesystem = { type = "ext4" }
     rule = project / "rules/extract"
     rule.mkdir(parents=True)
     (rule / "rule.toml").write_text(
-        '[inputs]\nimage = "file"\n[execution]\ntype = "run"\n'
+        '[inputs]\nimage = { kind = "file" }\n[execution]\ntype = "run"\n'
         'command = ["mcopy", "-i", "/run/rugix/bakery/work/inputs/image", "::/BOOT/BOOTX64.EFI", "/run/rugix/bakery/work/outputs/efi"]\n'
         '[execution.outputs.efi]\nkind = "file"\npath = "efi"\n'
     )
@@ -265,7 +266,7 @@ def test_small_fat_partition_dereferences_boot_links(
     rule = project / "rules/extract"
     rule.mkdir(parents=True)
     (rule / "rule.toml").write_text(
-        '[inputs]\nimage = "file"\n[execution]\ntype = "run"\n'
+        '[inputs]\nimage = { kind = "file" }\n[execution]\ntype = "run"\n'
         'command = ["mcopy", "-i", "/run/rugix/bakery/work/inputs/image", "::/kernel.img", "/run/rugix/bakery/work/outputs/kernel"]\n'
         '[execution.outputs.kernel]\nkind = "file"\npath = "kernel"\n'
     )

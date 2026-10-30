@@ -1,6 +1,7 @@
 //! Spawn a process in isolated environment.
 
 use std::ffi::CString;
+use std::os::unix::process::ExitStatusExt;
 use std::path::PathBuf;
 
 use clap::Parser;
@@ -25,6 +26,11 @@ pub struct Args {
     #[clap(long)]
     pid_namespace: bool,
 
+    /// Supervise the command and terminate surviving descendants without creating
+    /// namespaces.
+    #[clap(long, conflicts_with_all = ["bind_mounts", "recursive_bind_mounts", "chroot", "pid_namespace"])]
+    supervise: bool,
+
     /// Command to execute.
     #[clap(required = true, trailing_var_arg = true)]
     command: Vec<String>,
@@ -42,6 +48,14 @@ fn main() {
 
 /// Create an isolated child process and spawn the specified command in it.
 fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
+    if args.supervise {
+        let status = rugix_isolator::supervise(&args.command)?;
+        std::process::exit(
+            status
+                .code()
+                .unwrap_or_else(|| 128 + status.signal().unwrap_or(1)),
+        );
+    }
     let mut isolator = Isolator::new();
 
     for bind in &args.bind_mounts {

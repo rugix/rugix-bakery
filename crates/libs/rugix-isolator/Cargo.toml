@@ -9,7 +9,7 @@ repository.workspace = true
 homepage.workspace = true
 
 [dependencies]
-nix = { workspace = true, features = ["sched", "mount", "fs", "user"] }
+nix = { workspace = true, features = ["sched", "mount", "fs", "user", "signal"] }
 
 [lints]
 workspace = true

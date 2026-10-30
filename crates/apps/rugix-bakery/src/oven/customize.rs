@@ -17,19 +17,23 @@ use tempfile::tempdir;
 use tracing::info;
 use xscript::{cmd, vars, Cmd, Run};
 
-use crate::build::dependencies::ProjectDependencies;
 use crate::cli::status::CliLog;
 use crate::config::layers::LayerConfig;
 use crate::config::mixins::MixinConfig;
 use crate::config::recipes::ParameterValue;
 use crate::config::systems::Architecture;
 use crate::oven::archive;
-use crate::oven::layer::LayerContext;
 use crate::project::library::Library;
 use crate::project::recipes::{PackageManager, Recipe, StepKind};
 use crate::project::repositories::RepositoryIdx;
 use crate::project::ProjectRef;
 use crate::BakeryResult;
+
+/// Private recipe workspace and dependency registration path.
+struct LayerContext {
+    build_dir: PathBuf,
+    registrations: PathBuf,
+}
 
 struct Logger {
     cli_log: StatusSegmentRef<CliLog>,
@@ -88,26 +92,9 @@ pub(crate) fn customize(
     inputs: &BTreeMap<Str, PathBuf>,
     src: Option<&Path>,
     target: &Path,
-    layer_path: &Path,
+    registrations: &Path,
     source_date_epoch: u64,
-    reuse_cache: bool,
 ) -> BakeryResult<()> {
-    let used_files = project
-        .dir()
-        .join(layer_path.join("rebuild-if-changed.txt"));
-    let dependency_record = project
-        .dir()
-        .join(layer_path.join("project-dependencies.json"));
-    let dependencies_current = reuse_cache
-        && match ProjectDependencies::load(&dependency_record)? {
-            Some(dependencies) => dependencies.is_current(project.dir())?,
-            None => false,
-        };
-    if target.exists() && dependencies_current {
-        return Ok(());
-    }
-    // Every successful execution replaces its discovered dependency set.
-    fs::write(&used_files, "").whatever("unable to reset project dependency registrations")?;
     let bundle_dir = tempdir().whatever("unable to create temporary directory")?;
     let bundle_dir = bundle_dir.path();
     if let Some(src) = src {
@@ -118,13 +105,13 @@ pub(crate) fn customize(
         std::fs::create_dir_all(&bundle_dir).whatever("unable ot create layer directory")?;
     }
     let layer_ctx = LayerContext {
-        project: project.clone(),
         build_dir: bundle_dir.to_path_buf(),
-        output_dir: layer_path.to_path_buf(),
+        registrations: registrations.to_path_buf(),
     };
     let root_dir = bundle_dir.join("roots/system");
     std::fs::create_dir_all(&root_dir).ok();
-    let logger = Logger::new(name, layer_path)?;
+    let output_dir = target.parent().expect("layer archive has a parent");
+    let logger = Logger::new(name, output_dir)?;
     if let Err(error) = apply_recipes(
         &layer_ctx,
         &logger,
@@ -137,7 +124,7 @@ pub(crate) fn customize(
     ) {
         let last_lines = logger.current_lines();
 
-        cli_msg!("Log: {:?}", layer_path.join("build.log"));
+        cli_msg!("Log: {:?}", output_dir.join("build.log"));
         for line in last_lines.lines() {
             cli_msg!("> {line}")
         }
@@ -163,11 +150,9 @@ pub(crate) fn customize(
         }
     }
 
-    let dependencies = ProjectDependencies::capture(project.dir(), &used_files)?;
     info!("packing system files");
     archive::create(bundle_dir, target, Some(source_date_epoch as i64))
         .whatever("failed to package system files")?;
-    dependencies.save(&dependency_record)?;
     Ok(())
 }
 
@@ -512,8 +497,8 @@ fn apply_recipes(
                         RUGIX_ROOT_DIR = "/",
                         RUGIX_PROJECT_DIR = "/run/rugix/bakery/project",
                         RUGIX_ARCH = arch.as_str(),
-                        RUGIX_REBUILD_IF_CHANGED = Path::new("/run/rugix/bakery/project").join(&layer_ctx.output_dir).join("rebuild-if-changed.txt"),
-                        LAYER_REBUILD_IF_CHANGED = Path::new("/run/rugix/bakery/project").join(&layer_ctx.output_dir).join("rebuild-if-changed.txt"),
+                        RUGIX_REBUILD_IF_CHANGED = Path::new("/run/rugix/bakery/project").join(&layer_ctx.registrations),
+                        LAYER_REBUILD_IF_CHANGED = Path::new("/run/rugix/bakery/project").join(&layer_ctx.registrations),
                         RECIPE_INPUTS_DIR = "/run/rugix/bakery/recipe-inputs",
                         RECIPE_DIR = "/run/rugix/bakery/recipe",
                         RECIPE_STEP_PATH = &script,
@@ -548,8 +533,8 @@ fn apply_recipes(
                         RUGIX_CACHE_DIR = Path::new("/run/rugix/bakery/cache").join(project.local_id().as_str()),
                         RUGIX_PROJECT_DIR = project.dir(),
                         RUGIX_ARCH = arch.as_str(),
-                        RUGIX_REBUILD_IF_CHANGED = project.dir().join(&layer_ctx.output_dir).join("rebuild-if-changed.txt"),
-                        LAYER_REBUILD_IF_CHANGED = project.dir().join(&layer_ctx.output_dir).join("rebuild-if-changed.txt"),
+                        RUGIX_REBUILD_IF_CHANGED = project.dir().join(&layer_ctx.registrations),
+                        LAYER_REBUILD_IF_CHANGED = project.dir().join(&layer_ctx.registrations),
                         RECIPE_INPUTS_DIR = input_dir.path(),
                         RECIPE_DIR = &recipe.path,
                         RECIPE_STEP_PATH = &script,

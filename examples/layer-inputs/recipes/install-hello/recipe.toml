@@ -1,7 +1,7 @@
 description = "Install the example Debian package."
 
-[inputs]
-package = "file"
+[inputs.package]
+kind = "file"
 
 [rules.build-package]
 uses = "cargo-deb"

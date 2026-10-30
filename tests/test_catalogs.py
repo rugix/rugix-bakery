@@ -132,7 +132,7 @@ def test_documented_recipe_inputs_execute(env_project: BakeryBuilder) -> None:
     recipe = project / "vendor/recipes/install-app/recipe.toml"
     recipe.write_text(
         recipe.read_text().replace(
-            'application = "file"',
+            'application = { kind = "file" }',
             'application = { kind = "file", description = "Compiled application" }',
         )
     )

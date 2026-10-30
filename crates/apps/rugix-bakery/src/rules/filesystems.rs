@@ -23,16 +23,16 @@ struct Ext4 {
     block_size: u64,
     reserved_percent: u8,
     mkfs_options: String,
-    source_date_epoch: u64,
 }
 
 pub fn ext4() -> BakeryResult<()> {
     let p: Ext4 = parameters()?;
+    let epoch = super::source_date_epoch()?;
     let image = "/run/rugix/bakery/work/outputs/image.ext4";
     if !p.block_size.is_power_of_two() || !(1024..=65536).contains(&p.block_size) {
         bail!("ext4 block-size must be a power of two between 1024 and 65536");
     }
-    let mut tar = epoch_command("tar", p.source_date_epoch)?;
+    let mut tar = epoch_command("tar", epoch)?;
     tar.args([
         "--create",
         "--file=-",
@@ -45,7 +45,7 @@ pub fn ext4() -> BakeryResult<()> {
         "--pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime",
         "--clamp-mtime",
     ])
-    .arg(format!("--mtime=@{}", p.source_date_epoch))
+    .arg(format!("--mtime=@{}", epoch))
     .args(["--directory=/run/rugix/bakery/work/inputs/tree", "."])
     .stdout(Stdio::piped());
     let mut archive = tar.spawn().whatever("unable to hash filesystem tree")?;
@@ -96,7 +96,7 @@ pub fn ext4() -> BakeryResult<()> {
         p.size
     };
     sparse_file(image, size)?;
-    let mut mkfs = epoch_command("mkfs.ext4", p.source_date_epoch)?;
+    let mut mkfs = epoch_command("mkfs.ext4", epoch)?;
     mkfs.args(["-q", "-F", "-b"])
         .arg(p.block_size.to_string())
         .arg("-m")
@@ -124,8 +124,8 @@ pub fn ext4() -> BakeryResult<()> {
         image,
     ]))?;
     if automatic {
-        run(epoch_command("resize2fs", p.source_date_epoch)?.args(["-M", image]))?;
-        let metadata = output(epoch_command("dumpe2fs", p.source_date_epoch)?.args(["-h", image]))?;
+        run(epoch_command("resize2fs", epoch)?.args(["-M", image]))?;
+        let metadata = output(epoch_command("dumpe2fs", epoch)?.args(["-h", image]))?;
         let text = String::from_utf8(metadata.stdout).whatever("invalid ext4 metadata")?;
         let field = |key: &str| -> BakeryResult<u64> {
             text.lines()
@@ -155,11 +155,11 @@ struct Fat {
     volume_id: String,
     sectors_per_cluster: u64,
     mkfs_options: String,
-    source_date_epoch: u64,
 }
 
 pub fn fat() -> BakeryResult<()> {
     let p: Fat = parameters()?;
+    let epoch = super::source_date_epoch()?;
     let image = "/run/rugix/bakery/work/outputs/image.fat";
     let root = Path::new("/run/rugix/bakery/work/inputs/tree");
     let mut identity = Sha256::new();
@@ -253,7 +253,7 @@ pub fn fat() -> BakeryResult<()> {
         p.size
     };
     sparse_file(image, size)?;
-    let mut mkfs = epoch_command("mkfs.vfat", p.source_date_epoch)?;
+    let mut mkfs = epoch_command("mkfs.vfat", epoch)?;
     let volume_id = if p.volume_id.is_empty() {
         hex::encode(identity.finalize())[..8].to_owned()
     } else {
@@ -274,10 +274,10 @@ pub fn fat() -> BakeryResult<()> {
     for (relative, files) in tree {
         let destination = format!("::/{}", relative.display());
         if !relative.as_os_str().is_empty() {
-            run(epoch_command("mmd", p.source_date_epoch)?.args(["-i", image, &destination]))?;
+            run(epoch_command("mmd", epoch)?.args(["-i", image, &destination]))?;
         }
         if !files.is_empty() {
-            run(epoch_command("mcopy", p.source_date_epoch)?
+            run(epoch_command("mcopy", epoch)?
                 .args(["-i", image])
                 .args(files)
                 .arg(format!("{}/", destination.trim_end_matches('/'))))?;
@@ -292,12 +292,12 @@ struct Squashfs {
     compression: String,
     block_size: u64,
     mkfs_options: String,
-    source_date_epoch: u64,
 }
 
 pub fn squashfs() -> BakeryResult<()> {
     let p: Squashfs = parameters()?;
-    run(epoch_command("mksquashfs", p.source_date_epoch)?
+    let epoch = super::source_date_epoch()?;
+    run(epoch_command("mksquashfs", epoch)?
         .args([
             "/run/rugix/bakery/work/inputs/tree",
             "/run/rugix/bakery/work/outputs/image.squashfs",

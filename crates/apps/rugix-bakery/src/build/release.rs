@@ -13,7 +13,7 @@ use crate::config::systems::Architecture;
 use crate::oven::system::{release_metadata, ReleaseInfo};
 use crate::BakeryResult;
 
-use super::{Artifact, ArtifactLocation, Planner, Task};
+use super::{Artifact, ArtifactLocation, ExecutionContext, Planner, Task};
 
 #[derive(Debug)]
 pub struct ReleaseTask {
@@ -21,7 +21,6 @@ pub struct ReleaseTask {
     architecture: Architecture,
     release: ReleaseInfo,
     system: String,
-    source_date_epoch: Option<u64>,
 }
 
 impl Planner {
@@ -32,7 +31,6 @@ impl Planner {
         architecture: Architecture,
         release: &ReleaseInfo,
         system: &str,
-        source_date_epoch: Option<u64>,
     ) -> BTreeMap<Str, Artifact> {
         let task = self.plan.tasks.len();
         self.plan.tasks.push(Task::Release(ReleaseTask {
@@ -40,7 +38,6 @@ impl Planner {
             architecture,
             release: release.clone(),
             system: system.to_owned(),
-            source_date_epoch,
         }));
         let mut outputs = BTreeMap::new();
         for name in [
@@ -72,18 +69,14 @@ impl Planner {
 }
 
 impl ReleaseTask {
-    pub fn execute(&self, archive: &Path, root: &Path) -> BakeryResult<BTreeMap<Str, PathBuf>> {
+    pub fn execute(
+        &self,
+        archive: &Path,
+        root: &Path,
+        execution: ExecutionContext,
+    ) -> BakeryResult<BTreeMap<Str, PathBuf>> {
         let architecture = self.architecture;
-        let source_date_epoch = match self.source_date_epoch {
-            Some(epoch) => epoch,
-            None => fs::metadata(archive)
-                .whatever("unable to inspect completed layer")?
-                .modified()
-                .whatever("unable to inspect layer timestamp")?
-                .duration_since(std::time::UNIX_EPOCH)
-                .whatever("layer timestamp predates the Unix epoch")?
-                .as_secs(),
-        };
+        let source_date_epoch = execution.source_date_epoch;
         let system = &self.system;
         let release = &self.release;
         crate::oven::archive::extract(archive, root)?;
@@ -110,13 +103,7 @@ impl ReleaseTask {
         )
         .whatever("unable to write build context")?;
         let mut inputs = BTreeMap::new();
-        for (name, relative) in [
-            ("rootfs", "roots/system"),
-            ("boot", "roots/boot"),
-            ("config", "roots/config"),
-            ("artifacts", "artifacts"),
-            ("bsp", "bsp"),
-        ] {
+        for (name, relative) in super::layers::LAYER_DIRECTORIES {
             let path = root.join(relative);
             if !path.exists() {
                 fs::create_dir_all(&path).whatever("unable to create layer artifact directory")?;

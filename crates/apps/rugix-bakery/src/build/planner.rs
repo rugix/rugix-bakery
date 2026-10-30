@@ -217,7 +217,7 @@ impl Planner {
                     )
                 })?,
             };
-            if artifact.kind != input.kind() {
+            if artifact.kind != input.kind {
                 bail!("input {name:?} has an incompatible artifact kind");
             }
             scope.inputs.insert(name, artifact);
@@ -599,7 +599,7 @@ mod tests {
             "tooling/rules/copy/rule.toml",
             r#"
 [inputs]
-source = "file"
+source = { kind = "file" }
 [execution]
 type = "run"
 env = "runner"
@@ -614,7 +614,7 @@ path = "result"
             "vendor/rules/pair/rule.toml",
             r#"
 [inputs]
-source = "file"
+source = { kind = "file" }
 [execution]
 type = "graph"
 [execution.rules.copy]
@@ -677,7 +677,7 @@ result = { rule = { node = "left", output = "result" } }
             "vendor/rules/copy/rule.toml",
             r#"
 [inputs]
-source = "file"
+source = { kind = "file" }
 [execution]
 type = "run"
 env = "unused"
@@ -707,7 +707,7 @@ path = "result"
             "vendor/rules/copy/rule.toml",
             r#"
 [inputs]
-source = "file"
+source = { kind = "file" }
 [execution]
 type = "run"
 env = "unused"

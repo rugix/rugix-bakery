@@ -25,7 +25,6 @@ use super::{system, targets, BundleOpts};
 struct Pipeline {
     repositories: Arc<ProjectRepositories>,
     config: SystemConfig,
-    epoch: u64,
     bundle: Option<BundleOpts>,
 }
 
@@ -39,7 +38,6 @@ pub fn plan(
     let pipeline = Pipeline {
         repositories: planner.repositories.clone(),
         config: config.clone(),
-        epoch: 0,
         bundle: bundle.cloned(),
     };
     let outputs = pipeline.output_kinds();
@@ -93,10 +91,7 @@ impl Pipeline {
                 })
                 .ok_or_else(|| whatever!("image layout needs to be specified"))?
         };
-        let context: crate::config::build_context::BuildContext =
-            crate::config::load_json(&paths["context"])?;
-        let mut pipeline = self.clone();
-        pipeline.epoch = context.source_date_epoch;
+        let pipeline = self.clone();
         let mut inputs = path_artifacts(paths)?;
         let initialized = planner.core_rule(
             "initialize-boot",
@@ -115,7 +110,6 @@ impl Pipeline {
                     "architecture".into(),
                     ParameterValue::String(self.config.architecture.as_str().into()),
                 ),
-                ("source-date-epoch".into(), integer(pipeline.epoch)?),
             ]),
         )?;
         inputs.insert("boot".into(), initialized["boot"].clone());
@@ -184,15 +178,12 @@ impl Pipeline {
                 ("boot".into(), inputs["boot"].clone()),
                 ("image".into(), inputs["image"].clone()),
             ]),
-            BTreeMap::from([
-                (
-                    "target".into(),
-                    ParameterValue::String(
-                        target_name(self.config.target.as_ref().unwrap_or(&Target::Unknown)).into(),
-                    ),
+            BTreeMap::from([(
+                "target".into(),
+                ParameterValue::String(
+                    target_name(self.config.target.as_ref().unwrap_or(&Target::Unknown)).into(),
                 ),
-                ("source-date-epoch".into(), integer(self.epoch)?),
-            ]),
+            )]),
         )?;
         let mut filesystems = BTreeMap::new();
         let mut partition_images = BTreeMap::new();
@@ -205,8 +196,7 @@ impl Pipeline {
                 Some(root) => root_tree(&inputs, &boot, root)?,
                 None => directory(BTreeMap::new()),
             };
-            let mut parameters =
-                BTreeMap::from([("source-date-epoch".into(), integer(self.epoch)?)]);
+            let mut parameters = BTreeMap::new();
             let capacity = table.blocks_to_bytes(partition.size).into_raw();
             let name = match filesystem {
                 Filesystem::Ext4(options) => {
@@ -215,16 +205,20 @@ impl Pipeline {
                         "mkfs-options".into(),
                         shell_options(options.additional_options.as_deref())?,
                     );
-                    let archive_epoch = options
+                    let archive_parameters = options
                         .clamp_mtime
-                        .map_or(self.epoch as i64, |time| time.unix_seconds());
+                        .map(|time| {
+                            (
+                                "clamp-mtime".into(),
+                                ParameterValue::String(time.to_string().into()),
+                            )
+                        })
+                        .into_iter()
+                        .collect();
                     let archive = planner.core_rule(
                         "archive-tree",
                         BTreeMap::from([("tree".into(), tree.clone())]),
-                        BTreeMap::from([(
-                            "source-date-epoch".into(),
-                            ParameterValue::Integer(archive_epoch),
-                        )]),
+                        archive_parameters,
                     )?;
                     filesystems.insert(
                         PathBuf::from(format!("partition-{}.tar", partition.number)),
@@ -297,9 +291,9 @@ impl Pipeline {
         if let Some(options) = &self.bundle {
             let target = self.config.target.as_ref().unwrap_or(&Target::Unknown);
             let manifest = match target {
-                Target::GenericGrubEfi => super::efi_bundle_config(options),
+                Target::GenericGrubEfi => super::standard_bundle_config(options, 4),
                 Target::RpiTryboot | Target::RpiUboot => {
-                    super::rpi_bundle_config(options, table.is_gpt())
+                    super::standard_bundle_config(options, if table.is_gpt() { 4 } else { 5 })
                 }
                 Target::Bsp => super::bsp_bundle_config(paths["layer"].as_path(), options)?,
                 Target::Unknown => bail!("cannot bake bundles for unknown targets"),

@@ -58,7 +58,7 @@ def test_selected_tree_preserves_artifacts_and_cache(
     consumer = project / "rules/consume"
     consumer.mkdir()
     (consumer / "rule.toml").write_text(
-        '[inputs]\ntree = "directory"\n[execution]\ntype = "run"\n'
+        '[inputs]\ntree = { kind = "directory" }\n[execution]\ntype = "run"\n'
         'command = ["/bin/sh", "-ec", "cat /run/rugix/bakery/work/inputs/tree/configuration/settings.txt '
         '> /run/rugix/bakery/work/outputs/value; head -c 32 /dev/urandom > /run/rugix/bakery/work/outputs/token"]\n'
         '[execution.outputs.value]\nkind = "file"\npath = "value"\n'
@@ -152,7 +152,7 @@ def test_filesystem_rules_accept_generic_trees(
     verifier = project / "rules/extract"
     verifier.mkdir(parents=True)
     (verifier / "rule.toml").write_text(
-        '[inputs]\nimage = "file"\n[execution]\ntype = "run"\ncommand = '
+        '[inputs]\nimage = { kind = "file" }\n[execution]\ntype = "run"\ncommand = '
         + json.dumps(
             ["/bin/sh", "-ec", extract + " > /run/rugix/bakery/work/outputs/value"]
         )
@@ -201,7 +201,7 @@ def test_filesystem_sizing(env_project: BakeryBuilder, name: str, content: str) 
     verifier = project / "rules/digest"
     verifier.mkdir(parents=True)
     (verifier / "rule.toml").write_text(
-        '[inputs]\nimage = "file"\n[execution]\ntype = "run"\ncommand = '
+        '[inputs]\nimage = { kind = "file" }\n[execution]\ntype = "run"\ncommand = '
         + json.dumps(
             [
                 "/bin/sh",

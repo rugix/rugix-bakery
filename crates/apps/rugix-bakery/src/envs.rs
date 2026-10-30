@@ -142,7 +142,20 @@ impl EnvStore {
 
     /// Prepare a Buildah invocation using only this store.
     fn command(&self) -> Command {
-        let mut command = Command::new("buildah");
+        self.configure_command(Command::new("buildah"))
+    }
+
+    /// Contain every process started by a chroot-isolated environment command.
+    fn run_command(&self) -> Command {
+        let mut command = Command::new("rugix-isolate");
+        command.args(["--supervise", "--", "buildah"]);
+        self.configure_command(command)
+    }
+
+    /// Apply the same storage backend and inherited process settings to both commands.
+    fn configure_command(&self, mut command: Command) -> Command {
+        // The node epoch must not alter environment image construction or Buildah itself.
+        command.env_remove("SOURCE_DATE_EPOCH");
         command
             .arg("--root")
             .arg(&self.root)
@@ -196,13 +209,13 @@ impl BuiltEnv {
         self.run_with_env(arguments, mounts, &[])
     }
 
-    /// Override selected image variables for one command.
+    /// Set or remove selected image variables for one command.
     #[tracing::instrument(skip_all)]
     pub fn run_with_env(
         &self,
         arguments: &[OsString],
         mounts: &[BindMount],
-        environment: &[(&str, &str)],
+        environment: &[(&str, Option<&str>)],
     ) -> BakeryResult<ExitStatus> {
         // Own the name before acquisition so cancellation during 'from' also cleans up.
         let container = WorkingContainer {
@@ -218,10 +231,37 @@ impl BuiltEnv {
                 .stdout(Stdio::null()),
         )?;
         require_success(output.status, "creating env working container")?;
-        let mut command = self.store.command();
+        if environment.iter().any(|(_, value)| value.is_none()) {
+            let mut config = self.store.command();
+            config.arg("config");
+            for (name, value) in environment {
+                if value.is_none() {
+                    config.arg("--env").arg(format!("{name}-"));
+                }
+            }
+            require_success(
+                execute(config.arg(&container.id))?.status,
+                "configuring env working container",
+            )?;
+        }
+        // Storage helpers must outlive command supervision until container removal.
+        require_success(
+            execute(
+                self.store
+                    .command()
+                    .arg("mount")
+                    .arg(&container.id)
+                    .stdout(Stdio::null()),
+            )?
+            .status,
+            "mounting env working container",
+        )?;
+        let mut command = self.store.run_command();
         command.args(["run", "--isolation=chroot"]);
         for (name, value) in environment {
-            command.arg("--env").arg(format!("{name}={value}"));
+            if let Some(value) = value {
+                command.arg("--env").arg(format!("{name}={value}"));
+            }
         }
         let terminal = io::stdin().is_terminal() && io::stdout().is_terminal();
         command.arg(if terminal {

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -32,7 +33,7 @@ head -c 32 /dev/urandom > /run/rugix/bakery/work/outputs/token
     )
     (operation / "rule.toml").write_text(
         """[inputs]
-source = "file"
+source = { kind = "file" }
 [execution]
 type = "run"
 ENVIRONMENT
@@ -49,7 +50,7 @@ path = "token"
     graph.mkdir(parents=True)
     (graph / "rule.toml").write_text(
         """[inputs]
-source = "file"
+source = { kind = "file" }
 [execution]
 type = "graph"
 [execution.rules.copy]
@@ -256,7 +257,7 @@ head -c 32 /dev/urandom > /run/rugix/bakery/work/outputs/token
     consumer.mkdir()
     (consumer / "rule.toml").write_text(
         """[inputs]
-previous = "file"
+previous = { kind = "file" }
 [execution]
 type = "run"
 command = ["/bin/sh", "/run/rugix/bakery/work/rule/run.sh"]
@@ -325,3 +326,51 @@ def test_bakery_cache_tracks_runtime(
         assert (build(env_project) / "token").read_bytes() != unidentified
     finally:
         subprocess.run([runtime, "image", "rm", image], check=True)
+
+
+@pytest.mark.parametrize("use_env", [False, True])
+def test_rule_children_cannot_mutate_published_outputs(
+    env_project: BakeryBuilder, use_env: bool
+) -> None:
+    """Background writers terminate before cached outputs become visible to later nodes."""
+    project = env_project.project_dir
+    commands = {
+        "produce": (
+            'read proc_pid proc_stat < /proc/self/stat; test "$proc_pid" -eq "$$"; '
+            "exec 3>/run/rugix/bakery/work/outputs/result; printf original >&3; "
+            "(sleep 2; printf mutated >&3) >/dev/null 2>&1 & "
+            "setsid /bin/sh -c 'sleep 2; printf escaped >&3' >/dev/null 2>&1 &"
+        ),
+        "consume": (
+            "cat /run/rugix/bakery/work/inputs/source > /run/rugix/bakery/work/outputs/result; "
+            "sleep 4; "
+            "cat /run/rugix/bakery/work/inputs/source >> /run/rugix/bakery/work/outputs/result"
+        ),
+    }
+    for name, script in commands.items():
+        rule = project / "rules" / name
+        rule.mkdir(parents=True)
+        (rule / "rule.toml").write_text(
+            ('[inputs.source]\nkind = "file"\n' if name == "consume" else "")
+            + '[execution]\ntype = "run"\n'
+            + ('env = "tools"\n' if use_env else "")
+            + "command = "
+            + json.dumps(["/bin/sh", "-ec", script])
+            + '\n[execution.outputs.result]\nkind = "file"\npath = "result"\n'
+        )
+    graph = project / "rules/check"
+    graph.mkdir()
+    (graph / "rule.toml").write_text(
+        '[execution]\ntype = "graph"\n'
+        '[execution.rules.produce]\nuses = "produce"\n'
+        '[execution.rules.consume]\nuses = "consume"\n'
+        'inputs.source = { rule = { node = "produce", output = "result" } }\n'
+        "[execution.outputs]\n"
+        'result = { rule = { node = "consume", output = "result" } }\n'
+        'source = { rule = { node = "produce", output = "result" } }\n'
+    )
+    (project / "invocation.toml").write_text('uses = "check"\n')
+    for _ in range(2):
+        env_project.run(["bake", "rule", "invocation.toml", "build/result"])
+        assert (project / "build/result/result").read_bytes() == b"originaloriginal"
+        assert (project / "build/result/source").read_bytes() == b"original"

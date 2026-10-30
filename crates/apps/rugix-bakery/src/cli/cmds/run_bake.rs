@@ -12,8 +12,17 @@ use crate::BakeryResult;
 pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
     let project = load_project(args)?;
     match cmd {
-        args::BakeCommand::Rule { invocation, output } => {
-            crate::build::build_invocation(&project, invocation, output)?;
+        args::BakeCommand::Rule {
+            invocation,
+            output,
+            source_date,
+        } => {
+            crate::build::build_invocation(
+                &project,
+                invocation,
+                output,
+                source_epoch(source_date)?,
+            )?;
         }
         args::BakeCommand::Image {
             system,
@@ -25,7 +34,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
         } => {
             let param_overrides = oven::load_parameter_overrides(&params.param_files)?;
             let system_path = Path::new("build").join(system);
-            let source_date_epoch = source_date.map(|date| date.as_second() as u64);
+            let source_date_epoch = source_epoch(source_date)?;
             oven::bake_system(
                 &project,
                 &release.release_info(),
@@ -47,11 +56,12 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
             params,
         } => {
             let param_overrides = oven::load_parameter_overrides(&params.param_files)?;
-            let source_date_epoch = source_date.map(|date| date.as_second() as u64);
+            let source_date_epoch = source_epoch(source_date)?;
             LayerBakery::new(&project, *arch, &param_overrides)
                 .bake_root(layer, source_date_epoch)?;
         }
         args::BakeCommand::Bundle {
+            source_date,
             system,
             output,
             opts,
@@ -66,7 +76,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
                 &release.release_info(),
                 system,
                 &system_path,
-                None,
+                source_epoch(source_date)?,
                 &param_overrides,
                 &mixins.selection(),
                 Some(opts),
@@ -82,4 +92,12 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
         }
     }
     Ok(())
+}
+
+/// Reject dates before the Unix epoch rather than wrapping them to unsigned seconds.
+fn source_epoch(date: &Option<jiff::Timestamp>) -> BakeryResult<Option<u64>> {
+    date.map(|date| {
+        u64::try_from(date.as_second()).whatever("source date must not precede the Unix epoch")
+    })
+    .transpose()
 }

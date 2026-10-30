@@ -8,7 +8,6 @@ uses = "core/prepare-boot"
 inputs.image = { path = "layout.img" }
 inputs.boot = { path = "initialized-boot" }
 parameters.target = "rpi-tryboot"
-parameters.source-date-epoch = 1792972800
 ```
 
 The predefined boot flows use root partition 5 for MBR and partition 4 for GPT.

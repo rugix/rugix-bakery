@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import datetime
 import hashlib
 import json
 import os
 import shutil
+import tarfile
 import time
-import tomllib
 from pathlib import Path
 
 import pytest
@@ -15,20 +16,22 @@ from rugix_testkit import BakeryBuilder
 
 
 @pytest.mark.parametrize(
-    ("rule", "parameters"),
+    ("rule", "parameters", "epoch"),
     [
-        ("image-ext4", ""),
-        ("image-ext4", "source-date-epoch = 2100000000\n"),
-        ("image-ext4", "size = 67108864\nsource-date-epoch = 1700000000\n"),
-        ("image-fat", ""),
-        ("image-fat", "size = 67108864\nsource-date-epoch = 1700000000\n"),
-        ("image-fat", "size = 16777216\nsource-date-epoch = 1700000000\n"),
-        ("image-squashfs", ""),
-        ("image-squashfs", 'compression = "xz"\nsource-date-epoch = 1700000000\n'),
+        ("archive-tree", "", 0),
+        ("archive-tree", 'clamp-mtime = "2000-01-01T00:00:00Z"\n', 1704067200),
+        ("image-ext4", "", 0),
+        ("image-ext4", "", 2100000000),
+        ("image-ext4", "size = 67108864\n", 1700000000),
+        ("image-fat", "", 0),
+        ("image-fat", "size = 67108864\n", 1700000000),
+        ("image-fat", "size = 16777216\n", 1700000000),
+        ("image-squashfs", "", 0),
+        ("image-squashfs", 'compression = "xz"\n', 1700000000),
     ],
 )
 def test_core_rule_reproducibility(
-    env_project: BakeryBuilder, tmp_path: Path, rule: str, parameters: str
+    env_project: BakeryBuilder, tmp_path: Path, rule: str, parameters: str, epoch: int
 ) -> None:
     """Independent builds ignore wall time, inode allocation, and directory insertion order."""
     project = env_project.project_dir
@@ -77,7 +80,10 @@ def test_core_rule_reproducibility(
         bakery = (
             env_project if index == 0 else BakeryBuilder(root, tmp_path / "second-run")
         )
-        bakery.run(["bake", "rule", "invocation.toml", "build/result"])
+        date = datetime.datetime.fromtimestamp(epoch, datetime.UTC).isoformat()
+        bakery.run(
+            ["bake", "rule", "invocation.toml", "build/result", "--source-date", date]
+        )
         if index == 0:
             time.sleep(2)
     first_outputs = project / "build/result"
@@ -94,6 +100,11 @@ def test_core_rule_reproducibility(
                 hashlib.file_digest(first, "sha256").digest()
                 == hashlib.file_digest(other, "sha256").digest()
             ), f"{rule}/{output.name} differs between independent builds"
+
+    if rule == "archive-tree":
+        with tarfile.open(first_outputs / "archive") as archive:
+            expected = 946684800 if parameters else epoch
+            assert archive.getmember("./nested/a.txt").mtime == expected
 
     if rule in ("image-ext4", "image-squashfs", "image-fat"):
         extract = project / "rules/extract"
@@ -119,7 +130,7 @@ def test_core_rule_reproducibility(
         }
         command = commands[rule]
         (extract / "rule.toml").write_text(
-            '[inputs]\nimage = "file"\n[execution]\ntype = "run"\ncommand = '
+            '[inputs]\nimage = { kind = "file" }\n[execution]\ntype = "run"\ncommand = '
             + json.dumps(command)
             + '\n[execution.outputs.tree]\nkind = "directory"\npath = "tree"\n'
         )
@@ -140,7 +151,6 @@ def test_core_rule_reproducibility(
                 extracted / ".config/directory-link/long application filename.txt"
             ).read_text() == "other/long application filename.txt\n"
             return
-        epoch = tomllib.loads(parameters).get("source-date-epoch", 0)
         assert (extracted / "nested/a.txt").stat().st_mtime == min(epoch, 1600000000)
         assert (extracted / "nested/a.txt").stat().st_mode & 0o777 == 0o640
         assert os.readlink(extracted / "link") == "nested/a.txt"

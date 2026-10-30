@@ -178,6 +178,9 @@ impl MixinArgs {
 pub enum BakeCommand {
     /// Execute a rule invocation from a TOML file.
     Rule {
+        /// Source timestamp in RFC 3339 format; overrides SOURCE_DATE_EPOCH (default: 0).
+        #[clap(long)]
+        source_date: Option<jiff::Timestamp>,
         /// Invocation with uses, inputs, parameters, and optional secrets.
         invocation: PathBuf,
         /// Directory in which to publish named outputs.
@@ -212,6 +215,9 @@ pub enum BakeCommand {
     },
     /// Bake a bundle.
     Bundle {
+        /// Source timestamp in RFC 3339 format; overrides SOURCE_DATE_EPOCH (default: 0).
+        #[clap(long)]
+        source_date: Option<jiff::Timestamp>,
         system: String,
         output: Option<PathBuf>,
         /// Disable compression of the bundle.
