@@ -24,17 +24,7 @@ jobs:
       matrix:
         target:
           - aarch64-unknown-linux-musl
-          - aarch64-unknown-linux-gnu
-          - armv7-unknown-linux-musleabihf
-          - armv7-unknown-linux-gnueabihf
-          - arm-unknown-linux-musleabihf
-          - arm-unknown-linux-gnueabihf
-          - arm-unknown-linux-musleabi
-          - arm-unknown-linux-gnueabi
           - x86_64-unknown-linux-musl
-          - x86_64-unknown-linux-gnu
-          - i686-unknown-linux-musl
-          - riscv64gc-unknown-linux-gnu
     env:
       CROSS_VERSION: "0.2.5"
     steps:
