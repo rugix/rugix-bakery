@@ -5,7 +5,9 @@ images and bundles with a Bakery container image and then check the results,
 either by booting a system in a QEMU virtual machine (VM) or by inspecting the
 partitions of an image. The tests use
 [Rugix Testkit](https://github.com/rugix/rugix-testkit), which documents the
-available fixtures.
+available fixtures. Bakery writes its build outputs, including SBOMs, under
+`build/<system>/`. Testkit keeps separate copies of images and bundles for
+use by tests, so their paths do not identify Bakery's output directory.
 
 The tests cover:
 

@@ -42,9 +42,10 @@ def test_efi_system_updates_from_baked_bundle(
     rugix.assert_boot(default="b", active="b")
 
 
-def test_bake_writes_sboms(bakery: BakeryBuilder) -> None:
+def test_bake_writes_sboms(bakery: BakeryBuilder, rugix_project: Path) -> None:
     """Baking a system writes SPDX and CycloneDX SBOMs of its packages."""
-    output = bakery.bake_image("efi").parent
+    bakery.bake_image("efi")
+    output = rugix_project / "build" / "efi"
     for sbom in ("sbom.spdx.json", "sbom.cdx.json"):
         content = (output / sbom).read_text()
         json.loads(content)
