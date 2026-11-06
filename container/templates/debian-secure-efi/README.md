@@ -21,8 +21,9 @@ extends the firmware's trust to the root filesystem.
 > [Set Up Secure Boot in the Firmware](#set-up-secure-boot-in-the-firmware)
 > explains these steps.
 >
-> The data partition is neither encrypted nor authenticated. Configure these
-> protections separately to protect stored data against disclosure and tampering.
+> The data partition, available at `/data`, is neither encrypted nor
+> authenticated. Configure encryption and authentication separately to protect
+> stored data against disclosure and tampering.
 
 ## Build Your First Image
 
