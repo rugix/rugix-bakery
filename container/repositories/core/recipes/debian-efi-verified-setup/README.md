@@ -41,7 +41,7 @@ bootstrap-config = { path = "config/bootstrap.toml" }
 ```
 
 The supplied files must match the image layout and verified-root boot contract.
-Both are installed at their usual paths under `/etc/rugix/`.
+Both are rendered and installed at their usual paths under `/etc/rugix/`.
 The bootstrap file can contain `@SYSTEM_SIZE@` placeholders, replaced by the
 recipe's `system_size` parameter. This parameter defaults to 4 GiB per system
 slot. Existing factory capacities of the ESP are preserved; data receives the
@@ -66,3 +66,30 @@ Set the system architecture to `amd64` or `arm64`, then pass the same value
 as the EFI build rule's required `architecture` parameter. The
 [Debian EFI rule](../../rules/image-debian-efi-verified/README.md) shows
 the matching build configuration.
+
+## Secondary Configuration Partition
+
+For example, enable the secondary config layout in a layer:
+
+```toml
+[parameters."core/debian-efi-verified-setup"]
+secondary_config = true
+```
+
+Set `parameters.secondary-config = true` on the EFI image rule as well.
+Existing installations need a separate partition-layout migration before
+receiving this root configuration; update bundles do not add partitions.
+The factory reserves an empty `config-secondary` as partition 2, equal in
+capacity to `config`. Bootstrap preserves both config partitions and places
+`system-a`, `system-b`, and `data` at partition numbers 3, 4, and 5.
+The secondary partition can stage a complete replacement ESP, including
+systemd-boot; writing and activating that replacement requires a separate
+operation.
+
+Custom system configurations can use `@SYSTEM_A_PARTITION@`,
+`@SYSTEM_B_PARTITION@`, and `@DATA_PARTITION@` placeholders for these
+partition numbers. Custom bootstrap plans can use `@SECONDARY_CONFIG@` to
+insert the secondary partition entry after `config` and before `system-a`,
+as shown in the [bundled template](files/bootstrap.toml.in). It expands to a named partition with
+`size = 0`, preserving its factory capacity, or to empty text when disabled.
+Custom configurations without these placeholders are used as supplied.

@@ -241,8 +241,23 @@ pub fn sign_rpi() -> BakeryResult<()> {
 
 /// Build the initial factory layout; Rugix bootstrap creates the spare system and data.
 pub fn layout(rpi: bool) -> BakeryResult<()> {
+    #[derive(Deserialize)]
+    #[serde(rename_all = "kebab-case")]
+    struct Parameters {
+        secondary_config: bool,
+    }
+    let secondary = if rpi {
+        false
+    } else {
+        parameters::<Parameters>()?.secondary_config
+    };
+    write_layout(rpi, secondary, Path::new(INPUTS), Path::new(OUTPUTS))
+}
+
+/// Export a factory layout and, for EFI, its correctly numbered image artifacts.
+fn write_layout(rpi: bool, secondary: bool, inputs: &Path, outputs: &Path) -> BakeryResult<()> {
     let capacity = |name: &str| -> BakeryResult<u64> {
-        Ok(fs::metadata(Path::new(INPUTS).join(name))
+        Ok(fs::metadata(inputs.join(name))
             .whatever("unable to inspect partition image")?
             .len())
     };
@@ -258,7 +273,8 @@ pub fn layout(rpi: bool) -> BakeryResult<()> {
             None
         },
     };
-    let config = partition("config", capacity("config")?, true);
+    let config_size = capacity("config")?;
+    let config = partition("config", config_size, true);
     let system = partition("system-a", capacity("system")?, false);
     let partitions = if rpi {
         let boot = capacity("boot")?;
@@ -269,7 +285,19 @@ pub fn layout(rpi: bool) -> BakeryResult<()> {
             system,
         ]
     } else {
-        vec![config, system]
+        let mut partitions = vec![config];
+        if secondary {
+            // Keep the staging area out of firmware ESP discovery until activation.
+            partitions.push(partition("config-secondary", config_size, false));
+        }
+        partitions.push(system);
+        let images = outputs.join("partitions");
+        fs::create_dir(&images).whatever("unable to create partition artifacts")?;
+        for (name, number) in [("config", 1), ("system", partitions.len())] {
+            fs::copy(inputs.join(name), images.join(number.to_string()))
+                .whatever("unable to export partition artifact")?;
+        }
+        partitions
     };
     let layout = ImageLayout {
         ty: Some(PartitionTableType::Gpt),
@@ -277,7 +305,7 @@ pub fn layout(rpi: bool) -> BakeryResult<()> {
         raw_blobs: None,
     };
     fs::write(
-        Path::new(OUTPUTS).join("layout.json"),
+        outputs.join("layout.json"),
         serde_json::to_vec_pretty(&layout).whatever("unable to encode A/B layout")?,
     )
     .whatever("unable to write A/B layout")
@@ -323,5 +351,82 @@ fn rpi_signing_time(value: &str) -> BakeryResult<u64> {
         super::source_date_epoch()
     } else {
         value.parse::<u64>().whatever("invalid signing-time")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::{Read, Seek, SeekFrom};
+
+    use super::*;
+
+    #[test]
+    fn efi_factory_partitions_match_artifacts() {
+        // Both layouts assemble the root in the right slot and leave staging space empty.
+        for secondary in [false, true] {
+            let temp = tempfile::tempdir().unwrap();
+            let inputs = temp.path().join("inputs");
+            let outputs = temp.path().join("outputs");
+            fs::create_dir(&inputs).unwrap();
+            fs::create_dir(&outputs).unwrap();
+            fs::write(inputs.join("config"), vec![0x43; 1024 * 1024]).unwrap();
+            fs::write(inputs.join("system"), vec![0x53; 4096]).unwrap();
+            write_layout(false, secondary, &inputs, &outputs).unwrap();
+            let layout: ImageLayout =
+                crate::config::load_config_or_json(&outputs.join("layout.json")).unwrap();
+            let partitions = layout.partitions.unwrap();
+            let names: Vec<_> = partitions
+                .iter()
+                .map(|p| p.name.as_deref().unwrap())
+                .collect();
+            assert_eq!(
+                names,
+                if secondary {
+                    vec!["config", "config-secondary", "system-a"]
+                } else {
+                    vec!["config", "system-a"]
+                }
+            );
+            if secondary {
+                assert_eq!(partitions[0].size, partitions[1].size);
+                assert!(partitions[1].ty.is_none());
+                assert!(!outputs.join("partitions/2").exists());
+            }
+            let disk = outputs.join("factory.img");
+            super::super::disk::image_gpt(
+                &outputs.join("layout.json"),
+                &outputs.join("partitions"),
+                &disk,
+                None,
+            )
+            .unwrap();
+            let table = rugix_common::disk::PartitionTable::read(&disk).unwrap();
+            let mut image = fs::File::open(disk).unwrap();
+            for (index, expected) in [
+                (0, vec![0x43; 1024 * 1024]),
+                (partitions.len() - 1, vec![0x53; 4096]),
+            ] {
+                image
+                    .seek(SeekFrom::Start(
+                        table
+                            .blocks_to_bytes(table.partitions[index].start)
+                            .into_raw(),
+                    ))
+                    .unwrap();
+                let mut bytes = vec![0; expected.len()];
+                image.read_exact(&mut bytes).unwrap();
+                assert_eq!(bytes, expected);
+            }
+            if secondary {
+                image
+                    .seek(SeekFrom::Start(
+                        table.blocks_to_bytes(table.partitions[1].start).into_raw(),
+                    ))
+                    .unwrap();
+                let mut bytes = vec![1; 1024 * 1024];
+                image.read_exact(&mut bytes).unwrap();
+                assert!(bytes.iter().all(|b| *b == 0));
+            }
+        }
     }
 }

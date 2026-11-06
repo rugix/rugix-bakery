@@ -53,3 +53,27 @@ secrets.bundle-key = { path = "keys/bundle.key" }
 
 Bakery supplies the built layer as `rootfs`. Run
 `./run-bakery bake image efi --release-version v1`.
+
+## Secondary Configuration Partition
+
+To reserve space for a replacement ESP, including systemd-boot, set
+`parameters.secondary-config = true`. This adds an empty `config-secondary`
+partition with the same capacity as `config`. Both config partitions precede
+the system partitions, so `system-a`, `system-b`, and `data` use partition
+numbers 3, 4, and 5 after bootstrap.
+
+Enable the matching recipe option in the root filesystem's layer:
+
+```toml
+[parameters."core/debian-efi-verified-setup"]
+secondary_config = true
+```
+
+Use this option when provisioning a matching factory layout. Existing
+installations need a separate partition-layout migration before receiving the
+changed root configuration.
+
+Custom roots must provide equivalent system and bootstrap configurations.
+The [EFI layout rule](../layout-efi-ab/README.md) describes the reserved
+partition. The update bundle continues to update the root and UKI slots;
+updating and activating a replacement ESP requires a separate operation.

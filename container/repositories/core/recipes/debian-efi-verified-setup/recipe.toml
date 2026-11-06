@@ -18,3 +18,7 @@ bootstrap-config = { path = "recipes/debian-efi-verified-setup/files/bootstrap.t
 [parameters.system_size]
 description = "Default minimum A/B system capacity in bytes after bootstrap."
 default = 4294967296
+
+[parameters.secondary_config]
+description = "Use the secondary configuration partition layout. Must match the EFI image rule's secondary-config parameter."
+default = false

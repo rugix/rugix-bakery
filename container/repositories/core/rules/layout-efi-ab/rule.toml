@@ -9,6 +9,10 @@ description = "Root filesystem image with appended verity data."
 kind = "file"
 description = "EFI System Partition image, used as the configuration partition."
 
+[parameters.secondary-config]
+description = "Reserve an empty secondary configuration partition with the same capacity as the ESP."
+default = false
+
 [execution]
 type = "run"
 command = ["rugix-bakery", "internal", "exec-rule", "layout-efi-ab"]
@@ -17,3 +21,8 @@ command = ["rugix-bakery", "internal", "exec-rule", "layout-efi-ab"]
 kind = "file"
 path = "layout.json"
 description = "Rugix ImageLayout with named A/B partitions."
+
+[execution.outputs.partitions]
+kind = "directory"
+path = "partitions"
+description = "Factory partition images named by their one-based partition numbers."

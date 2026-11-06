@@ -53,6 +53,10 @@ default = "none"
 description = "Factory disk capacity in bytes. Zero sizes the disk from its partitions."
 default = 0
 
+[parameters.secondary-config]
+description = "Reserve an empty secondary configuration partition with the same capacity as the ESP."
+default = false
+
 [execution]
 type = "graph"
 
@@ -118,21 +122,19 @@ parameters.size-alignment = 67108864
 
 [execution.rules.layout]
 uses = "core/layout-efi-ab"
+parameters.secondary-config = { parameter = "secondary-config" }
 inputs.config = { rule = { node = "esp", output = "image" } }
 inputs.system = { rule = { node = "filesystem", output = "image" } }
 
 [execution.rules.release]
 uses = "core/image-release"
 inputs.layout = { rule = { node = "layout", output = "layout" } }
+inputs.partitions = { rule = { node = "layout", output = "partitions" } }
 inputs.manifest = { path = "rules/image-efi-verified/bundle.toml" }
 inputs.certificate = { input = "bundle-certificate" }
 secrets.key = { input = "bundle-key" }
 parameters.size = { parameter = "disk-size" }
 parameters.signing-time = { parameter = "signing-time" }
-
-[execution.rules.release.inputs.partitions.tree]
-"1" = { rule = { node = "esp", output = "image" } }
-"2" = { rule = { node = "filesystem", output = "image" } }
 
 [execution.rules.release.inputs.payloads.tree]
 "system.img" = { rule = { node = "filesystem", output = "image" } }

@@ -49,6 +49,10 @@ default = "none"
 description = "Factory disk capacity in bytes. Zero sizes the disk from its partitions."
 default = 0
 
+[parameters.secondary-config]
+description = "Reserve an empty secondary configuration partition with the same capacity as the ESP."
+default = false
+
 [execution]
 type = "graph"
 
@@ -72,6 +76,7 @@ parameters.panic-timeout = { parameter = "panic-timeout" }
 parameters.boot-timeout = { parameter = "boot-timeout" }
 parameters.signing-time = { parameter = "signing-time" }
 parameters.config-size = { parameter = "config-size" }
+parameters.secondary-config = { parameter = "secondary-config" }
 parameters.root-compression = { parameter = "root-compression" }
 parameters.disk-size = { parameter = "disk-size" }
 

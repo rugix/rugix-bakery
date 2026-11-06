@@ -6,7 +6,7 @@
 partition = 1
 
 [data-partition]
-partition = 4
+partition = @DATA_PARTITION@
 
 [boot-flow]
 type = "systemd-boot"
@@ -17,12 +17,12 @@ b = "rugix-b.efi"
 
 [slots.system-a]
 type = "block"
-partition = 2
+partition = @SYSTEM_A_PARTITION@
 immutable = true
 
 [slots.system-b]
 type = "block"
-partition = 3
+partition = @SYSTEM_B_PARTITION@
 immutable = true
 
 [slots.boot-a]
