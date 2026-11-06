@@ -345,6 +345,52 @@ impl Planner {
         Ok(outputs)
     }
 
+    /// Resolve system outputs using ordinary graph bindings.
+    pub fn system_graph(
+        &mut self,
+        config: &crate::config::systems::SystemConfig,
+        inputs: BTreeMap<Str, Artifact>,
+        standard: BTreeMap<Str, Artifact>,
+    ) -> BakeryResult<BTreeMap<Str, Artifact>> {
+        let mut scope =
+            Scope::with_rules(self.repositories.root_repository, config.rules.as_ref())?;
+        if config
+            .rules
+            .as_ref()
+            .is_some_and(|rules| rules.contains_key("standard"))
+        {
+            bail!("system rule name standard is reserved");
+        }
+        scope.inputs = inputs;
+        scope.completed.insert("standard".into(), standard.clone());
+        let mut outputs = BTreeMap::new();
+        for (name, artifact) in standard {
+            let filename = match name.as_str() {
+                "image" => "system.img",
+                "bundle" => "system.rugixb",
+                "hash" => "system.rugixb-hash",
+                other => other,
+            };
+            outputs.insert(filename.into(), artifact);
+        }
+        for (name, source) in config.outputs.iter().flatten() {
+            super::validate_publication_name(name)?;
+            if name == "build-context.json" || outputs.contains_key(name) {
+                bail!("reserved or colliding system output {name:?}");
+            }
+            outputs.insert(name.clone(), self.artifact(&mut scope, source, false)?);
+        }
+        for name in config.rules.iter().flat_map(|rules| rules.keys()) {
+            if !scope.completed.contains_key(name) {
+                bail!("system rule {name:?} is not referenced by any output");
+            }
+        }
+        if outputs.is_empty() {
+            bail!("system must publish at least one artifact besides build-context.json");
+        }
+        Ok(outputs)
+    }
+
     /// Resolve an artifact, planning dependencies on demand.
     pub(crate) fn artifact(
         &mut self,
@@ -585,6 +631,63 @@ mod tests {
         let path = root.join(path);
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(path, contents).unwrap();
+    }
+
+    /// System graphs share bindings, reject mistakes, and permit image-free output.
+    #[test]
+    fn system_graph_publication() {
+        let temp = tempfile::tempdir().unwrap();
+        let repos = repositories(temp.path());
+        write(
+            temp.path(),
+            "project/rules/copy/rule.toml",
+            r#"
+[inputs.context]
+kind = "file"
+[execution]
+type = "run"
+command = ["false"]
+[execution.outputs.result]
+kind = "file"
+path = "result"
+"#,
+        );
+        let parse = |body: &str| {
+            toml::from_str::<crate::config::systems::SystemConfig>(&format!(
+                "layer = \"base\"\narchitecture = \"amd64\"\n{body}"
+            ))
+            .unwrap()
+        };
+        let config = parse(
+            r#"
+[rules.copy]
+uses = "copy"
+[outputs]
+"context-copy.json" = { rule = { node = "copy", output = "result" } }
+"#,
+        );
+        let inputs = BTreeMap::from([("context".into(), Artifact::json(&42).unwrap())]);
+        let mut planner = Planner::new(repos.clone()).unwrap();
+        let outputs = planner
+            .system_graph(&config, inputs.clone(), BTreeMap::new())
+            .unwrap();
+        assert!(outputs.contains_key("context-copy.json"));
+        assert_eq!(planner.finish(outputs).tasks.len(), 1);
+        for body in [
+            "[rules.unused]\nuses = \"copy\"",
+            "[rules.standard]\nuses = \"copy\"",
+            "[outputs]\n\"../escape\" = { input = \"context\" }",
+            "[outputs]\n\"build-context.json\" = { input = \"context\" }",
+            "",
+        ] {
+            assert!(
+                Planner::new(repos.clone())
+                    .unwrap()
+                    .system_graph(&parse(body), inputs.clone(), BTreeMap::new())
+                    .is_err(),
+                "{body}"
+            );
+        }
     }
 
     /// Imported compositions resolve their own dependencies and share predecessor nodes.

@@ -41,7 +41,11 @@ pub fn plan(
         bundle: bundle.cloned(),
     };
     let outputs = pipeline.output_kinds();
-    planner.defer(inputs, outputs, move |inputs| {
+    planner.defer(inputs, outputs, move |inputs, needed| {
+        let mut pipeline = pipeline.clone();
+        if !needed.contains("bundle") && !needed.contains("hash") {
+            pipeline.bundle = None;
+        }
         pipeline.resolve_layout(inputs)
     })
 }
@@ -59,6 +63,7 @@ impl Pipeline {
         ]);
         if self.bundle.is_some() {
             outputs.insert("bundle".into(), ArtifactKind::File);
+            outputs.insert("hash".into(), ArtifactKind::File);
         }
         outputs
     }
@@ -161,7 +166,11 @@ impl Pipeline {
             )]),
         )?;
         inputs.insert("image".into(), disk["image"].clone());
-        let outputs = planner.defer(inputs, self.output_kinds(), move |inputs| {
+        let outputs = planner.defer(inputs, self.output_kinds(), move |inputs, needed| {
+            let mut pipeline = pipeline.clone();
+            if !needed.contains("bundle") && !needed.contains("hash") {
+                pipeline.bundle = None;
+            }
             pipeline.populate(inputs, &layout)
         });
         Ok(planner.finish(outputs))
@@ -335,6 +344,7 @@ impl Pipeline {
                 BTreeMap::new(),
             )?;
             outputs.insert("bundle".into(), bundle["bundle"].clone());
+            outputs.insert("hash".into(), bundle["hash"].clone());
         }
         Ok(planner.finish(outputs))
     }

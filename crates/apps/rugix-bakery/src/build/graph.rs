@@ -1,6 +1,6 @@
 //! Deferred graph expansion for plans whose shape depends on predecessor artifacts.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 use std::path::PathBuf;
 
@@ -11,7 +11,7 @@ use crate::BakeryResult;
 
 use super::{Artifact, ArtifactLocation, Plan, Planner, Task};
 
-type Expansion = dyn Fn(&BTreeMap<Str, PathBuf>) -> BakeryResult<Plan>;
+type Expansion = dyn Fn(&BTreeMap<Str, PathBuf>, &BTreeSet<Str>) -> BakeryResult<Plan>;
 
 /// A planning boundary within the same executor and cache session.
 pub struct GraphTask {
@@ -33,7 +33,7 @@ impl Planner {
         &mut self,
         inputs: BTreeMap<Str, Artifact>,
         outputs: BTreeMap<Str, ArtifactKind>,
-        expand: impl Fn(&BTreeMap<Str, PathBuf>) -> BakeryResult<Plan> + 'static,
+        expand: impl Fn(&BTreeMap<Str, PathBuf>, &BTreeSet<Str>) -> BakeryResult<Plan> + 'static,
     ) -> BTreeMap<Str, Artifact> {
         let task = self.plan.tasks.len();
         self.plan.tasks.push(Task::Graph(GraphTask {

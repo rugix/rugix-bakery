@@ -27,3 +27,6 @@ parameters.signing-time = "1700000000"
 
 Save the invocation as `build-rule.toml` and run
 `./run-bakery bake rule build-rule.toml build/result`. The output is `bundle`.
+
+
+The `hash` output contains the bundle identity used to verify updates.

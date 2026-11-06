@@ -4,8 +4,13 @@
 
 - Introduce repository-defined build rules with artifact inputs and outputs,
   parameters, sensitive inputs, tooling environments, and reusable compositions.
+  Systems compose named rules and publish artifacts through explicit outputs.
 - Run existing layer, recipe, image, SBOM, and bundle builds through one executor
-  while preserving existing system configurations and published artifact names.
+  with artifact dependency filtering, including deferred pipeline expansions.
+- Add `bake system` with repeatable `--artifact` selection and atomic publication.
+  Deprecate `bake image` and `bake bundle` while preserving their behavior.
+  Predefined pipelines include bundles and explicit bundle hashes by default;
+  configure encoding or disable bundles in the system bundle table.
 - Provide generic filesystem, disk assembly, archive, and bundle rules, with
   reproducible outputs and automatic filesystem sizing.
 - Track declared artifact contents and registered project dependencies when

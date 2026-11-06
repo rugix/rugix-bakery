@@ -12,6 +12,36 @@ use crate::BakeryResult;
 pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
     let project = load_project(args)?;
     match cmd {
+        args::BakeCommand::System {
+            system,
+            artifact,
+            output,
+            release,
+            source_date,
+            params,
+            mixins,
+        } => {
+            let overrides = oven::load_parameter_overrides(&params.param_files)?;
+            let output = output
+                .clone()
+                .unwrap_or_else(|| Path::new("build").join(system));
+            let selection = if artifact.is_empty() {
+                oven::ArtifactSelection::All
+            } else {
+                oven::ArtifactSelection::Names(artifact.clone())
+            };
+            oven::bake_system(
+                &project,
+                &release.release_info(),
+                system,
+                &output,
+                source_epoch(source_date)?,
+                &overrides,
+                &mixins.selection(),
+                None,
+                &selection,
+            )?;
+        }
         args::BakeCommand::Rule {
             invocation,
             output,
@@ -34,6 +64,9 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
         } => {
             let param_overrides = oven::load_parameter_overrides(&params.param_files)?;
             let system_path = Path::new("build").join(system);
+            eprintln!(
+                "warning: bake image is deprecated; use bake system {system} --artifact system.img"
+            );
             let source_date_epoch = source_epoch(source_date)?;
             oven::bake_system(
                 &project,
@@ -44,6 +77,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
                 &param_overrides,
                 &mixins.selection(),
                 None,
+                &oven::ArtifactSelection::ImageCommand,
             )?;
             if let Some(output) = output {
                 crate::build::copy_file(&system_path.join("system.img"), output)?;
@@ -69,6 +103,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
             params,
             mixins,
         } => {
+            eprintln!("warning: bake bundle is deprecated; use bake system {system}");
             let param_overrides = oven::load_parameter_overrides(&params.param_files)?;
             let system_path = Path::new("build").join(system);
             oven::bake_system(
@@ -80,6 +115,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
                 &param_overrides,
                 &mixins.selection(),
                 Some(opts),
+                &oven::ArtifactSelection::All,
             )?;
             let output = output
                 .clone()

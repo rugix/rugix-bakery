@@ -143,6 +143,7 @@ parameters.signing-time = { parameter = "signing-time" }
 [execution.outputs]
 image = { rule = { node = "release", output = "image" } }
 bundle = { rule = { node = "release", output = "bundle" } }
+bundle-hash = { rule = { node = "release", output = "bundle-hash" } }
 uki = { rule = { node = "signed-uki", output = "image" } }
 bootloader = { rule = { node = "signed-bootloader", output = "image" } }
 root-hash = { rule = { node = "filesystem", output = "root-hash" } }

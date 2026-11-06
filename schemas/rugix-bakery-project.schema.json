@@ -418,6 +418,23 @@
       ],
       "description": "Architecture."
     },
+    "rugix_bakery.systems.SystemBundleConfig": {
+      "type": "object",
+      "description": "Bundle encoding for the predefined pipeline.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "compression": {
+          "type": "boolean"
+        },
+        "chunker": {
+          "type": "string"
+        }
+      },
+      "required": [],
+      "unevaluatedProperties": false
+    },
     "rugix_bakery.systems.SystemConfig": {
       "type": "object",
       "properties": {
@@ -439,8 +456,20 @@
         "image": {
           "$ref": "#/$defs/rugix_bakery.systems.SystemImageConfig"
         },
-        "build": {
-          "$ref": "#/$defs/rugix_bakery.rules.RuleInvocation"
+        "rules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.RuleInvocation"
+          }
+        },
+        "outputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+          }
+        },
+        "bundle": {
+          "$ref": "#/$defs/rugix_bakery.systems.SystemBundleConfig"
         },
         "options": {
           "$ref": "#/$defs/rugix_bakery.systems.SystemOptions"

@@ -75,20 +75,42 @@ pub fn bake_system(
     param_overrides: &ParameterOverrides,
     mixin_selection: &MixinSelection,
     bundle_options: Option<&BundleOpts>,
+    selection: &ArtifactSelection,
 ) -> BakeryResult<()> {
     let context = ExecutionContext::resolve(source_date_epoch)?;
     let system_config = project
         .config()
         .get_system_config(system)
         .ok_or_else(|| whatever!("unable to find image {system}"))?;
-    if system_config.build.is_some()
-        && (system_config.target.is_some()
-            || system_config.image.is_some()
-            || system_config.options.is_some())
-    {
-        bail!("repository-defined builds cannot be combined with target, image, or options; configure the assembly rule instead");
+    let standard = system_config.target.is_some() || system_config.image.is_some();
+    if !standard && (system_config.options.is_some() || system_config.bundle.is_some()) {
+        bail!("options and bundle require target or image");
     }
-    info!("baking image `{system}`");
+    if !standard
+        && bundle_options.is_some_and(|opts| opts.disable_compression || opts.chunker.is_some())
+    {
+        bail!("bundle CLI overrides require a predefined-pipeline system");
+    }
+    let configured = system_config.bundle.as_ref();
+    let mut resolved = BundleOpts {
+        disable_compression: configured.and_then(|b| b.compression) == Some(false),
+        chunker: configured
+            .and_then(|b| b.chunker.as_ref())
+            .map(|value| {
+                value
+                    .parse::<ChunkerAlgorithm>()
+                    .whatever("invalid system bundle chunker")
+            })
+            .transpose()?,
+    };
+    if let Some(overrides) = bundle_options {
+        resolved.disable_compression |= overrides.disable_compression;
+        if overrides.chunker.is_some() {
+            resolved.chunker = overrides.chunker.clone();
+        }
+    }
+    let bundle_options = (configured.and_then(|b| b.enabled) != Some(false)).then_some(&resolved);
+    info!("baking system `{system}`");
     let layer_bakery = LayerBakery::new(project, system_config.architecture, param_overrides);
     let mut planner = Planner::new(project.repositories()?)?.with_layers(project, param_overrides);
     let baked_layer =
@@ -103,6 +125,7 @@ pub fn bake_system(
         system,
         output,
         context,
+        selection,
     )
 }
 
@@ -388,7 +411,9 @@ pub fn bake_bundle(
     opts: &BundleOpts,
 ) -> BakeryResult<si_crypto_hashes::HashDigest> {
     let system_config = project.config().resolve_system_config(system)?;
-    if system_config.build.is_some() && (opts.disable_compression || opts.chunker.is_some()) {
+    if (system_config.target.is_none() && system_config.image.is_none())
+        && (opts.disable_compression || opts.chunker.is_some())
+    {
         bail!("configure bundle encoding through the repository-defined assembly rule");
     }
     let source = system_path.join("system.rugixb");
@@ -434,7 +459,7 @@ fn bsp_bundle_config(system_path: &Path, opts: &BundleOpts) -> BakeryResult<Bund
     let bundle = bsp.bundle.as_ref();
     let payloads_list = bundle.map(|b| &b.payloads).filter(|p| !p.is_empty());
     let Some(payloads_list) = payloads_list else {
-        bail!("rugix-bsp.toml has no [[bundle.payloads]] entries");
+        bail!("rugix-bsp.toml has no [[bundle.payloads]] entries; set [systems.<name>.bundle] enabled = false to disable bundles");
     };
 
     let compression = if opts.disable_compression {
@@ -474,4 +499,40 @@ fn bsp_bundle_config(system_path: &Path, opts: &BundleOpts) -> BakeryResult<Bund
         manifest::UpdateType::Full,
         payloads,
     ))
+}
+
+/// Published artifacts needed by a command.
+pub enum ArtifactSelection {
+    All,
+    ImageCommand,
+    Names(Vec<String>),
+}
+
+impl ArtifactSelection {
+    pub fn select(&self, outputs: &mut BTreeMap<Str, Artifact>) -> BakeryResult<()> {
+        match self {
+            Self::All => {}
+            Self::ImageCommand => outputs
+                .retain(|name, _| !matches!(name.as_str(), "system.rugixb" | "system.rugixb-hash")),
+            Self::Names(names) => {
+                for name in names {
+                    if !outputs.contains_key(name.as_str()) {
+                        bail!(
+                            "unknown system artifact {name:?}; available artifacts: {}",
+                            outputs
+                                .keys()
+                                .map(|name| name.as_str())
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        );
+                    }
+                }
+                outputs.retain(|name, _| {
+                    name == "build-context.json"
+                        || names.iter().any(|requested| requested == name.as_str())
+                });
+            }
+        }
+        Ok(())
+    }
 }

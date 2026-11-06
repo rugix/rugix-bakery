@@ -42,17 +42,22 @@ For example, select the wrapper in a system definition:
 layer = "efi"
 architecture = "amd64"
 
-[systems.efi.build]
+[systems.efi.rules.release]
 uses = "core/image-debian-efi-verified"
 parameters.architecture = "amd64"
 inputs.boot-certificate = { path = "keys/boot.crt" }
 inputs.bundle-certificate = { path = "keys/bundle.crt" }
 secrets.boot-key = { path = "keys/boot.key" }
 secrets.bundle-key = { path = "keys/bundle.key" }
+
+[systems.efi.outputs]
+"system.img" = { rule = { node = "release", output = "image" } }
+"system.rugixb" = { rule = { node = "release", output = "bundle" } }
+"system.rugixb-hash" = { rule = { node = "release", output = "bundle-hash" } }
 ```
 
 Bakery supplies the built layer as `rootfs`. Run
-`./run-bakery bake image efi --release-version v1`.
+`./run-bakery bake system efi --release-version v1`.
 
 ## Secondary Configuration Partition
 
@@ -77,3 +82,6 @@ Custom roots must provide equivalent system and bootstrap configurations.
 The [EFI layout rule](../layout-efi-ab/README.md) describes the reserved
 partition. The update bundle continues to update the root and UKI slots;
 updating and activating a replacement ESP requires a separate operation.
+
+
+The `bundle-hash` output contains the bundle identity used to verify updates.

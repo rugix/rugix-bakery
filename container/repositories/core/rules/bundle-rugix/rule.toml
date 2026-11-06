@@ -17,3 +17,8 @@ command = ["rugix-bakery", "internal", "exec-rule", "bundle-rugix"]
 description = "Indexed Rugix update bundle."
 kind = "file"
 path = "update.rugixb"
+
+[execution.outputs.hash]
+description = "Bundle hash for update verification."
+kind = "file"
+path = "update.rugixb-hash"

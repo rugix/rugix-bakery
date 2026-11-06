@@ -23,39 +23,35 @@ pub fn assemble(
     system: &str,
     output: &Path,
     context: ExecutionContext,
+    selection: &super::ArtifactSelection,
 ) -> BakeryResult<()> {
     let inputs = planner.release(&layer, config.architecture, release, system);
     let context_artifact = inputs["context"].clone();
-    let mut outputs = if let Some(invocation) = &config.build {
-        planner.invocation(invocation, inputs)?
+    let standard = if config.target.is_some() || config.image.is_some() {
+        super::pipeline::plan(&mut planner, inputs.clone(), config, bundle_options)
     } else {
-        super::pipeline::plan(&mut planner, inputs, config, bundle_options)
+        BTreeMap::new()
     };
-    if !outputs.contains_key("image") {
-        bail!("system assembly must export an image artifact");
-    }
-    if outputs
-        .insert("build-context.json".into(), context_artifact)
-        .is_some()
+    let mut outputs = planner.system_graph(config, inputs, standard)?;
+    if matches!(selection, super::ArtifactSelection::ImageCommand)
+        && !outputs.contains_key("system.img")
     {
-        bail!("assembly output build-context.json is reserved for release metadata");
+        bail!("bake image requires a published system.img artifact");
+    }
+    outputs.insert("build-context.json".into(), context_artifact);
+    selection.select(&mut outputs)?;
+    if matches!(selection, super::ArtifactSelection::ImageCommand) {
+        eprintln!(
+            "warning: bake image is deprecated; use bake system {system} {}",
+            outputs
+                .keys()
+                .map(|name| format!("--artifact {name}"))
+                .collect::<Vec<_>>()
+                .join(" ")
+        );
     }
     let plan = planner.finish(outputs);
     let mut executor = Executor::for_project(project, context)?;
     let artifacts = executor.execute(&plan)?;
-    if !artifacts["image"].is_file() {
-        bail!("system assembly image must be a file");
-    }
-    let mut publication = BTreeMap::new();
-    for (name, source) in artifacts {
-        let filename = match name.as_str() {
-            "image" => "system.img",
-            "bundle" => "system.rugixb",
-            other => other,
-        };
-        if publication.insert(filename.into(), source).is_some() {
-            bail!("assembly outputs collide at destination {filename:?}");
-        }
-    }
-    build::publish(&publication, output, project.dir())
+    build::publish(&artifacts, output, project.dir())
 }

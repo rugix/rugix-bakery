@@ -44,8 +44,9 @@ pub fn main(
             param_overrides,
             &Default::default(),
             None,
+            &oven::ArtifactSelection::Names(vec!["system.img".into()]),
         )
-        .whatever("error baking system")?;
+        .whatever("test requires a system with a published system.img artifact")?;
 
         let test_status = rugix_cli::add_status(TestCliStatus {
             total_steps: test_config.steps.len() as u64,

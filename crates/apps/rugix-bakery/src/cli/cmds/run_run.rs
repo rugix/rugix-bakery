@@ -28,8 +28,9 @@ pub fn run(args: &args::Args, cmd: &args::RunCommand) -> BakeryResult<()> {
         &param_overrides,
         &cmd.mixins.selection(),
         None,
+        &oven::ArtifactSelection::Names(vec!["system.img".into()]),
     )
-    .whatever("error baking image")?;
+    .whatever("run requires a system with a published system.img artifact")?;
 
     let image_path = output.join("system.img");
 

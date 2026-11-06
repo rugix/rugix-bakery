@@ -1,6 +1,7 @@
 //! Plan and execute repository-defined artifact builds.
 
 use std::collections::BTreeMap;
+use std::ffi::CString;
 use std::fs;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
@@ -19,6 +20,7 @@ mod execute;
 mod graph;
 mod layers;
 mod planner;
+mod reachable;
 mod release;
 mod results;
 mod runtime;
@@ -80,6 +82,7 @@ pub fn publish(
         bail!("build output must not contain the project or its source artifacts");
     }
     for (name, source) in artifacts {
+        validate_publication_name(name)?;
         let filename = name.as_str();
         run!([
             "cp",
@@ -93,9 +96,10 @@ pub fn publish(
         .whatever("unable to publish assembly artifact")?;
     }
     if output.exists() {
-        fs::remove_dir_all(output).whatever("unable to replace previous build")?;
+        exchange_directories(staging.path(), output)?;
+    } else {
+        fs::rename(staging.path(), output).whatever("unable to publish build")?;
     }
-    fs::rename(staging.path(), output).whatever("unable to publish build")?;
     Ok(())
 }
 
@@ -120,6 +124,43 @@ pub fn copy_file(source: &Path, destination: &Path) -> BakeryResult<()> {
         fs::create_dir_all(parent).whatever("unable to create export parent directory")?;
     }
     fs::copy(source, destination).whatever("unable to export file")?;
+    Ok(())
+}
+
+/// Published names stay within the output directory.
+pub fn validate_publication_name(name: &str) -> BakeryResult<()> {
+    if name.is_empty()
+        || name == "."
+        || name == ".."
+        || name.contains('/')
+        || name.contains(char::from(92))
+    {
+        bail!("invalid published artifact name {name:?}: expected a flat file name");
+    }
+    Ok(())
+}
+
+/// Exchange directories with the Linux syscall on both GNU and musl targets.
+fn exchange_directories(left: &Path, right: &Path) -> BakeryResult<()> {
+    let left =
+        CString::new(left.as_os_str().as_encoded_bytes()).whatever("invalid staging path")?;
+    let right =
+        CString::new(right.as_os_str().as_encoded_bytes()).whatever("invalid output path")?;
+    // Both pointers refer to live NUL-terminated strings for the duration of the syscall.
+    let result = unsafe {
+        nix::libc::syscall(
+            nix::libc::SYS_renameat2,
+            nix::libc::AT_FDCWD,
+            left.as_ptr(),
+            nix::libc::AT_FDCWD,
+            right.as_ptr(),
+            nix::libc::RENAME_EXCHANGE,
+        )
+    };
+    if result != 0 {
+        return Err(std::io::Error::last_os_error())
+            .whatever("unable to atomically replace previous build");
+    }
     Ok(())
 }
 
@@ -160,9 +201,16 @@ mod tests {
         let output = project.join("build");
         publish(&artifacts, &output, &project).unwrap();
         assert_eq!(fs::read(output.join("image")).unwrap(), b"image contents");
-        assert_eq!(
-            fs::read(output.join("system.img")).unwrap(),
-            b"image contents"
-        );
+        publish(
+            &BTreeMap::from([("only".into(), source.clone())]),
+            &output,
+            &project,
+        )
+        .unwrap();
+        assert!(!output.join("image").exists());
+        assert_eq!(fs::read(output.join("only")).unwrap(), b"image contents");
+        let invalid = BTreeMap::from([("../escape".into(), source.clone())]);
+        assert!(publish(&invalid, &output, &project).is_err());
+        assert!(output.join("only").exists());
     }
 }
