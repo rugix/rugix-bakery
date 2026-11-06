@@ -10,5 +10,5 @@ For example, add the recipe to a layer derived from a compatible base:
 recipes = ["core/rugix-ctrl"]
 
 [parameters."core/rugix-ctrl"]
-version = "container"
+version = "v1.4.0"
 ```

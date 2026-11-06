@@ -2,9 +2,10 @@
 
 set -eu
 
-# Install .deb packages if they were downloaded by the run step.
+# Install .deb packages if they were downloaded by the run step. Use APT so that
+# package dependencies, such as `ca-certificates` since Rugix 1.4.0, are installed.
 if ls /tmp/rugix-ctrl*.deb 1>/dev/null 2>&1; then
-    dpkg -i /tmp/rugix-ctrl*.deb
+    apt-get install -y /tmp/rugix-ctrl*.deb
     rm -f /tmp/rugix-ctrl*.deb
 fi
 
