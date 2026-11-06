@@ -27,7 +27,6 @@ rm -f /etc/ssh/ssh_host_*
 
 install -D -m 644 "$RECIPE_INPUTS_DIR/bundle-root" /etc/rugix/bundle-root.crt
 cat > /etc/rugix/ctrl.toml <<'EOF'
-automatic-delta-updates = true
 [signatures]
 roots = ["/etc/rugix/bundle-root.crt"]
 EOF
