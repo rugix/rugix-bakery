@@ -155,7 +155,8 @@ where
 #[cfg(test)]
 mod configuration_tests {
     use super::images::ImageConfig;
-    use super::{load_config, parse_config, projects::ProjectConfig};
+    use super::projects::ProjectConfig;
+    use super::{load_config, parse_config};
     use std::path::Path;
 
     /// Image configurations retain byte-size strings and timestamp semantics.
