@@ -1,0 +1,12 @@
+description = "Configure update trust, SSH access, networking, and volatile root writes."
+# Run after the platform, verified-root, and SSH recipes.
+priority = 0
+dependencies = ["core/debian-rpi-verified-setup", "core/ssh"]
+
+[inputs.bundle-root]
+kind = "file"
+description = "Trusted root certificate for update bundles."
+
+[inputs.ssh-key]
+kind = "file"
+description = "Public SSH key authorized to log in as root."
