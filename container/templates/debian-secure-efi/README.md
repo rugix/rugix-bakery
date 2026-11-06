@@ -162,7 +162,8 @@ Rugix Bakery builds the root filesystem from a layer, which applies recipes,
 sets of build steps and files, to a base system. A build rule then assembles
 the root filesystem into the disk image and update bundle.
 `layers/customized.toml` selects the Debian base and recipes, while
-`recipes/secure-setup/` configures networking, login, and update trust.
+`recipes/secure-setup/files/` contains the static configuration for networking,
+login, update trust, and writable state.
 `rugix-bakery.toml` selects the image build rule and supplies its signing keys
 and certificates.
 
@@ -189,7 +190,7 @@ as described in the Rugix Bakery documentation on
 [CPU architectures](https://rugix.org/docs/bakery/#cpu-architectures).
 
 Adapt the kernel console arguments in `cmdline-extra` in `rugix-bakery.toml`
-and the initial RAM disk modules in `recipes/secure-setup/steps/00-install.sh`
+and the initial RAM disk modules in `recipes/secure-setup/files/initramfs-modules`
 for your hardware. The supplied modules support virtio devices in QEMU.
 
 ### Space for Bootloader Updates
