@@ -81,7 +81,7 @@ pub fn bake_system(
     let system_config = project
         .config()
         .get_system_config(system)
-        .ok_or_else(|| whatever!("unable to find image {system}"))?;
+        .ok_or_else(|| whatever!("unable to find system {system}"))?;
     let standard = system_config.target.is_some() || system_config.image.is_some();
     if !standard && (system_config.options.is_some() || system_config.bundle.is_some()) {
         bail!("options and bundle require target or image");
