@@ -8,6 +8,9 @@ description = """
 Debian images for EFI-compatible systems (AMD64 and ARM64).
 """
 
+[debian-secure-efi]
+description = "Debian signed EFI boot and verified A/B roots with development signing keys."
+
 [yocto-grub-efi]
 description = """
 Yocto-based template for QEMU (AMD64 and ARM64).

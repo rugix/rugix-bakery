@@ -1,0 +1,12 @@
+parent = "core/debian-trixie"
+recipes = ["secure-setup"]
+
+[parameters."core/rugix-ctrl"]
+version = "v1.4.0"
+
+[parameters."core/debian-efi-verified-setup"]
+secondary_config = true
+
+[inputs.secure-setup]
+bundle-root = { path = "keys/bundle-root.crt" }
+ssh-key = { path = "keys/ssh.pub" }
