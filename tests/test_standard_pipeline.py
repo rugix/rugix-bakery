@@ -84,6 +84,8 @@ def test_standard_pipeline_rebuilds_and_reproduces(
     prepare(project)
     env_project.run(["bake", "image", "device", *RELEASE])
     output = project / "build/device"
+    assert not (output / "system.rugixb").exists()
+    assert not (output / "system.rugixb-hash").exists()
     with (output / "system.img").open("rb") as image:
         image.seek(32768)
         assert image.read(8) == b"firmware"
@@ -173,6 +175,9 @@ def test_standard_bundle_uses_graph_payloads(env_project: BakeryBuilder) -> None
         ["bake", "bundle", "device", "export.rugixb", "--disable-compression"]
     )
     assert digest(project / "export.rugixb") == digest(output / "system.rugixb")
+    assert (project / "export.rugixb-hash").read_text() == (
+        output / "system.rugixb-hash"
+    ).read_text()
 
 
 def test_default_source_date_survives_noop_builds(
@@ -278,3 +283,34 @@ def test_small_fat_partition_dereferences_boot_links(
     assert (
         project / "build/device/filesystems/partition-2.img"
     ).stat().st_size == 16 * 1024 * 1024
+
+
+def test_filtered_system_skips_bundle_and_replaces_publication(
+    env_project: BakeryBuilder, capfd: pytest.CaptureFixture[str]
+) -> None:
+    """Image selection skips bundle planning and replaces previous published outputs."""
+    project = env_project.project_dir
+    prepare(project)
+    env_project.run(["bake", "system", "device", *RELEASE])
+    output = project / "build/device"
+    assert (output / "system.rugixb-hash").is_file()
+    layout = project / "recipes/base/bsp.toml"
+    layout.write_text(layout.read_text().split("[[bundle.payloads]]")[0])
+    capfd.readouterr()
+    env_project.run(["bake", "system", "device", "--artifact", "system.img", *RELEASE])
+    assert {path.name for path in output.iterdir()} == {
+        "system.img",
+        "build-context.json",
+    }
+    assert 'rule "bundle-rugix"' not in capfd.readouterr().err
+    with pytest.raises(subprocess.CalledProcessError):
+        env_project.run(["bake", "system", "device", "--artifact", "missing"])
+    assert (output / "system.img").is_file()
+    with pytest.raises(subprocess.CalledProcessError):
+        env_project.run(["bake", "system", "device", *RELEASE])
+    config = project / "rugix-bakery.toml"
+    config.write_text(
+        config.read_text() + "\n[systems.device.bundle]\nenabled = false\n"
+    )
+    env_project.run(["bake", "system", "device", *RELEASE])
+    assert not (output / "system.rugixb").exists()

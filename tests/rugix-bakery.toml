@@ -51,7 +51,7 @@ target = "generic-grub-efi"
 layer = "efi-verified"
 architecture = "amd64"
 
-[systems.efi-verified.build]
+[systems.efi-verified.rules.release]
 uses = "core/image-debian-efi-verified"
 parameters.architecture = "amd64"
 parameters.cmdline-extra = "console=ttyS0,115200n8"
@@ -59,3 +59,20 @@ inputs.boot-certificate = { path = ".rugix-testkit/verified-keys/boot.crt" }
 inputs.bundle-certificate = { path = ".rugix-testkit/verified-keys/bundle.crt" }
 secrets.boot-key = { path = ".rugix-testkit/verified-keys/boot.key" }
 secrets.bundle-key = { path = ".rugix-testkit/verified-keys/bundle.key" }
+
+[systems.efi-verified.outputs]
+"uki" = { rule = { node = "release", output = "uki" } }
+"bootloader" = { rule = { node = "release", output = "bootloader" } }
+"root-hash" = { rule = { node = "release", output = "root-hash" } }
+"hash-offset" = { rule = { node = "release", output = "hash-offset" } }
+"data-size" = { rule = { node = "release", output = "data-size" } }
+"system.img" = { rule = { node = "release", output = "image" } }
+"system.rugixb" = { rule = { node = "release", output = "bundle" } }
+"system.rugixb-hash" = { rule = { node = "release", output = "bundle-hash" } }
+
+[systems.efi-verified.rules.sbom]
+uses = "core/sbom"
+inputs.tree = { input = "rootfs" }
+
+[systems.efi-verified.outputs."sbom.spdx.json"]
+rule = { node = "sbom", output = "spdx" }

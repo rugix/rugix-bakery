@@ -66,7 +66,7 @@ so the script refuses to overwrite them.
 Now build the image:
 
 ```sh
-./run-bakery bake image pi --release-version v1
+./run-bakery bake system pi --release-version v1
 ```
 
 The two files you need are in `build/pi/`:
@@ -155,7 +155,7 @@ For a new release, change your project and build it again with a new version,
 using the same `keys/` directory:
 
 ```sh
-./run-bakery bake image pi --release-version v2
+./run-bakery bake system pi --release-version v2
 ```
 
 Use the resulting `build/pi/system.rugixb` with
@@ -183,7 +183,7 @@ you change them in the build configuration. Kernel arguments go in
 `cmdline-extra` in `rugix-bakery.toml`, which already sets serial and screen
 consoles. Boot settings are the contents of `config.txt` inside the signed
 image. For example, to enable the serial port for that console, add this entry
-inside the existing `[systems.pi.build]` table in `rugix-bakery.toml`:
+inside the existing `[systems.pi.rules.release]` table in `rugix-bakery.toml`:
 
 ```toml
 parameters.boot-config = """

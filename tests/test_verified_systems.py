@@ -115,8 +115,10 @@ def test_efi_verified_boot_and_update(
     secure_boot_firmware: tuple[Path, Path],
 ) -> None:
     """The system boots with Secure Boot and updates, rolls back, and commits slot B."""
-    image = bakery.bake_image(SYSTEM)
+    bakery.run(["bake", "system", SYSTEM])
     output = bakery.project_dir / "build" / SYSTEM
+    image = output / "system.img"
+    assert (output / "sbom.spdx.json").is_file()
     root_hash = (output / "root-hash").read_text().strip()
     vm = start_vm(_config(image, secure_boot_firmware))
     rugix = RugixCtrl(vm)
