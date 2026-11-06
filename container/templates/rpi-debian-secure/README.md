@@ -144,15 +144,8 @@ image causes verification to fail.
 
 ## Keep Data Across Reboots
 
-The system image is read-only. To let programs write files, Rugix Ctrl places a
-writable layer in memory over it. Those writes disappear on reboot, including
-changes under `/root`. Put files that must survive reboots and updates in
-`/data`. SSH host keys are also saved persistently, so the device keeps its SSH
-identity across reboots.
-
-Persistent data is unencrypted and is outside root filesystem verification.
-For example, dm-verity detects a changed application in the system image, but
-does not check a configuration file that your application reads from `/data`.
+See [Rugix Ctrl's state management documentation](https://rugix.org/docs/ctrl/state-management/)
+for persistence options; this template keeps root filesystem writes in memory.
 
 ## Build an Update
 
