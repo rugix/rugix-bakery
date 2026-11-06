@@ -20,6 +20,9 @@ it reads it. This extends the bootloader's trust to the root filesystem.
 > change the device's firmware settings.
 > [Set Up Signed Boot on the Device](#set-up-signed-boot-on-the-device)
 > explains these steps.
+>
+> The data partition is neither encrypted nor authenticated. Configure these
+> protections separately to protect stored data against disclosure and tampering.
 
 ## Build Your First Image
 
