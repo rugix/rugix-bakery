@@ -1,0 +1,13 @@
+[systems.efi]
+layer = "customized"
+architecture = "amd64"
+
+[systems.efi.build]
+uses = "core/image-debian-efi-verified"
+parameters.architecture = "amd64"
+parameters.cmdline-extra = "console=tty0 console=ttyS0,115200n8"
+parameters.secondary-config = true
+inputs.boot-certificate = { path = "keys/boot.crt" }
+inputs.bundle-certificate = { path = "keys/bundle.crt" }
+secrets.boot-key = { path = "keys/boot.key" }
+secrets.bundle-key = { path = "keys/bundle.key" }
