@@ -1,0 +1,20 @@
+[layout]
+type = "gpt"
+
+[[layout.partitions]]
+name = "config"
+# Preserve the factory configuration partition's capacity.
+size = 0
+type = "C12A7328-F81F-11D2-BA4B-00A0C93EC93B"
+
+[[layout.partitions]]
+name = "system-a"
+size = @SYSTEM_SIZE@
+
+[[layout.partitions]]
+name = "system-b"
+size = @SYSTEM_SIZE@
+
+[[layout.partitions]]
+name = "data"
+filesystem = { type = "ext4", label = "data" }

@@ -1,0 +1,26 @@
+description = "Prepare an ESP tree with a signed bootloader and initial A/B UKI."
+category = "Verified Boot"
+
+[inputs.uki]
+kind = "file"
+description = "Signed UKI for the initial A slot."
+
+[inputs.bootloader]
+kind = "file"
+description = "Signed systemd-boot executable."
+
+[parameters.architecture]
+description = "Target architecture: amd64 or arm64."
+
+[parameters.timeout]
+default = 0
+description = "systemd-boot menu timeout in seconds."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "prepare-efi-esp"]
+
+[execution.outputs.tree]
+kind = "directory"
+path = "esp"
+description = "EFI System Partition contents."

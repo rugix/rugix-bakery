@@ -1,0 +1,14 @@
+description = "Select the installed systemd EFI stub for an explicit architecture."
+category = "Boot Artifacts"
+
+[parameters.architecture]
+description = "Target architecture: amd64 or arm64. Must match the installed EFI artifacts."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "efi-stub"]
+
+[execution.outputs.stub]
+description = "Unsigned systemd EFI stub for the selected architecture."
+kind = "file"
+path = "stub.efi"

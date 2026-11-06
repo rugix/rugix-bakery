@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+
+case "${1:-}" in
+    prereqs)
+        exit 0
+        ;;
+esac
+
+. /usr/share/initramfs-tools/hook-functions
+
+copy_exec /usr/sbin/veritysetup /sbin/veritysetup
+copy_exec /usr/bin/od /usr/bin/od
+# Missing modules are skipped, so efivarfs is harmless on kernels without EFI.
+manual_add_modules dm_verity overlay squashfs efivarfs

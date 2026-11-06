@@ -1,0 +1,20 @@
+description = "Configure Raspberry Pi 4/CM4 or Pi 5 Debian systems for signed tryboot and verified A/B roots."
+category = "Verified Boot"
+priority = 500
+dependencies = ["rpi-debian-setup", "debian-verified-root"]
+
+[inputs.system-config]
+kind = "file"
+description = "Rugix Ctrl system configuration. Defaults to the standard verified A/B layout."
+
+[inputs.bootstrap-config]
+kind = "file"
+description = "Rugix bootstrap layout. Optional @SYSTEM_SIZE@ placeholders use system_size."
+
+[input-defaults]
+system-config = { path = "recipes/debian-rpi-verified-setup/files/system.toml" }
+bootstrap-config = { path = "recipes/debian-rpi-verified-setup/files/bootstrap.toml.in" }
+
+[parameters.system_size]
+description = "Default minimum A/B system capacity in bytes after bootstrap."
+default = 4294967296

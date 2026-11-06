@@ -9,6 +9,10 @@ description = "Directory tree of files and directories. Contained symlinks are d
 description = "Capacity in bytes. Zero sizes the image from the tree, including FAT32 overhead."
 default = 0
 
+[parameters.free-percent]
+description = "Additional free space as a percentage of the populated tree's cluster count. Used only for automatic sizing."
+default = 0
+
 [parameters.label]
 description = "Volume label. Empty uses the formatter's default."
 default = ""
@@ -24,6 +28,14 @@ default = 0
 [parameters.mkfs-options]
 description = "Additional mkfs.fat arguments, separated with shell-style quoting."
 default = ""
+
+[parameters.minimum-size]
+description = "Minimum capacity in bytes when size is zero."
+default = 0
+
+[parameters.size-alignment]
+description = "Round automatic capacity up to a multiple of this power-of-two byte count. Zero rounds up to 1 MiB."
+default = 0
 
 [execution]
 type = "run"

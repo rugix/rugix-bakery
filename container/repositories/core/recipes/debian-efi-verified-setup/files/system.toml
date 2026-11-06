@@ -1,0 +1,44 @@
+# Explicit slots pair root partitions with signed UKI files on the ESP.
+# UKIs remain unchanged after installation. Mark their slots immutable so
+# Rugix Ctrl retains installed payload hashes for slot verification.
+
+[config-partition]
+partition = 1
+
+[data-partition]
+partition = 4
+
+[boot-flow]
+type = "systemd-boot"
+
+[boot-flow.entries]
+a = "rugix-a.efi"
+b = "rugix-b.efi"
+
+[slots.system-a]
+type = "block"
+partition = 2
+immutable = true
+
+[slots.system-b]
+type = "block"
+partition = 3
+immutable = true
+
+[slots.boot-a]
+type = "file"
+path = "/run/rugix/mounts/config/EFI/Linux/rugix-a.efi"
+immutable = true
+
+[slots.boot-b]
+type = "file"
+path = "/run/rugix/mounts/config/EFI/Linux/rugix-b.efi"
+immutable = true
+
+[boot-groups.a.slots]
+system = "system-a"
+boot = "boot-a"
+
+[boot-groups.b.slots]
+system = "system-b"
+boot = "boot-b"

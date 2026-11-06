@@ -110,6 +110,9 @@
       "type": "object",
       "description": "Partition of an image.",
       "properties": {
+        "name": {
+          "type": "string"
+        },
         "size": {
           "$ref": "#/$defs/rugix_bakery.foreign.NumBytes"
         },

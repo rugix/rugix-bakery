@@ -5,12 +5,18 @@ metadata and creates FAT32 images. Small trees still require FAT32's minimum
 cluster count. For fixed capacities, the formatter selects FAT12, FAT16, or FAT32
 to suit the image size. Use `mkfs-options = "-F 32"` to require FAT32.
 
+With automatic sizing, `free-percent` reserves additional file-cluster capacity
+as a percentage of the current contents. `minimum-size` sets a byte floor, and
+`size-alignment` rounds the result up to a power-of-two byte multiple. All three
+default to zero; zero alignment retains the rule's 1 MiB rounding. An explicit
+`size` overrides automatic sizing and these adjustments.
+
 Contained symlinks are dereferenced. Links outside the input tree, directory
 cycles, dangling links, and special files are rejected.
 
-An explicit capacity is useful for fixed boot partitions. The rule fails if the
-tree does not fit. The default volume ID comes from tree paths and file contents;
-set `volume-id` when another component needs a particular ID.
+The rule fails if the tree does not fit an explicit capacity. The default
+volume ID comes from tree paths and file contents; set `volume-id` when another
+component needs a particular ID.
 
 The rule formats with invariant metadata and copies entries in sorted order.
 The build source epoch fixes copied-entry timestamps, using UTC. It defaults to zero;

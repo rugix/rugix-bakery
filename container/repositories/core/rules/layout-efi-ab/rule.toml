@@ -1,0 +1,19 @@
+description = "Reserve the named A/B partitions for the EFI verified boot flow."
+category = "Verified Boot"
+
+[inputs.system]
+kind = "file"
+description = "Root filesystem image with appended verity data."
+
+[inputs.config]
+kind = "file"
+description = "EFI System Partition image, used as the configuration partition."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "layout-efi-ab"]
+
+[execution.outputs.layout]
+kind = "file"
+path = "layout.json"
+description = "Rugix ImageLayout with named A/B partitions."

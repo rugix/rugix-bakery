@@ -46,3 +46,16 @@ target = "rpi-uboot"
 layer = "old-debian-snapshot"
 architecture = "amd64"
 target = "generic-grub-efi"
+
+[systems.efi-verified]
+layer = "efi-verified"
+architecture = "amd64"
+
+[systems.efi-verified.build]
+uses = "core/image-debian-efi-verified"
+parameters.architecture = "amd64"
+parameters.cmdline-extra = "console=ttyS0,115200n8"
+inputs.boot-certificate = { path = ".rugix-testkit/verified-keys/boot.crt" }
+inputs.bundle-certificate = { path = ".rugix-testkit/verified-keys/bundle.crt" }
+secrets.boot-key = { path = ".rugix-testkit/verified-keys/boot.key" }
+secrets.bundle-key = { path = ".rugix-testkit/verified-keys/bundle.key" }

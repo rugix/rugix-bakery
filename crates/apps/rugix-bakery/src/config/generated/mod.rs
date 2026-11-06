@@ -3777,6 +3777,8 @@ pub mod images {
     #[doc = "Partition of an image.\n"]
     #[derive(Clone, Debug)]
     pub struct ImagePartition {
+        #[doc = "GPT partition name.\n"]
+        pub name: ::std::option::Option<::sidex::types::Str>,
         #[doc = "Size of the partition.\n"]
         pub size: ::std::option::Option<super::foreign::NumBytes>,
         #[doc = "Filesystem of the partition.\n"]
@@ -3793,6 +3795,12 @@ pub mod images {
         const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
             "::rugix_bakery::images::ImagePartition",
             ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
+                ::sidex::shape::FieldShape::new(
+                    "name",
+                    ::sidex::shape::shape_of::<::sidex::types::Str>,
+                )
+                .with_docs("GPT partition name.\n")
+                .optional(),
                 ::sidex::shape::FieldShape::new(
                     "size",
                     ::sidex::shape::shape_of::<super::foreign::NumBytes>,
@@ -3844,19 +3852,23 @@ pub mod images {
         fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
             match index {
                 0usize => self
-                    .size
+                    .name
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 1usize => self
-                    .filesystem
+                    .size
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 2usize => self
+                    .filesystem
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                3usize => self
                     .root
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
-                3usize => self.ty.as_ref().map(|value| ::sidex::Encode::encode(value)),
-                4usize => self
+                4usize => self.ty.as_ref().map(|value| ::sidex::Encode::encode(value)),
+                5usize => self
                     .bootable
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
@@ -3870,35 +3882,41 @@ pub mod images {
         fn decode(
             decoder: &mut dyn ::sidex::Decoder,
         ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
-            let mut __field_0 = ::std::option::Option::<super::foreign::NumBytes>::None;
-            let mut __field_1 = ::std::option::Option::<Filesystem>::None;
-            let mut __field_2 = ::std::option::Option::<::sidex::types::Str>::None;
-            let mut __field_3 = ::std::option::Option::<PartitionType>::None;
-            let mut __field_4 = ::std::option::Option::<bool>::None;
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 = ::std::option::Option::<super::foreign::NumBytes>::None;
+            let mut __field_2 = ::std::option::Option::<Filesystem>::None;
+            let mut __field_3 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_4 = ::std::option::Option::<PartitionType>::None;
+            let mut __field_5 = ::std::option::Option::<bool>::None;
             decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
                 match index {
                     0usize => {
                         __field_0 = ::std::option::Option::Some(
-                            <super::foreign::NumBytes as ::sidex::Decode>::decode(decoder)?,
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
                         )
                     }
                     1usize => {
                         __field_1 = ::std::option::Option::Some(
-                            <Filesystem as ::sidex::Decode>::decode(decoder)?,
+                            <super::foreign::NumBytes as ::sidex::Decode>::decode(decoder)?,
                         )
                     }
                     2usize => {
                         __field_2 = ::std::option::Option::Some(
-                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                            <Filesystem as ::sidex::Decode>::decode(decoder)?,
                         )
                     }
                     3usize => {
                         __field_3 = ::std::option::Option::Some(
-                            <PartitionType as ::sidex::Decode>::decode(decoder)?,
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
                         )
                     }
                     4usize => {
-                        __field_4 =
+                        __field_4 = ::std::option::Option::Some(
+                            <PartitionType as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    5usize => {
+                        __field_5 =
                             ::std::option::Option::Some(<bool as ::sidex::Decode>::decode(decoder)?)
                     }
                     _ => {}
@@ -3906,11 +3924,12 @@ pub mod images {
                 ::std::result::Result::Ok(())
             })?;
             ::std::result::Result::Ok(Self {
-                size: __field_0,
-                filesystem: __field_1,
-                root: __field_2,
-                ty: __field_3,
-                bootable: __field_4,
+                name: __field_0,
+                size: __field_1,
+                filesystem: __field_2,
+                root: __field_3,
+                ty: __field_4,
+                bootable: __field_5,
             })
         }
     }
@@ -3918,12 +3937,23 @@ pub mod images {
         #[doc = "Creates a new [`ImagePartition`]."]
         pub fn new() -> Self {
             Self {
+                name: ::std::default::Default::default(),
                 size: ::std::default::Default::default(),
                 filesystem: ::std::default::Default::default(),
                 root: ::std::default::Default::default(),
                 ty: ::std::default::Default::default(),
                 bootable: ::std::default::Default::default(),
             }
+        }
+        #[doc = "Sets the value of `name`."]
+        pub fn set_name(&mut self, name: ::std::option::Option<::sidex::types::Str>) -> &mut Self {
+            self.name = name;
+            self
+        }
+        #[doc = "Sets the value of `name`."]
+        pub fn with_name(mut self, name: ::std::option::Option<::sidex::types::Str>) -> Self {
+            self.name = name;
+            self
         }
         #[doc = "Sets the value of `size`."]
         pub fn set_size(

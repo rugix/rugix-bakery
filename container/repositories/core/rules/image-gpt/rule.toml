@@ -1,0 +1,23 @@
+description = "Assemble a GPT disk from a Rugix layout and partition images."
+category = "Image Assembly"
+
+[inputs.layout]
+kind = "file"
+description = "Rugix ImageLayout in JSON or TOML, with GPT partition names and sizes."
+
+[inputs.partitions]
+kind = "directory"
+description = "Partition image files named by partition number, such as 1 and 2."
+
+[parameters.size]
+default = 0
+description = "Disk capacity in bytes. Zero sizes the disk from its partitions."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "image-gpt"]
+
+[execution.outputs.image]
+kind = "file"
+path = "image.gpt"
+description = "Sparse GPT disk image."

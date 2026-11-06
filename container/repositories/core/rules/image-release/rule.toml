@@ -1,0 +1,51 @@
+description = "Assemble a factory GPT disk and an authenticated update bundle from shared payloads."
+category = "Image Assembly"
+secrets = ["key"]
+
+[inputs.layout]
+kind = "file"
+description = "GPT ImageLayout in JSON or TOML."
+
+[inputs.partitions]
+kind = "directory"
+description = "Partition images named by their one-based partition numbers."
+
+[inputs.manifest]
+kind = "file"
+description = "Rugix bundle manifest mapping payload files to target slots."
+
+[inputs.payloads]
+kind = "directory"
+description = "Bundle payload files at the paths referenced by the manifest."
+
+[inputs.certificate]
+kind = "file"
+description = "Single PEM-encoded RSA X.509 end-entity signer certificate issued directly by the trusted root. No intermediates."
+
+[parameters.size]
+description = "Factory disk capacity in bytes. Zero sizes the disk from its partitions."
+default = 0
+
+[parameters.signing-time]
+description = "Signing time as Unix seconds in a string. Empty uses the build source epoch."
+default = ""
+
+[execution]
+type = "graph"
+
+[execution.rules.disk]
+uses = "core/image-gpt"
+parameters.size = { parameter = "size" }
+
+[execution.rules.bundle]
+uses = "core/bundle-rugix"
+
+[execution.rules.signed]
+parameters.signing-time = { parameter = "signing-time" }
+uses = "core/sign-bundle-rugix"
+inputs.bundle = { rule = { node = "bundle", output = "bundle" } }
+secrets.key = { input = "key" }
+
+[execution.outputs]
+image = { rule = { node = "disk", output = "image" } }
+bundle = { rule = { node = "signed", output = "bundle" } }

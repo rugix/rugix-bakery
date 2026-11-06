@@ -2970,6 +2970,7 @@ dependencies = [
  "rugix-common",
  "rugix-fs",
  "rugix-isolator",
+ "rugix-pki",
  "rugix-tasks",
  "rugix-version",
  "russh",
@@ -2989,6 +2990,7 @@ dependencies = [
  "url",
  "uuid",
  "xscript 0.4.0",
+ "zeroize",
 ]
 
 [[package]]

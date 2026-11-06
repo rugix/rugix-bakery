@@ -120,6 +120,31 @@ RUN locale-gen en_US.UTF-8 \
 
 ENV LANGUAGE=en_US.UTF-8 LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 
+# Verified boot tools. EFI resources for both targets are data, not host executables.
+RUN set -eu; \
+    native=$(dpkg --print-architecture); \
+    case "$native" in amd64) foreign=arm64;; arm64) foreign=amd64;; *) exit 1;; esac; \
+    dpkg --add-architecture "$foreign"; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends cryptsetup-bin openssl osslsigncode \
+        sbsigntool systemd-boot-efi python3-pefile python3-cryptography xxd; \
+    mkdir -p /tmp/rugix-efi; cd /tmp/rugix-efi; \
+    apt-get download "systemd-boot-efi:$foreign"; \
+    dpkg-deb -x ./*.deb extracted; \
+    cp extracted/usr/lib/systemd/boot/efi/* /usr/lib/systemd/boot/efi/; \
+    cd /; rm -rf /tmp/rugix-efi; \
+    dpkg --remove-architecture "$foreign"; \
+    apt-get clean; rm -rf /var/lib/apt/lists/*; \
+    curl -fsSL https://raw.githubusercontent.com/systemd/systemd/v257.8/src/ukify/ukify.py -o /usr/local/bin/ukify; \
+    echo "161c7f755b78f9cfa02ad7f79fefed781e096176ed1ed171f8b4cf8ad0b27b29  /usr/local/bin/ukify" | sha256sum -c -; \
+    sed -i 's/{{PROJECT_VERSION}}/257.8/g; s/{{VERSION_TAG}}/v257.8/g' /usr/local/bin/ukify; \
+    chmod 755 /usr/local/bin/ukify; \
+    mkdir -p /usr/local/lib/rugix /usr/local/share/licenses/rpi-eeprom; \
+    curl -fsSL https://raw.githubusercontent.com/raspberrypi/rpi-eeprom/f54693eca0a170bca62313cd781976e47bacdeb1/rpi-eeprom-digest -o /usr/local/lib/rugix/rpi-eeprom-digest; \
+    echo "2885e3603f9d89995cf5b033f2a616bd1e932547c1d3cffff1ad98e427996a03  /usr/local/lib/rugix/rpi-eeprom-digest" | sha256sum -c -; \
+    chmod 755 /usr/local/lib/rugix/rpi-eeprom-digest; \
+    curl -fsSL https://raw.githubusercontent.com/raspberrypi/rpi-eeprom/f54693eca0a170bca62313cd781976e47bacdeb1/LICENSE -o /usr/local/share/licenses/rpi-eeprom/LICENSE
+
 COPY boot /usr/share/rugix/boot
 COPY container/repositories /usr/share/rugix/repositories
 COPY container/templates /usr/share/rugix/templates

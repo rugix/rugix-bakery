@@ -1,0 +1,11 @@
+update-type = "full"
+
+[[payloads]]
+filename = "system.img"
+delivery = { type = "slot", slot = "system" }
+block-encoding = { chunker = "casync-64", deduplicate = true }
+
+[[payloads]]
+filename = "boot.efi"
+delivery = { type = "slot", slot = "boot" }
+block-encoding = { chunker = "casync-64", deduplicate = true }

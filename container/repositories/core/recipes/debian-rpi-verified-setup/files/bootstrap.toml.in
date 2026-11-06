@@ -1,0 +1,30 @@
+[layout]
+type = "gpt"
+
+# Preserve the factory configuration and boot partitions' capacities.
+[[layout.partitions]]
+name = "config"
+size = 0
+type = "C12A7328-F81F-11D2-BA4B-00A0C93EC93B"
+
+[[layout.partitions]]
+name = "boot-a"
+size = 0
+type = "C12A7328-F81F-11D2-BA4B-00A0C93EC93B"
+
+[[layout.partitions]]
+name = "boot-b"
+size = 0
+type = "C12A7328-F81F-11D2-BA4B-00A0C93EC93B"
+
+[[layout.partitions]]
+name = "system-a"
+size = @SYSTEM_SIZE@
+
+[[layout.partitions]]
+name = "system-b"
+size = @SYSTEM_SIZE@
+
+[[layout.partitions]]
+name = "data"
+filesystem = { type = "ext4", label = "data" }

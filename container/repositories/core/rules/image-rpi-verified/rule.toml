@@ -1,0 +1,169 @@
+description = "Build a signed Raspberry Pi 4/CM4 or Pi 5 A/B release with a verified root from an existing root filesystem."
+category = "Verified Boot"
+secrets = ["boot-key", "bundle-key"]
+
+[inputs.kernel]
+kind = "file"
+description = "Target Linux kernel image."
+
+[inputs.initrd]
+kind = "file"
+description = "Initrd implementing the core verified-root boot contract."
+
+[inputs.rootfs]
+kind = "directory"
+description = "Prepared root filesystem implementing the core verified-root boot contract."
+
+[inputs.boot]
+kind = "directory"
+description = "Raspberry Pi firmware tree containing start4.elf, fixup4.dat, DTBs, and overlays."
+
+[inputs.config]
+kind = "directory"
+description = "Layer configuration partition contents."
+
+[inputs.boot-public-key]
+kind = "file"
+description = "PEM-encoded RSA-2048 public key matching the Raspberry Pi boot signing key."
+
+[inputs.bundle-certificate]
+kind = "file"
+description = "Single PEM-encoded RSA X.509 end-entity signer certificate issued directly by the trusted root. No intermediates."
+
+[parameters.cmdline-extra]
+description = "Additional authenticated kernel arguments."
+default = ""
+
+[parameters.panic-timeout]
+description = "Kernel panic reboot delay in seconds. Zero leaves the system stopped."
+default = 10
+
+[parameters.boot-config]
+description = "Contents of config.txt inside the signed boot image. Must select kernel8.img and initrd."
+default = """
+[all]
+arm_64bit=1
+kernel=kernel8.img
+initramfs initrd followkernel
+"""
+
+[parameters.signing-time]
+description = "Signing time as Unix seconds in a string. Empty uses the build source epoch."
+default = ""
+
+[parameters.config-size]
+description = "Configuration partition capacity in bytes. Zero sizes automatically with a 64 MiB minimum."
+default = 0
+
+[parameters.boot-size]
+description = "Boot partition capacity in bytes. Zero sizes automatically with a 256 MiB minimum."
+default = 0
+
+[parameters.boot-image-size]
+description = "Signed boot image capacity in bytes. Zero sizes it from its contents."
+default = 0
+
+[parameters.root-compression]
+description = "SquashFS compression of the root filesystem, such as zstd or xz, or none."
+default = "none"
+
+[parameters.disk-size]
+description = "Factory disk capacity in bytes. Zero sizes the disk from its partitions."
+default = 0
+
+[execution]
+type = "graph"
+
+[execution.rules.filesystem]
+uses = "core/image-squashfs-verity"
+inputs.tree = { input = "rootfs" }
+parameters.compression = { parameter = "root-compression" }
+
+[execution.rules.cmdline]
+uses = "core/verified-cmdline"
+inputs.root-hash = { rule = { node = "filesystem", output = "root-hash" } }
+inputs.hash-offset = { rule = { node = "filesystem", output = "hash-offset" } }
+inputs.data-size = { rule = { node = "filesystem", output = "data-size" } }
+parameters.platform = "rpi"
+parameters.extra = { parameter = "cmdline-extra" }
+parameters.panic-timeout = { parameter = "panic-timeout" }
+
+[execution.rules.boot-config]
+uses = "core/write-text"
+parameters.content = { parameter = "boot-config" }
+
+[execution.rules.boot-tree]
+uses = "core/prepare-rpi-boot"
+inputs.config = { rule = { node = "boot-config", output = "file" } }
+inputs.boot = { input = "boot" }
+inputs.kernel = { input = "kernel" }
+inputs.initrd = { input = "initrd" }
+inputs.cmdline = { rule = { node = "cmdline", output = "cmdline" } }
+
+[execution.rules.boot-image]
+uses = "core/image-fat"
+inputs.tree = { rule = { node = "boot-tree", output = "tree" } }
+parameters.size = { parameter = "boot-image-size" }
+parameters.label = "bootimg"
+
+[execution.rules.boot-signature]
+uses = "core/sign-rpi"
+inputs.image = { rule = { node = "boot-image", output = "image" } }
+inputs.public-key = { input = "boot-public-key" }
+secrets.key = { input = "boot-key" }
+parameters.signing-time = { parameter = "signing-time" }
+
+[execution.rules.boot]
+uses = "core/image-fat"
+parameters.size = { parameter = "boot-size" }
+parameters.label = "boot"
+parameters.minimum-size = 268435456
+
+[execution.rules.boot.inputs.tree.tree]
+"boot.img" = { rule = { node = "boot-image", output = "image" } }
+"boot.sig" = { rule = { node = "boot-signature", output = "signature" } }
+"config.txt" = { path = "rules/image-rpi-verified/boot-config.txt" }
+
+[execution.rules.config-tree]
+uses = "core/prepare-rpi-config"
+inputs.config = { input = "config" }
+
+[execution.rules.config]
+uses = "core/image-fat"
+inputs.tree = { rule = { node = "config-tree", output = "config" } }
+parameters.size = { parameter = "config-size" }
+parameters.label = "config"
+parameters.minimum-size = 67108864
+
+[execution.rules.layout]
+uses = "core/layout-rpi-ab"
+inputs.config = { rule = { node = "config", output = "image" } }
+inputs.boot = { rule = { node = "boot", output = "image" } }
+inputs.system = { rule = { node = "filesystem", output = "image" } }
+
+[execution.rules.release]
+uses = "core/image-release"
+inputs.layout = { rule = { node = "layout", output = "layout" } }
+inputs.manifest = { path = "rules/image-rpi-verified/bundle.toml" }
+inputs.certificate = { input = "bundle-certificate" }
+secrets.key = { input = "bundle-key" }
+parameters.size = { parameter = "disk-size" }
+parameters.signing-time = { parameter = "signing-time" }
+
+[execution.rules.release.inputs.partitions.tree]
+"1" = { rule = { node = "config", output = "image" } }
+"2" = { rule = { node = "boot", output = "image" } }
+"4" = { rule = { node = "filesystem", output = "image" } }
+
+[execution.rules.release.inputs.payloads.tree]
+"system.img" = { rule = { node = "filesystem", output = "image" } }
+"boot.img" = { rule = { node = "boot", output = "image" } }
+
+[execution.outputs]
+image = { rule = { node = "release", output = "image" } }
+bundle = { rule = { node = "release", output = "bundle" } }
+boot-image = { rule = { node = "boot-image", output = "image" } }
+boot-signature = { rule = { node = "boot-signature", output = "signature" } }
+root-hash = { rule = { node = "filesystem", output = "root-hash" } }
+hash-offset = { rule = { node = "filesystem", output = "hash-offset" } }
+data-size = { rule = { node = "filesystem", output = "data-size" } }

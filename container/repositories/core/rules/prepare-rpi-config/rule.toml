@@ -1,0 +1,15 @@
+description = "Initialize Raspberry Pi A/B tryboot selection and Rugix bootstrap."
+category = "Verified Boot"
+
+[inputs.config]
+kind = "directory"
+description = "Layer configuration partition contents to preserve."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "prepare-rpi-config"]
+
+[execution.outputs.config]
+kind = "directory"
+path = "config"
+description = "Mutable tryboot selector partition contents."

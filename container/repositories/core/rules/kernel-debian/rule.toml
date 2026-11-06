@@ -1,0 +1,28 @@
+description = "Select one installed Debian kernel and its exact version."
+category = "Boot Artifacts"
+
+[inputs.rootfs]
+kind = "directory"
+description = "Debian root filesystem containing boot/vmlinuz-* and lib/modules."
+
+[parameters.version]
+default = ""
+description = "Exact installed kernel version. Empty selects the unique matching version."
+
+[parameters.flavor]
+default = ""
+description = "Required kernel version suffix. Empty accepts any flavor."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "kernel-debian"]
+
+[execution.outputs.kernel]
+kind = "file"
+path = "kernel"
+description = "Selected kernel image."
+
+[execution.outputs.version]
+kind = "file"
+path = "version"
+description = "Selected kernel version as text."

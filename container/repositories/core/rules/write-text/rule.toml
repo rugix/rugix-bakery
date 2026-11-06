@@ -1,0 +1,14 @@
+description = "Create a text file from a parameter."
+category = "Image Assembly"
+
+[parameters.content]
+description = "Exact UTF-8 file contents."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "write-text"]
+
+[execution.outputs.file]
+kind = "file"
+path = "file"
+description = "Text file containing content verbatim."

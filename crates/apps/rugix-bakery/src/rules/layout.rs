@@ -141,7 +141,7 @@ pub fn compute_partition_table(
                     start,
                     size,
                     ty: partition_type.0,
-                    name: None,
+                    name: partition.name.as_ref().map(ToString::to_string),
                     gpt_id: None,
                     gpt_attrs: None,
                     bootable: partition.bootable.unwrap_or(false),

@@ -1,0 +1,11 @@
+# Debian system with a verified root for the Secure Boot tests.
+parent = "core/debian-trixie"
+
+recipes = [
+    "core/debian-efi-verified-setup",
+    "core/ssh",
+    "rugix-testkit/network",
+]
+
+[parameters."core/rugix-ctrl"]
+version = "v1.4.0"

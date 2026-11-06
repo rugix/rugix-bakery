@@ -1,0 +1,33 @@
+description = "Create a SquashFS image with appended dm-verity authentication data."
+category = "Filesystem Images"
+
+[inputs.tree]
+kind = "directory"
+description = "Root filesystem directory tree."
+
+[parameters.compression]
+description = "Compression algorithm accepted by mksquashfs, such as zstd or xz, or none."
+default = "none"
+
+[execution]
+type = "graph"
+
+[execution.rules.filesystem]
+uses = "core/image-squashfs"
+inputs.tree = { input = "tree" }
+parameters.compression = { parameter = "compression" }
+
+[execution.rules.verity]
+uses = "core/dm-verity"
+inputs.image = { rule = { node = "filesystem", output = "image" } }
+
+[execution.rules.append]
+uses = "core/append-verity"
+inputs.image = { rule = { node = "filesystem", output = "image" } }
+inputs.hash-tree = { rule = { node = "verity", output = "hash-tree" } }
+
+[execution.outputs]
+image = { rule = { node = "append", output = "image" } }
+root-hash = { rule = { node = "verity", output = "root-hash" } }
+hash-offset = { rule = { node = "append", output = "hash-offset" } }
+data-size = { rule = { node = "append", output = "data-size" } }

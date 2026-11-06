@@ -56,6 +56,7 @@ pub fn bsp_to_image_layout(bsp: &BspConfig) -> ImageLayout {
         .iter()
         .flatten()
         .map(|p| ImagePartition {
+            name: None,
             size: p.size,
             filesystem: p.filesystem.clone(),
             root: p.root.clone(),
