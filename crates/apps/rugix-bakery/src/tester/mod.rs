@@ -44,7 +44,10 @@ pub fn main(
             param_overrides,
             &Default::default(),
             None,
-            &oven::ArtifactSelection::Names(vec!["system.img".into()]),
+            &oven::ArtifactSelection::Exclude(vec![
+                "system.rugixb".into(),
+                "system.rugixb-hash".into(),
+            ]),
         )
         .whatever("error baking system")?;
 

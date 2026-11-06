@@ -8,6 +8,7 @@ import struct
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import pytest
 from rugix_testkit import (
@@ -110,13 +111,24 @@ def secure_boot_firmware(
 def test_efi_verified_inventory_selection(
     bakery: BakeryBuilder, verified_keys: Path
 ) -> None:
-    """A verified system can publish its independent SBOM without an image or bundle."""
-    bakery.run(["bake", "system", SYSTEM, "--artifact", "sbom.spdx.json"])
-    output = bakery.project_dir / "build" / SYSTEM
-    assert {path.name for path in output.iterdir()} == {
-        "sbom.spdx.json",
-        "build-context.json",
-    }
+    """A verified system can publish its independent SBOM without replacing shared artifacts."""
+    with TemporaryDirectory(dir=bakery.project_dir / ".rugix-testkit") as directory:
+        output = Path(directory) / "inventory"
+        bakery.run(
+            [
+                "bake",
+                "system",
+                SYSTEM,
+                "--artifact",
+                "sbom.spdx.json",
+                "--output",
+                str(output.relative_to(bakery.project_dir)),
+            ]
+        )
+        assert {path.name for path in output.iterdir()} == {
+            "sbom.spdx.json",
+            "build-context.json",
+        }
 
 
 def test_efi_verified_boot_and_update(
@@ -127,17 +139,15 @@ def test_efi_verified_boot_and_update(
     secure_boot_firmware: tuple[Path, Path],
 ) -> None:
     """The system boots with Secure Boot and updates, rolls back, and commits slot B."""
-    bakery.run(["bake", "system", SYSTEM])
+    image = bakery.bake_image(SYSTEM)
     output = bakery.project_dir / "build" / SYSTEM
-    image = output / "system.img"
-    assert (output / "sbom.spdx.json").is_file()
     root_hash = (output / "root-hash").read_text().strip()
     vm = start_vm(_config(image, secure_boot_firmware))
     rugix = RugixCtrl(vm)
     assert rugix.assert_boot(default="a", active="a").boot_flow == "systemd-boot"
     _assert_verified(vm, root_hash, partition=2)
 
-    url = bundle_url(output / "system.rugixb")
+    url = bundle_url(bakery.bake_bundle(SYSTEM))
     _install(vm, rugix, url, verified_keys)
     rugix.assert_boot(default="a", active="b")
     _assert_verified(vm, root_hash, partition=3)
