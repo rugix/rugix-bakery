@@ -99,12 +99,14 @@ configuration and embeds the matching public key in the bootloader. Like the
 build, provisioning needs the private key, so keep it on hosts you control and
 never copy it to a device.
 
-Some provisioning steps write to the processor's one-time programmable (OTP)
-memory. These changes cannot be undone and can permanently bind the device to
-your boot key, so losing the key can prevent future updates. The guides above
-explain which steps are permanent and how to test signed boot and recovery on
-your board before taking them. Before deploying, confirm on your target
-hardware that a modified boot image does not start.
+> [!WARNING]
+> Some provisioning steps write to the processor's one-time programmable (OTP)
+> memory. These changes cannot be undone and can permanently bind the device to
+> your boot key, so losing the key can prevent future updates.
+
+The guides above explain which steps are permanent and how to test signed boot
+and recovery on your board before taking them. Before deploying, confirm on
+your target hardware that a modified boot image does not start.
 
 ## Boot and Connect to the Device
 
