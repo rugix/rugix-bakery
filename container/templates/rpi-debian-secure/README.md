@@ -171,7 +171,8 @@ Rugix Bakery builds the root filesystem from a layer, which applies recipes,
 sets of build steps and files, to a base system. A build rule then assembles
 the root filesystem into the disk image and update bundle.
 `layers/customized.toml` selects the Debian base and recipes, while
-`recipes/secure-setup/` configures networking, login, and update trust.
+`recipes/secure-setup/files/` contains the static configuration for networking,
+login, update trust, and writable state.
 `rugix-bakery.toml` selects the image build rule and supplies its signing keys
 and certificates.
 
