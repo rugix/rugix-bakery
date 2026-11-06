@@ -107,6 +107,18 @@ def secure_boot_firmware(
     return code, variables
 
 
+def test_efi_verified_inventory_selection(
+    bakery: BakeryBuilder, verified_keys: Path
+) -> None:
+    """A verified system can publish its independent SBOM without an image or bundle."""
+    bakery.run(["bake", "system", SYSTEM, "--artifact", "sbom.spdx.json"])
+    output = bakery.project_dir / "build" / SYSTEM
+    assert {path.name for path in output.iterdir()} == {
+        "sbom.spdx.json",
+        "build-context.json",
+    }
+
+
 def test_efi_verified_boot_and_update(
     bakery: BakeryBuilder,
     start_vm: Callable[[VMConfig], VMHandle],
