@@ -1,40 +1,65 @@
 # Debian with Secure Boot on Raspberry Pi
 
 This template builds Debian images for Raspberry Pi 4, Compute Module 4, and
-Pi 5, with signed boot images and Rugix Ctrl updates. It provides a disk image
-for initial installation and signed update bundles for later releases.
-The system includes Ethernet networking and SSH access.
+Pi 5, with signed boot images, a verified root filesystem, and updates through
+Rugix Ctrl. Rugix is an open-source toolkit for building and updating embedded
+Linux systems, and Rugix Ctrl is its update tool on the device. The template
+provides a disk image for initial installation and signed update bundles for
+later releases. The system includes Ethernet networking and SSH access.
 
-Rugix Bakery signs the images using keys you supply. To make the device reject
-software you have not signed, you also need to configure its boot firmware to
-trust your key. Building the image and configuring firmware trust are separate
-steps, described below.
+These boards support signed boot: once provisioned, the Raspberry Pi bootloader
+starts only a boot image signed with your key. The template signs the boot
+image, which contains the kernel, and the kernel checks the root filesystem as
+it reads it. This extends the bootloader's trust to the root filesystem.
+
+> [!WARNING]
+> Signing images provides no boot authenticity on its own. The Raspberry Pi
+> bootloader must be provisioned with your boot public key and must enforce
+> signature checks. Without signature enforcement, a modified boot image can
+> bypass root filesystem verification. This template does not
+> change the device's firmware settings.
+> [Set Up Signed Boot on the Device](#set-up-signed-boot-on-the-device)
+> explains these steps.
 
 ## Build Your First Image
 
-You need Docker or Podman to run Rugix Bakery, plus OpenSSL and OpenSSH's
-`ssh-keygen` to generate development keys. The template builds an ARM64 system;
-an AMD64 build host also needs ARM64 emulation. Use a Bakery version that
-includes this template.
+You need Docker or Podman to run Rugix Bakery, the build tool for Rugix
+images, plus OpenSSL and OpenSSH's `ssh-keygen` to generate development keys.
+Use a Rugix Bakery version that includes this template. The
+[Rugix Bakery documentation](https://rugix.org/docs/bakery/) explains how to
+get the `run-bakery` launcher.
 
-In a new project directory containing the `run-bakery` launcher, run:
+The template builds an ARM64 system, so an AMD64 build host also needs ARM64
+emulation, as described in the Rugix Bakery documentation on
+[CPU architectures](https://rugix.org/docs/bakery/#cpu-architectures).
+
+In a new project directory containing the launcher, run:
 
 ```sh
 ./run-bakery init rpi-debian-secure
 ./prepare.sh
 ```
 
-The preparation script creates a `keys/` directory with signing keys,
-certificates, and an SSH key for logging in to the device. Run it once for the
-project. Replacing these keys can make future images and updates fail
-verification on devices set up with the original keys, so the script refuses
-to overwrite them.
+The preparation script creates a `keys/` directory with development keys and
+certificates:
 
-Boot signing and update signing use separate keys. The boot key authenticates
-files loaded at startup. A separate key signs update bundles, and its
-certificate is issued by a root certificate that Rugix Ctrl trusts.
+| Files | Purpose |
+| --- | --- |
+| `boot.key`, `boot.pub` | Sign boot images. The bootloader trusts `boot.pub`. |
+| `bundle-root.key`, `bundle-root.crt` | Update root. Devices trust `bundle-root.crt`; `bundle-root.key` issues signer certificates. |
+| `bundle.key`, `bundle.crt` | Sign update bundles. `bundle-root.key` issued `bundle.crt`. |
+| `ssh`, `ssh.pub` | Log in to the device. |
 
-Build the image:
+Boot signing and update signing use separate keys. The bootloader trusts the
+boot public key directly. Rugix Ctrl trusts the update root certificate and
+accepts bundles signed by a certificate that the root issues directly. You can
+therefore replace the update signing key without changing what devices trust.
+
+Run the script once for the project. Replacing these keys can make future
+images and updates fail verification on devices set up with the original keys,
+so the script refuses to overwrite them.
+
+Now build the image:
 
 ```sh
 ./run-bakery bake image pi --release-version v1
@@ -47,31 +72,35 @@ The two files you need are in `build/pi/`:
 | `system.img` | Install the system on a new device. |
 | `system.rugixb` | Update a device that is already running the system. |
 
-Keep `keys/` for subsequent builds. Git ignores this directory, and the private
-signing keys stay on the build host. The device image contains the public
-certificates and SSH public key it needs to check updates and allow login.
+Keep `keys/` for subsequent builds. Git ignores this directory, and the
+private signing keys never enter the device image. The image contains only the
+public keys and certificates it needs to check updates and allow login.
 
 ## Set Up Signed Boot on the Device
 
-The Raspberry Pi bootloader is stored in EEPROM, a small flash memory on the
-board. For signed boot, this bootloader needs to trust your boot signing key
-and require a valid signature before starting the system. With ordinary
-firmware settings, it can load the same image without checking the signature.
+Rugix Bakery signs the images, but you configure each device's bootloader to
+require the signatures. The Raspberry Pi bootloader is stored in EEPROM, a
+small flash memory on the board. For signed boot, this bootloader needs to
+trust your boot public key and require a valid signature before starting the
+system. With ordinary firmware settings, it loads the same image without
+checking the signature.
 
 Use Raspberry Pi's provisioning instructions for your board:
 
 - [Raspberry Pi 4 and Compute Module 4](https://github.com/raspberrypi/usbboot/tree/master/secure-boot-recovery)
 - [Raspberry Pi 5](https://github.com/raspberrypi/usbboot/tree/master/secure-boot-recovery5)
 
-The template's boot key pair is `keys/boot.key` and `keys/boot.pub`.
-Provisioning tools use these keys to prepare and sign the bootloader. Keep
-the private key on the provisioning host.
+Pass `keys/boot.key` to the provisioning script. It signs the bootloader
+configuration and embeds the matching public key in the bootloader. Like the
+build, provisioning needs the private key, so keep it on hosts you control and
+never copy it to a device.
 
-Follow the development and recovery steps for your board before making
-permanent changes. Programming one-time programmable (OTP) memory can lock a
-device to its signing key, so losing that key can prevent future updates.
-The template itself leaves EEPROM and OTP unchanged. Check signature rejection
-and recovery on your target hardware before deploying it.
+Some provisioning steps write to the processor's one-time programmable (OTP)
+memory. These changes cannot be undone and can permanently bind the device to
+your boot key, so losing the key can prevent future updates. The guides above
+explain which steps are permanent and how to test signed boot and recovery on
+your board before taking them. Before deploying, confirm on your target
+hardware that a modified boot image does not start.
 
 ## Boot and Connect to the Device
 
@@ -81,7 +110,8 @@ layout. It makes room for two copies of the system, called A and B, with at
 least 4 GiB each, and uses the remaining space for persistent data.
 
 The device obtains an Ethernet address through DHCP. Look up that address on
-your DHCP server and connect with the generated SSH key. For example:
+your DHCP server, for example in your router's lease list, and connect with the
+generated SSH key:
 
 ```sh
 ssh -i keys/ssh root@192.0.2.10
@@ -93,15 +123,20 @@ password login is disabled.
 ## How Boot Verification Works
 
 The boot files are packaged in `boot.img`, a filesystem image containing the
-Linux kernel, the files needed to start it, firmware files, and boot settings.
-The Raspberry Pi bootloader checks its signature and loads it into memory.
+Linux kernel, its initial RAM disk, Raspberry Pi firmware files, the kernel
+command line, and boot settings. The boot partition holds `boot.img`, its
+signature `boot.sig`, and a short `config.txt` that tells the bootloader to
+load `boot.img`. This outer file cannot turn off signature checks. With signed
+boot enabled, the bootloader checks the signature, loads `boot.img` into
+memory, and takes all other settings from inside it.
 
-Those signed boot settings contain a trusted hash of the root filesystem.
-Linux uses that hash with dm-verity to check the filesystem's contents as they
-are read. This connects the boot signature to the Debian system and
-application files: modifying the root image without signing matching boot
-settings causes verification to fail. This protection depends on firmware
-that enforces signed boot.
+The kernel command line inside the signed image contains the root hash of the
+root filesystem. Linux uses it with dm-verity, a kernel feature that checks
+each block of the filesystem against a hash tree as the block is read. The
+hash tree is stored after the filesystem, and the root hash authenticates the
+whole tree. This connects the boot signature to the Debian system and
+application files: modifying the root image without signing a matching boot
+image causes verification to fail.
 
 ## Keep Data Across Reboots
 
@@ -117,7 +152,8 @@ does not check a configuration file that your application reads from `/data`.
 
 ## Build an Update
 
-For a new release, change your project and build it again with a new version:
+For a new release, change your project and build it again with a new version,
+using the same `keys/` directory:
 
 ```sh
 ./run-bakery bake image pi --release-version v2
@@ -126,19 +162,28 @@ For a new release, change your project and build it again with a new version:
 Use the resulting `build/pi/system.rugixb` with
 [Rugix Ctrl's system update workflow](https://rugix.org/docs/ctrl/updates/system-updates/).
 Rugix Ctrl installs a matching pair of boot and root images in the copy of the
-system that is not running, allowing a trial boot before you commit the update. Keep using
-signing keys and certificates that the deployed devices trust.
+system that is not running and then boots it once as a trial. If the trial
+boot fails or you do not commit the update, the device returns to the previous
+copy on the next reboot.
 
 ## Adapt the Template
 
-The project separates filesystem customization from image assembly.
+Rugix Bakery builds the root filesystem from a layer, which applies recipes,
+sets of build steps and files, to a base system. A build rule then assembles
+the root filesystem into the disk image and update bundle.
 `layers/customized.toml` selects the Debian base and recipes, while
 `recipes/secure-setup/` configures networking, login, and update trust.
 `rugix-bakery.toml` selects the image build rule and supplies its signing keys
 and certificates.
 
-For example, to enable serial console output, add this entry inside the
-existing `[systems.pi.build]` table in `rugix-bakery.toml`:
+### Change Boot Settings
+
+Because the bootloader reads its settings from inside the signed boot image,
+you change them in the build configuration. Kernel arguments go in
+`cmdline-extra` in `rugix-bakery.toml`, which already sets serial and screen
+consoles. Boot settings are the contents of `config.txt` inside the signed
+image. For example, to enable the serial port for that console, add this entry
+inside the existing `[systems.pi.build]` table in `rugix-bakery.toml`:
 
 ```toml
 parameters.boot-config = """
@@ -150,26 +195,43 @@ enable_uart=1
 """
 ```
 
-This replaces the full boot configuration, so it includes the kernel and
-startup file selections as well as the UART setting. The default build rule
-selects the installed `rpi-v8` kernel, which supports both Pi 4 and Pi 5.
-Test booting and rolling back an update on the hardware you intend to use.
+This replaces the full boot configuration, so it repeats the default kernel
+and initial RAM disk settings along with the UART setting. `kernel8.img` is
+the kernel selected by the build rule, by default Debian's installed `rpi-v8`
+kernel, which supports both Pi 4 and Pi 5. A faulty boot configuration can
+stop the new system copy from booting, so test updates with changed settings
+on your target hardware, including the return to the previous copy.
 
-The initial size of each system is controlled by `system_size` on
-`core/debian-rpi-verified-setup` in `layers/customized.toml`.
-Future updates must fit the partitions created during installation; changing
-a deployed device's partition layout requires a separate migration.
+### Change the System Size
+
+To change the minimum size of each system copy, add a `system_size` value in
+bytes to `layers/customized.toml`. For example, for 8 GiB:
+
+```toml
+[parameters."core/debian-rpi-verified-setup"]
+system_size = 8589934592
+```
+
+Both copies share the storage with the boot partitions and `/data`, so larger
+copies need larger storage. Rugix Ctrl creates the partitions on first boot,
+and future updates must fit them. Changing the partition layout of a deployed
+device requires a separate migration.
 
 ## Use Your Own Signing Keys
 
 The generated keys have no passphrases and are intended for development.
 To use your own keys, replace the signing inputs and secrets in
 `rugix-bakery.toml`, and set the trusted update root certificate in
-`layers/customized.toml`. The update signer certificate must be issued directly
-by the root certificate the device trusts. It needs `CA:FALSE` and
-digital-signature usage: it signs updates, but cannot issue certificates.
-Changing the trusted root or the firmware boot key also requires updating
-trust on the devices that use them.
+`layers/customized.toml`. The boot key must be a 2048-bit RSA key with a
+PEM-encoded public key, and the update signer certificate must be a PEM-encoded
+RSA certificate. The update signer certificate must be issued directly by the
+root certificate the device trusts. It needs `CA:FALSE` and digital-signature
+usage: it signs updates, but cannot issue certificates.
+
+Deployed devices keep trusting the original keys. Choose the boot key before
+making OTP changes, because they can bind a device to that key permanently.
+To change the update root, ship an update, signed with the current keys, that
+installs the new root certificate.
 
 The [Raspberry Pi build rule reference](https://github.com/rugix/rugix-bakery/tree/main/container/repositories/core/rules/image-rpi-verified)
 covers signing inputs, certificate requirements, and image sizes.
