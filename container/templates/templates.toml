@@ -23,6 +23,9 @@ description = """
 Debian images for Raspberry Pi 4 and 5.
 """
 
+[rpi-debian-secure]
+description = "Debian signed boot and verified A/B roots for Raspberry Pi 4/CM4 and Pi 5."
+
 [rpi-raspios]
 description = """
 Raspberry Pi OS images for all Raspberry Pi models.
