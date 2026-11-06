@@ -38,8 +38,7 @@ corresponding update bundles.
 Repositories can supply build rules for filesystem images, disk assembly, and
 update bundles. Rules run with Bakery's tools or in a Dockerfile-defined
 environment. Compose them around existing layers and recipes to support custom
-platforms. Standard system configurations use the same rule engine. See the
-[layer input example](examples/layer-inputs) for a recipe that consumes a rule output.
+platforms. Standard system configurations use the same rule engine.
 
 ## Inspect Repository Building Blocks
 
