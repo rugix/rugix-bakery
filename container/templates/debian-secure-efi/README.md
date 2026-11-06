@@ -17,8 +17,12 @@ extends the firmware's trust to the root filesystem.
 > Signing images provides no boot authenticity on its own. The device's UEFI
 > firmware must trust your boot signing certificate, and Secure Boot must be
 > enabled so that the firmware enforces signatures. Without signature
-> enforcement, a modified boot image can bypass root filesystem verification. [Set Up Secure Boot in the Firmware](#set-up-secure-boot-in-the-firmware)
+> enforcement, a modified boot image can bypass root filesystem verification.
+> [Set Up Secure Boot in the Firmware](#set-up-secure-boot-in-the-firmware)
 > explains these steps.
+>
+> The data partition is neither encrypted nor authenticated. Configure these
+> protections separately to protect stored data against disclosure and tampering.
 
 ## Build Your First Image
 
