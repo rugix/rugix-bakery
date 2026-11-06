@@ -118,6 +118,3 @@ Save the invocation as `build-rule.toml` and run
 `./run-bakery bake rule build-rule.toml build/result`.
 For Debian roots, [the Debian wrapper](../image-debian-rpi-verified/README.md)
 also selects a kernel and generates its initrd.
-
-
-The `bundle-hash` output contains the bundle identity used to verify updates.

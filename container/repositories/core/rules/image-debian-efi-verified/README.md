@@ -82,6 +82,3 @@ Custom roots must provide equivalent system and bootstrap configurations.
 The [EFI layout rule](../layout-efi-ab/README.md) describes the reserved
 partition. The update bundle continues to update the root and UKI slots;
 updating and activating a replacement ESP requires a separate operation.
-
-
-The `bundle-hash` output contains the bundle identity used to verify updates.

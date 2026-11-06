@@ -1,6 +1,6 @@
 //! System configuration.
 
-import foreign::NumBytes
+import foreign::{NumBytes, ChunkerAlgorithm}
 import rules::{RuleInvocation, ArtifactSource}
 import images::{ImageLayout, SquashfsOptions}
 
@@ -73,10 +73,10 @@ record SystemImageConfig {
 /// Bundle encoding for the predefined pipeline.
 #[json(rename_all = "kebab-case")]
 record SystemBundleConfig {
-    /// Include an update bundle by default.
+    /// Include an update bundle. Defaults to true for supported targets and false otherwise.
     enabled?: bool,
-    /// Compress payloads with XZ by default.
+    /// Compress bundle payloads. Defaults to true.
     compression?: bool,
-    /// Chunking algorithm using the CLI syntax.
-    chunker?: string,
+    /// Bundle payload chunking algorithm. Defaults to casync-64.
+    chunker?: ChunkerAlgorithm,
 }

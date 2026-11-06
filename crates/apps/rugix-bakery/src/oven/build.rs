@@ -3,8 +3,6 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use reportify::bail;
-
 use crate::build::{self, Artifact, ExecutionContext, Executor, Planner};
 use crate::config::systems::SystemConfig;
 use crate::oven::system::ReleaseInfo;
@@ -33,23 +31,8 @@ pub fn assemble(
         BTreeMap::new()
     };
     let mut outputs = planner.system_graph(config, inputs, standard)?;
-    if matches!(selection, super::ArtifactSelection::ImageCommand)
-        && !outputs.contains_key("system.img")
-    {
-        bail!("bake image requires a published system.img artifact");
-    }
     outputs.insert("build-context.json".into(), context_artifact);
     selection.select(&mut outputs)?;
-    if matches!(selection, super::ArtifactSelection::ImageCommand) {
-        eprintln!(
-            "warning: bake image is deprecated; use bake system {system} {}",
-            outputs
-                .keys()
-                .map(|name| format!("--artifact {name}"))
-                .collect::<Vec<_>>()
-                .join(" ")
-        );
-    }
     let plan = planner.finish(outputs);
     let mut executor = Executor::for_project(project, context)?;
     let artifacts = executor.execute(&plan)?;

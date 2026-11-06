@@ -30,7 +30,7 @@ pub fn run(args: &args::Args, cmd: &args::RunCommand) -> BakeryResult<()> {
         None,
         &oven::ArtifactSelection::Names(vec!["system.img".into()]),
     )
-    .whatever("run requires a system with a published system.img artifact")?;
+    .whatever("error baking system")?;
 
     let image_path = output.join("system.img");
 

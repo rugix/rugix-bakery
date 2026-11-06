@@ -19,6 +19,3 @@ inputs.payloads = { path = "release/payloads" }
 Save the invocation as `build-rule.toml` in the project. Run
 `./run-bakery bake rule build-rule.toml build/result`; exported artifacts appear
 under their output names in `build/result`.
-
-
-The `hash` output contains the bundle identity used to verify updates.

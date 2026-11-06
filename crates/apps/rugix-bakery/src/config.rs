@@ -155,7 +155,8 @@ where
 #[cfg(test)]
 mod configuration_tests {
     use super::images::ImageConfig;
-    use super::parse_config;
+    use super::{load_config, parse_config, projects::ProjectConfig};
+    use std::path::Path;
 
     /// Image configurations retain byte-size strings and timestamp semantics.
     #[test]
@@ -209,6 +210,22 @@ filesystem = { type = "ext4", clamp-mtime = "2025-01-02T03:04:05+01:00" }
                 options.clamp_mtime.as_ref().unwrap().to_string(),
                 "2025-01-02T02:04:05Z"
             );
+        }
+    }
+
+    /// Every advertised template loads through the generated project schema.
+    #[test]
+    fn bundled_template_configurations() {
+        let templates = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../container/templates");
+        let catalog: toml::Table = load_config(&templates.join("templates.toml")).unwrap();
+        for name in catalog.keys() {
+            let path = templates.join(name).join("rugix-bakery.toml");
+            let config: ProjectConfig = load_config(&path).unwrap();
+            assert!(!config.systems.as_ref().unwrap().is_empty(), "{name}");
+            let raw: toml::Table = load_config(&path).unwrap();
+            for system in raw["systems"].as_table().unwrap().values() {
+                assert!(system.get("build").is_none(), "{name} still uses build");
+            }
         }
     }
 }

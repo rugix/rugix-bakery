@@ -3080,6 +3080,8 @@ pub mod foreign {
     )]
     #[doc = "Number of bytes.\n"]
     pub type NumBytes = ::sidex::serde::Serde<::byte_calc::NumBytes>;
+    #[doc = "Bundle payload chunking algorithm, as defined by rugix-bundle.\n"]
+    pub type ChunkerAlgorithm = rugix_bundle::manifest::ChunkerAlgorithm;
 }
 pub mod images {
     #![doc = "Image configuration.\n"]
@@ -10026,40 +10028,16 @@ pub mod systems {
     #[doc = "Bundle encoding for the predefined pipeline.\n"]
     #[derive(Clone, Debug)]
     pub struct SystemBundleConfig {
-        #[doc = "Include an update bundle by default.\n"]
+        #[doc = "Include an update bundle. Defaults to true for supported targets and false otherwise.\n"]
         pub enabled: ::std::option::Option<bool>,
-        #[doc = "Compress payloads with XZ by default.\n"]
+        #[doc = "Compress bundle payloads. Defaults to true.\n"]
         pub compression: ::std::option::Option<bool>,
-        #[doc = "Chunking algorithm using the CLI syntax.\n"]
-        pub chunker: ::std::option::Option<::sidex::types::Str>,
+        #[doc = "Bundle payload chunking algorithm. Defaults to casync-64.\n"]
+        pub chunker: ::std::option::Option<super::foreign::ChunkerAlgorithm>,
     }
     #[automatically_derived]
     impl ::sidex::Shaped for SystemBundleConfig {
-        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
-            "::rugix_bakery::systems::SystemBundleConfig",
-            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
-                ::sidex::shape::FieldShape::new("enabled", ::sidex::shape::shape_of::<bool>)
-                    .with_docs("Include an update bundle by default.\n")
-                    .optional(),
-                ::sidex::shape::FieldShape::new("compression", ::sidex::shape::shape_of::<bool>)
-                    .with_docs("Compress payloads with XZ by default.\n")
-                    .optional(),
-                ::sidex::shape::FieldShape::new(
-                    "chunker",
-                    ::sidex::shape::shape_of::<::sidex::types::Str>,
-                )
-                .with_docs("Chunking algorithm using the CLI syntax.\n")
-                .optional(),
-            ])),
-        )
-        .with_docs("Bundle encoding for the predefined pipeline.\n")
-        .with_attrs(&[::sidex::shape::Attr::List {
-            path: "json",
-            args: &[::sidex::shape::Attr::Assign {
-                path: "rename_all",
-                value: ::sidex::shape::AttrValue::String("kebab-case"),
-            }],
-        }]);
+        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::systems::SystemBundleConfig" , :: sidex :: shape :: ShapeKind :: Record (:: sidex :: shape :: RecordShape :: new (& [:: sidex :: shape :: FieldShape :: new ("enabled" , :: sidex :: shape :: shape_of :: < bool > ,) . with_docs ("Include an update bundle. Defaults to true for supported targets and false otherwise.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("compression" , :: sidex :: shape :: shape_of :: < bool > ,) . with_docs ("Compress bundle payloads. Defaults to true.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("chunker" , :: sidex :: shape :: shape_of :: < super :: foreign :: ChunkerAlgorithm > ,) . with_docs ("Bundle payload chunking algorithm. Defaults to casync-64.\n") . optional ()]))) . with_docs ("Bundle encoding for the predefined pipeline.\n") . with_attrs (& [:: sidex :: shape :: Attr :: List { path : "json" , args : & [:: sidex :: shape :: Attr :: Assign { path : "rename_all" , value : :: sidex :: shape :: AttrValue :: String ("kebab-case") }] }]) ;
     }
     #[automatically_derived]
     impl ::sidex::Encode for SystemBundleConfig {
@@ -10099,7 +10077,7 @@ pub mod systems {
         ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
             let mut __field_0 = ::std::option::Option::<bool>::None;
             let mut __field_1 = ::std::option::Option::<bool>::None;
-            let mut __field_2 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_2 = ::std::option::Option::<super::foreign::ChunkerAlgorithm>::None;
             decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
                 match index {
                     0usize => {
@@ -10112,7 +10090,7 @@ pub mod systems {
                     }
                     2usize => {
                         __field_2 = ::std::option::Option::Some(
-                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                            <super::foreign::ChunkerAlgorithm as ::sidex::Decode>::decode(decoder)?,
                         )
                     }
                     _ => {}
@@ -10158,13 +10136,16 @@ pub mod systems {
         #[doc = "Sets the value of `chunker`."]
         pub fn set_chunker(
             &mut self,
-            chunker: ::std::option::Option<::sidex::types::Str>,
+            chunker: ::std::option::Option<super::foreign::ChunkerAlgorithm>,
         ) -> &mut Self {
             self.chunker = chunker;
             self
         }
         #[doc = "Sets the value of `chunker`."]
-        pub fn with_chunker(mut self, chunker: ::std::option::Option<::sidex::types::Str>) -> Self {
+        pub fn with_chunker(
+            mut self,
+            chunker: ::std::option::Option<super::foreign::ChunkerAlgorithm>,
+        ) -> Self {
             self.chunker = chunker;
             self
         }

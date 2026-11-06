@@ -49,6 +49,3 @@ secrets.bundle-key = { path = "keys/bundle.key" }
 
 Bakery supplies the built layer's `rootfs`, `boot`, and `config` trees. Run
 `./run-bakery bake system rpi --release-version v1`.
-
-
-The `bundle-hash` output contains the bundle identity used to verify updates.

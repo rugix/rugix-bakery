@@ -17,7 +17,7 @@ use url::Url;
 use xscript::{run, Run};
 
 use crate::config::recipes::ParameterValue;
-use crate::config::systems::{Architecture, SystemConfig};
+use crate::config::systems::{Architecture, SystemConfig, Target};
 use crate::project::library::{Library, MixinIdx};
 use crate::project::ProjectRef;
 use crate::utils::caching::{download, Hasher};
@@ -94,14 +94,7 @@ pub fn bake_system(
     let configured = system_config.bundle.as_ref();
     let mut resolved = BundleOpts {
         disable_compression: configured.and_then(|b| b.compression) == Some(false),
-        chunker: configured
-            .and_then(|b| b.chunker.as_ref())
-            .map(|value| {
-                value
-                    .parse::<ChunkerAlgorithm>()
-                    .whatever("invalid system bundle chunker")
-            })
-            .transpose()?,
+        chunker: configured.and_then(|bundle| bundle.chunker.clone()),
     };
     if let Some(overrides) = bundle_options {
         resolved.disable_compression |= overrides.disable_compression;
@@ -109,7 +102,17 @@ pub fn bake_system(
             resolved.chunker = overrides.chunker.clone();
         }
     }
-    let bundle_options = (configured.and_then(|b| b.enabled) != Some(false)).then_some(&resolved);
+    let supports_bundle = matches!(
+        system_config.target,
+        Some(Target::GenericGrubEfi | Target::RpiTryboot | Target::RpiUboot | Target::Bsp)
+    );
+    let bundle_enabled = configured
+        .and_then(|bundle| bundle.enabled)
+        .unwrap_or(supports_bundle);
+    if bundle_enabled && !supports_bundle {
+        bail!("bundle.enabled = true requires a target that supports bundles (generic-grub-efi, rpi-tryboot, rpi-uboot, or bsp)");
+    }
+    let bundle_options = bundle_enabled.then_some(&resolved);
     info!("baking system `{system}`");
     let layer_bakery = LayerBakery::new(project, system_config.architecture, param_overrides);
     let mut planner = Planner::new(project.repositories()?)?.with_layers(project, param_overrides);
@@ -404,18 +407,9 @@ impl BundleOpts {
 }
 
 pub fn bake_bundle(
-    project: &ProjectRef,
-    system: &str,
     system_path: &Path,
     output: &Path,
-    opts: &BundleOpts,
 ) -> BakeryResult<si_crypto_hashes::HashDigest> {
-    let system_config = project.config().resolve_system_config(system)?;
-    if (system_config.target.is_none() && system_config.image.is_none())
-        && (opts.disable_compression || opts.chunker.is_some())
-    {
-        bail!("configure bundle encoding through the repository-defined assembly rule");
-    }
     let source = system_path.join("system.rugixb");
     if !source.is_file() {
         bail!("system assembly did not export a bundle artifact");
@@ -504,7 +498,7 @@ fn bsp_bundle_config(system_path: &Path, opts: &BundleOpts) -> BakeryResult<Bund
 /// Published artifacts needed by a command.
 pub enum ArtifactSelection {
     All,
-    ImageCommand,
+    Exclude(Vec<String>),
     Names(Vec<String>),
 }
 
@@ -512,8 +506,9 @@ impl ArtifactSelection {
     pub fn select(&self, outputs: &mut BTreeMap<Str, Artifact>) -> BakeryResult<()> {
         match self {
             Self::All => {}
-            Self::ImageCommand => outputs
-                .retain(|name, _| !matches!(name.as_str(), "system.rugixb" | "system.rugixb-hash")),
+            Self::Exclude(names) => {
+                outputs.retain(|name, _| !names.iter().any(|excluded| excluded == name.as_str()))
+            }
             Self::Names(names) => {
                 for name in names {
                     if !outputs.contains_key(name.as_str()) {

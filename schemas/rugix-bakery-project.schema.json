@@ -20,6 +20,10 @@
   "required": [],
   "unevaluatedProperties": false,
   "$defs": {
+    "rugix_bakery.foreign.ChunkerAlgorithm": {
+      "type": "string",
+      "description": "Bundle payload chunking algorithm, as defined by rugix-bundle."
+    },
     "rugix_bakery.foreign.NumBytes": {
       "type": [
         "string",
@@ -429,7 +433,7 @@
           "type": "boolean"
         },
         "chunker": {
-          "type": "string"
+          "$ref": "#/$defs/rugix_bakery.foreign.ChunkerAlgorithm"
         }
       },
       "required": [],

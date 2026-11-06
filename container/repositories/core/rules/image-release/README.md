@@ -35,6 +35,3 @@ secrets.key = { path = "keys/bundle.key" }
 
 Save the invocation as `build-rule.toml` and run
 `./run-bakery bake rule build-rule.toml build/result`.
-
-
-The `bundle-hash` output contains the bundle identity used to verify updates.

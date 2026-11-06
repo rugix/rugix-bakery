@@ -3,7 +3,7 @@
 //! BSP layouts and partition capacities can depend on layer outputs. Deferred
 //! expansion reads those artifacts and adds nodes to the same execution session.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -42,15 +42,21 @@ pub fn plan(
     };
     let outputs = pipeline.output_kinds();
     planner.defer(inputs, outputs, move |inputs, needed| {
-        let mut pipeline = pipeline.clone();
-        if !needed.contains("bundle") && !needed.contains("hash") {
-            pipeline.bundle = None;
-        }
+        let pipeline = pipeline.for_outputs(needed);
         pipeline.resolve_layout(inputs)
     })
 }
 
 impl Pipeline {
+    /// Omit bundle planning when only independent pipeline outputs are needed.
+    fn for_outputs(&self, needed: &BTreeSet<Str>) -> Self {
+        let mut pipeline = self.clone();
+        if !needed.contains("bundle") && !needed.contains("hash") {
+            pipeline.bundle = None;
+        }
+        pipeline
+    }
+
     fn output_kinds(&self) -> BTreeMap<Str, ArtifactKind> {
         let mut outputs = BTreeMap::from([
             ("image".into(), ArtifactKind::File),
@@ -167,10 +173,7 @@ impl Pipeline {
         )?;
         inputs.insert("image".into(), disk["image"].clone());
         let outputs = planner.defer(inputs, self.output_kinds(), move |inputs, needed| {
-            let mut pipeline = pipeline.clone();
-            if !needed.contains("bundle") && !needed.contains("hash") {
-                pipeline.bundle = None;
-            }
+            let pipeline = pipeline.for_outputs(needed);
             pipeline.populate(inputs, &layout)
         });
         Ok(planner.finish(outputs))

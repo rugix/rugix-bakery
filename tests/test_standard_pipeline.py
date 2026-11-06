@@ -191,7 +191,9 @@ def test_default_source_date_survives_noop_builds(
     original = digest(output / "system.img")
     context = (output / "build-context.json").read_bytes()
     assert json.loads(context)["source-date-epoch"] == 0
-    capfd.readouterr()
+    warning = capfd.readouterr().err
+    assert warning.count("bake image is deprecated") == 1
+    assert "use bake system device" in warning
     time.sleep(2)
     env_project.run(["bake", "image", "device"])
     assert 'Reusing rule "image-ext4"' in capfd.readouterr().err
@@ -314,3 +316,32 @@ def test_filtered_system_skips_bundle_and_replaces_publication(
     )
     env_project.run(["bake", "system", "device", *RELEASE])
     assert not (output / "system.rugixb").exists()
+
+
+@pytest.mark.parametrize("target", [None, "unknown"])
+def test_custom_layout_defaults_to_no_bundle(
+    env_project: BakeryBuilder, target: str | None, capfd: pytest.CaptureFixture[str]
+) -> None:
+    """Custom layouts without a supported target build images and reject enabled bundles."""
+    project = env_project.project_dir
+    prepare(project)
+    config = project / "rugix-bakery.toml"
+    layout = (
+        (project / "recipes/base/bsp.toml").read_text().split("[[bundle.payloads]]")[0]
+    )
+    layout = layout.replace("[image.layout", "[systems.device.image.layout")
+    declaration = "" if target is None else f'target = "{target}"'
+    config.write_text(
+        config.read_text().replace('target = "bsp"', declaration) + layout
+    )
+    env_project.run(["bake", "system", "device"])
+    output = project / "build/device"
+    assert (output / "system.img").is_file()
+    assert not (output / "system.rugixb").exists()
+    config.write_text(
+        config.read_text() + "\n[systems.device.bundle]\nenabled = true\n"
+    )
+    capfd.readouterr()
+    with pytest.raises(subprocess.CalledProcessError):
+        env_project.run(["bake", "system", "device"])
+    assert "requires a target that supports bundles" in capfd.readouterr().err

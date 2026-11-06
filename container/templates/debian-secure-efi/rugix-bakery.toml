@@ -13,11 +13,6 @@ secrets.boot-key = { path = "keys/boot.key" }
 secrets.bundle-key = { path = "keys/bundle.key" }
 
 [systems.efi.outputs]
-"uki" = { rule = { node = "release", output = "uki" } }
-"bootloader" = { rule = { node = "release", output = "bootloader" } }
-"root-hash" = { rule = { node = "release", output = "root-hash" } }
-"hash-offset" = { rule = { node = "release", output = "hash-offset" } }
-"data-size" = { rule = { node = "release", output = "data-size" } }
 "system.img" = { rule = { node = "release", output = "image" } }
 "system.rugixb" = { rule = { node = "release", output = "bundle" } }
 "system.rugixb-hash" = { rule = { node = "release", output = "bundle-hash" } }

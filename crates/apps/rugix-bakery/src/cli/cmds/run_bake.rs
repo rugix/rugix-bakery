@@ -2,7 +2,7 @@
 
 use std::path::Path;
 
-use reportify::ResultExt;
+use reportify::{bail, ResultExt};
 
 use crate::cli::{args, load_project};
 use crate::oven::{self, LayerBakery};
@@ -64,9 +64,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
         } => {
             let param_overrides = oven::load_parameter_overrides(&params.param_files)?;
             let system_path = Path::new("build").join(system);
-            eprintln!(
-                "warning: bake image is deprecated; use bake system {system} --artifact system.img"
-            );
+            tracing::warn!("bake image is deprecated; use bake system {system}");
             let source_date_epoch = source_epoch(source_date)?;
             oven::bake_system(
                 &project,
@@ -77,8 +75,14 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
                 &param_overrides,
                 &mixins.selection(),
                 None,
-                &oven::ArtifactSelection::ImageCommand,
+                &oven::ArtifactSelection::Exclude(vec![
+                    "system.rugixb".into(),
+                    "system.rugixb-hash".into(),
+                ]),
             )?;
+            if !system_path.join("system.img").is_file() {
+                bail!("bake image requires a published system.img file");
+            }
             if let Some(output) = output {
                 crate::build::copy_file(&system_path.join("system.img"), output)?;
             }
@@ -103,7 +107,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
             params,
             mixins,
         } => {
-            eprintln!("warning: bake bundle is deprecated; use bake system {system}");
+            tracing::warn!("bake bundle is deprecated; use bake system {system}");
             let param_overrides = oven::load_parameter_overrides(&params.param_files)?;
             let system_path = Path::new("build").join(system);
             oven::bake_system(
@@ -120,7 +124,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
             let output = output
                 .clone()
                 .unwrap_or_else(|| system_path.join("system.rugixb"));
-            let hash = oven::bake_bundle(&project, system, &system_path, &output, opts)?;
+            let hash = oven::bake_bundle(&system_path, &output)?;
             println!("{hash}");
             let hash_output = output.with_extension("rugixb-hash");
             std::fs::write(&hash_output, hash.to_string())
