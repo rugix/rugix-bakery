@@ -1,0 +1,23 @@
+description = "Reserve the named A/B partitions for the Raspberry Pi verified boot flow."
+category = "Verified Boot"
+
+[inputs.system]
+kind = "file"
+description = "Root filesystem image with appended verity data."
+
+[inputs.boot]
+kind = "file"
+description = "Signed boot partition image."
+
+[inputs.config]
+kind = "file"
+description = "Configuration partition image."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "layout-rpi-ab"]
+
+[execution.outputs.layout]
+kind = "file"
+path = "layout.json"
+description = "Rugix ImageLayout with named A/B partitions."

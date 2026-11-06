@@ -1,0 +1,40 @@
+# Signed boot partitions remain unchanged after installation. Mark their slots
+# immutable so Rugix Ctrl retains installed payload hashes for slot verification.
+# Defining slots replaces the default slot map, so all four slots are listed.
+
+[config-partition]
+partition = 1
+
+[data-partition]
+partition = 6
+
+[boot-flow]
+type = "rpi-tryboot"
+
+[slots.system-a]
+type = "block"
+partition = 4
+immutable = true
+
+[slots.system-b]
+type = "block"
+partition = 5
+immutable = true
+
+[slots.boot-a]
+type = "block"
+partition = 2
+immutable = true
+
+[slots.boot-b]
+type = "block"
+partition = 3
+immutable = true
+
+[boot-groups.a.slots]
+system = "system-a"
+boot = "boot-a"
+
+[boot-groups.b.slots]
+system = "system-b"
+boot = "boot-b"

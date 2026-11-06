@@ -1,0 +1,90 @@
+description = "Build a signed systemd-boot A/B release with a verified root from a prepared Debian root filesystem."
+category = "Verified Boot"
+secrets = ["boot-key", "bundle-key"]
+
+[inputs.rootfs]
+kind = "directory"
+description = "Prepared root filesystem implementing the core verified-root boot contract."
+
+[inputs.boot-certificate]
+kind = "file"
+description = "PEM-encoded RSA X.509 certificate for signing EFI boot artifacts."
+
+[inputs.bundle-certificate]
+kind = "file"
+description = "Single PEM-encoded RSA X.509 end-entity signer certificate issued directly by the trusted root. No intermediates."
+
+[parameters.architecture]
+description = "Target architecture: amd64 or arm64. Must match the system architecture."
+
+[parameters.kernel-version]
+description = "Exact installed kernel version. Empty selects the unique installed version."
+default = ""
+
+[parameters.cmdline-extra]
+description = "Additional authenticated kernel arguments."
+default = ""
+
+[parameters.panic-timeout]
+description = "Kernel panic reboot delay in seconds. Zero leaves the system stopped."
+default = 10
+
+[parameters.boot-timeout]
+description = "systemd-boot menu timeout in seconds."
+default = 0
+
+[parameters.signing-time]
+description = "Signing time as Unix seconds in a string. Empty uses the build source epoch."
+default = ""
+
+[parameters.config-size]
+description = "ESP capacity in bytes. Zero reserves three copies of its current files, uses at least 256 MiB, and rounds up to 64 MiB."
+default = 0
+
+[parameters.root-compression]
+description = "SquashFS compression of the root filesystem, such as zstd or xz, or none."
+default = "none"
+
+[parameters.disk-size]
+description = "Factory disk capacity in bytes. Zero sizes the disk from its partitions."
+default = 0
+
+[parameters.secondary-config]
+description = "Reserve an empty secondary configuration partition with the same capacity as the ESP."
+default = false
+
+[execution]
+type = "graph"
+
+[execution.rules.kernel]
+uses = "core/kernel-debian"
+parameters.version = { parameter = "kernel-version" }
+
+[execution.rules.initrd]
+uses = "core/initrd-debian"
+inputs.kernel-version = { rule = { node = "kernel", output = "version" } }
+
+[execution.rules.release]
+uses = "core/image-efi-verified"
+inputs.kernel = { rule = { node = "kernel", output = "kernel" } }
+inputs.initrd = { rule = { node = "initrd", output = "initrd" } }
+secrets.boot-key = { input = "boot-key" }
+secrets.bundle-key = { input = "bundle-key" }
+parameters.architecture = { parameter = "architecture" }
+parameters.cmdline-extra = { parameter = "cmdline-extra" }
+parameters.panic-timeout = { parameter = "panic-timeout" }
+parameters.boot-timeout = { parameter = "boot-timeout" }
+parameters.signing-time = { parameter = "signing-time" }
+parameters.config-size = { parameter = "config-size" }
+parameters.secondary-config = { parameter = "secondary-config" }
+parameters.root-compression = { parameter = "root-compression" }
+parameters.disk-size = { parameter = "disk-size" }
+
+[execution.outputs]
+image = { rule = { node = "release", output = "image" } }
+bundle = { rule = { node = "release", output = "bundle" } }
+uki = { rule = { node = "release", output = "uki" } }
+bootloader = { rule = { node = "release", output = "bootloader" } }
+root-hash = { rule = { node = "release", output = "root-hash" } }
+hash-offset = { rule = { node = "release", output = "hash-offset" } }
+data-size = { rule = { node = "release", output = "data-size" } }

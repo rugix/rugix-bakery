@@ -1,0 +1,150 @@
+description = "Build a signed systemd-boot A/B release with a verified root from an existing root filesystem."
+category = "Verified Boot"
+secrets = ["boot-key", "bundle-key"]
+
+[inputs.kernel]
+kind = "file"
+description = "Target Linux kernel image."
+
+[inputs.initrd]
+kind = "file"
+description = "Initrd implementing the core verified-root boot contract."
+
+[inputs.rootfs]
+kind = "directory"
+description = "Prepared root filesystem implementing the core verified-root boot contract."
+
+[inputs.boot-certificate]
+kind = "file"
+description = "PEM-encoded RSA X.509 certificate for signing EFI boot artifacts."
+
+[inputs.bundle-certificate]
+kind = "file"
+description = "Single PEM-encoded RSA X.509 end-entity signer certificate issued directly by the trusted root. No intermediates."
+
+[parameters.architecture]
+description = "Target architecture: amd64 or arm64. Must match the system architecture."
+
+[parameters.cmdline-extra]
+description = "Additional authenticated kernel arguments."
+default = ""
+
+[parameters.panic-timeout]
+description = "Kernel panic reboot delay in seconds. Zero leaves the system stopped."
+default = 10
+
+[parameters.boot-timeout]
+description = "systemd-boot menu timeout in seconds."
+default = 0
+
+[parameters.signing-time]
+description = "Signing time as Unix seconds in a string. Empty uses the build source epoch."
+default = ""
+
+[parameters.config-size]
+description = "ESP capacity in bytes. Zero reserves three copies of its current files, uses at least 256 MiB, and rounds up to 64 MiB."
+default = 0
+
+[parameters.root-compression]
+description = "SquashFS compression of the root filesystem, such as zstd or xz, or none."
+default = "none"
+
+[parameters.disk-size]
+description = "Factory disk capacity in bytes. Zero sizes the disk from its partitions."
+default = 0
+
+[parameters.secondary-config]
+description = "Reserve an empty secondary configuration partition with the same capacity as the ESP."
+default = false
+
+[execution]
+type = "graph"
+
+[execution.rules.filesystem]
+uses = "core/image-squashfs-verity"
+inputs.tree = { input = "rootfs" }
+parameters.compression = { parameter = "root-compression" }
+
+[execution.rules.cmdline]
+uses = "core/verified-cmdline"
+inputs.root-hash = { rule = { node = "filesystem", output = "root-hash" } }
+inputs.hash-offset = { rule = { node = "filesystem", output = "hash-offset" } }
+inputs.data-size = { rule = { node = "filesystem", output = "data-size" } }
+parameters.platform = "efi"
+parameters.extra = { parameter = "cmdline-extra" }
+parameters.panic-timeout = { parameter = "panic-timeout" }
+
+[execution.rules.stub]
+uses = "core/efi-stub"
+parameters.architecture = { parameter = "architecture" }
+
+[execution.rules.uki]
+uses = "core/uki"
+inputs.stub = { rule = { node = "stub", output = "stub" } }
+inputs.kernel = { input = "kernel" }
+inputs.initrd = { input = "initrd" }
+inputs.cmdline = { rule = { node = "cmdline", output = "cmdline" } }
+inputs.os-release = { select = { source = { input = "rootfs" }, path = "etc/os-release", kind = "file" } }
+
+[execution.rules.signed-uki]
+uses = "core/sign-efi"
+inputs.image = { rule = { node = "uki", output = "image" } }
+inputs.certificate = { input = "boot-certificate" }
+secrets.key = { input = "boot-key" }
+parameters.signing-time = { parameter = "signing-time" }
+
+[execution.rules.bootloader]
+uses = "core/systemd-boot"
+parameters.architecture = { parameter = "architecture" }
+
+[execution.rules.signed-bootloader]
+uses = "core/sign-efi"
+inputs.image = { rule = { node = "bootloader", output = "image" } }
+inputs.certificate = { input = "boot-certificate" }
+secrets.key = { input = "boot-key" }
+parameters.signing-time = { parameter = "signing-time" }
+
+[execution.rules.esp-tree]
+uses = "core/prepare-efi-esp"
+inputs.uki = { rule = { node = "signed-uki", output = "image" } }
+inputs.bootloader = { rule = { node = "signed-bootloader", output = "image" } }
+parameters.architecture = { parameter = "architecture" }
+parameters.timeout = { parameter = "boot-timeout" }
+
+[execution.rules.esp]
+uses = "core/image-fat"
+inputs.tree = { rule = { node = "esp-tree", output = "tree" } }
+parameters.size = { parameter = "config-size" }
+parameters.label = "config"
+parameters.free-percent = 200
+parameters.minimum-size = 268435456
+parameters.size-alignment = 67108864
+
+[execution.rules.layout]
+uses = "core/layout-efi-ab"
+parameters.secondary-config = { parameter = "secondary-config" }
+inputs.config = { rule = { node = "esp", output = "image" } }
+inputs.system = { rule = { node = "filesystem", output = "image" } }
+
+[execution.rules.release]
+uses = "core/image-release"
+inputs.layout = { rule = { node = "layout", output = "layout" } }
+inputs.partitions = { rule = { node = "layout", output = "partitions" } }
+inputs.manifest = { path = "rules/image-efi-verified/bundle.toml" }
+inputs.certificate = { input = "bundle-certificate" }
+secrets.key = { input = "bundle-key" }
+parameters.size = { parameter = "disk-size" }
+parameters.signing-time = { parameter = "signing-time" }
+
+[execution.rules.release.inputs.payloads.tree]
+"system.img" = { rule = { node = "filesystem", output = "image" } }
+"boot.efi" = { rule = { node = "signed-uki", output = "image" } }
+
+[execution.outputs]
+image = { rule = { node = "release", output = "image" } }
+bundle = { rule = { node = "release", output = "bundle" } }
+uki = { rule = { node = "signed-uki", output = "image" } }
+bootloader = { rule = { node = "signed-bootloader", output = "image" } }
+root-hash = { rule = { node = "filesystem", output = "root-hash" } }
+hash-offset = { rule = { node = "filesystem", output = "hash-offset" } }
+data-size = { rule = { node = "filesystem", output = "data-size" } }

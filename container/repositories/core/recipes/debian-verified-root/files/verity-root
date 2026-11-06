@@ -1,0 +1,151 @@
+#!/bin/sh
+set -eu
+
+case "${1:-}" in
+    prereqs)
+        exit 0
+        ;;
+esac
+
+. /scripts/functions
+
+root_hash=""
+platform=""
+hash_offset=""
+data_blocks=""
+for argument in $(cat /proc/cmdline); do
+    case "$argument" in
+        rugix.verity-root-hash=*)
+            root_hash="${argument#rugix.verity-root-hash=}"
+            ;;
+        rugix.verity-hash-offset=*)
+            hash_offset="${argument#rugix.verity-hash-offset=}"
+            ;;
+        rugix.verity-data-blocks=*)
+            data_blocks="${argument#rugix.verity-data-blocks=}"
+            ;;
+        rugix.platform=*)
+            platform="${argument#rugix.platform=}"
+            ;;
+    esac
+done
+
+case "$root_hash" in
+    "" | *[!0-9a-f]*)
+        panic "Missing or invalid authenticated root hash"
+        ;;
+esac
+[ "${#root_hash}" = 64 ] || panic "Invalid root hash length"
+
+case "$hash_offset" in
+    "" | *[!0-9]*)
+        panic "Invalid authenticated verity offset"
+        ;;
+esac
+case "$data_blocks" in
+    "" | *[!0-9]*)
+        panic "Invalid authenticated verity data length"
+        ;;
+esac
+if ! [ "$data_blocks" -gt 0 ] ||
+    ! [ "$hash_offset" -ge "$((data_blocks * 4096))" ] ||
+    ! [ "$((hash_offset % 4096))" -eq 0 ]; then
+    panic "Invalid authenticated verity geometry"
+fi
+
+case "$platform" in
+    efi)
+        modprobe efivarfs || panic "Unable to load EFI variable support"
+        mkdir -p /sys/firmware/efi/efivars
+        if ! grep -q ' /sys/firmware/efi/efivars ' /proc/mounts; then
+            mount -t efivarfs efivarfs /sys/firmware/efi/efivars ||
+                panic "Unable to mount EFI variables"
+        fi
+        selected_entry=/sys/firmware/efi/efivars/LoaderEntrySelected-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f
+        entry=$(tail -c +5 "$selected_entry" | tr -d '\000')
+        case "$entry" in
+            rugix-a.efi)
+                boot_group=a
+                ;;
+            rugix-b.efi)
+                boot_group=b
+                ;;
+            *)
+                panic "Unknown systemd-boot entry"
+                ;;
+        esac
+        ;;
+    rpi)
+        set -- $(od -An -t u1 /proc/device-tree/chosen/bootloader/partition)
+        [ "$1:$2:$3" = "0:0:0" ] || panic "Invalid Pi boot partition"
+        case "$4" in
+            2)
+                boot_group=a
+                ;;
+            3)
+                boot_group=b
+                ;;
+            *)
+                panic "Unknown Pi boot partition"
+                ;;
+        esac
+        ;;
+    *)
+        panic "Unknown verified boot platform"
+        ;;
+esac
+
+# Rugix Ctrl uses the disk holding the root for its configuration and data
+# partitions. Another disk with the same partition name, such as an attached
+# copy of this device's image, must not supply the root and thereby the data.
+root_label="system-$boot_group"
+
+find_root_partitions() {
+    for uevent in /sys/class/block/*/uevent; do
+        if grep -qx "PARTNAME=$root_label" "$uevent"; then
+            sed -n 's/^DEVNAME=//p' "$uevent"
+        fi
+    done
+}
+
+attempt=0
+while [ -z "$(find_root_partitions)" ]; do
+    attempt=$((attempt + 1))
+    [ "$attempt" -lt 100 ] || panic "Missing verified root partition $root_label"
+    sleep 0.1
+done
+# Disks that appear after probing settles are not considered.
+udevadm settle --timeout=10 || true
+root_partitions=$(find_root_partitions)
+newline='
+'
+case "$root_partitions" in
+    "")
+        panic "Missing verified root partition $root_label"
+        ;;
+    *"$newline"*)
+        panic "Ambiguous verified root partition $root_label: detach other disks containing it"
+        ;;
+esac
+root_device="/dev/$root_partitions"
+[ -b "$root_device" ] || panic "Missing verified root device $root_device"
+
+modprobe dm_verity || panic "Unable to load dm-verity"
+metadata=$(LC_ALL=C veritysetup dump --hash-offset "$hash_offset" "$root_device") ||
+    panic "Invalid appended verity superblock"
+
+verity_field() {
+    printf '%s\n' "$metadata" | sed -n "s/^$1:[[:space:]]*//p"
+}
+
+# The superblock is unsigned, so its geometry must match the signed command line.
+if [ "$(verity_field 'Hash type')" != 1 ] ||
+    [ "$(verity_field 'Data blocks')" != "$data_blocks" ] ||
+    [ "$(verity_field 'Data block size')" != 4096 ] ||
+    [ "$(verity_field 'Hash block size')" != 4096 ] ||
+    [ "$(verity_field 'Hash algorithm')" != sha256 ]; then
+    panic "Appended verity geometry does not match authenticated boot metadata"
+fi
+
+veritysetup open --hash-offset "$hash_offset" "$root_device" root "$root_device" "$root_hash" ||
+    panic "Root verification setup failed"

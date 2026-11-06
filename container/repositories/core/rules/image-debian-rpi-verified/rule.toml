@@ -1,0 +1,109 @@
+description = "Build a signed Raspberry Pi 4/CM4 or Pi 5 A/B release with a verified root from a prepared Debian root filesystem."
+category = "Verified Boot"
+secrets = ["boot-key", "bundle-key"]
+
+[inputs.rootfs]
+kind = "directory"
+description = "Prepared root filesystem implementing the core verified-root boot contract."
+
+[inputs.boot]
+kind = "directory"
+description = "Raspberry Pi firmware tree containing start4.elf, fixup4.dat, DTBs, and overlays."
+
+[inputs.config]
+kind = "directory"
+description = "Layer configuration partition contents."
+
+[inputs.boot-public-key]
+kind = "file"
+description = "PEM-encoded RSA-2048 public key matching the Raspberry Pi boot signing key."
+
+[inputs.bundle-certificate]
+kind = "file"
+description = "Single PEM-encoded RSA X.509 end-entity signer certificate issued directly by the trusted root. No intermediates."
+
+[parameters.kernel-version]
+description = "Exact installed kernel version. Empty selects the unique matching version."
+default = ""
+
+[parameters.kernel-flavor]
+description = "Required installed kernel version suffix."
+default = "rpi-v8"
+
+[parameters.cmdline-extra]
+description = "Additional authenticated kernel arguments."
+default = ""
+
+[parameters.panic-timeout]
+description = "Kernel panic reboot delay in seconds. Zero leaves the system stopped."
+default = 10
+
+[parameters.boot-config]
+description = "Contents of config.txt inside the signed boot image. Must select kernel8.img and initrd."
+default = """
+[all]
+arm_64bit=1
+kernel=kernel8.img
+initramfs initrd followkernel
+"""
+
+[parameters.signing-time]
+description = "Signing time as Unix seconds in a string. Empty uses the build source epoch."
+default = ""
+
+[parameters.config-size]
+description = "Configuration partition capacity in bytes. Zero sizes automatically with a 64 MiB minimum."
+default = 0
+
+[parameters.boot-size]
+description = "Boot partition capacity in bytes. Zero sizes automatically with a 256 MiB minimum."
+default = 0
+
+[parameters.boot-image-size]
+description = "Signed boot image capacity in bytes. Zero sizes it from its contents."
+default = 0
+
+[parameters.root-compression]
+description = "SquashFS compression of the root filesystem, such as zstd or xz, or none."
+default = "none"
+
+[parameters.disk-size]
+description = "Factory disk capacity in bytes. Zero sizes the disk from its partitions."
+default = 0
+
+[execution]
+type = "graph"
+
+[execution.rules.kernel]
+uses = "core/kernel-debian"
+parameters.version = { parameter = "kernel-version" }
+parameters.flavor = { parameter = "kernel-flavor" }
+
+[execution.rules.initrd]
+uses = "core/initrd-debian"
+inputs.kernel-version = { rule = { node = "kernel", output = "version" } }
+
+[execution.rules.release]
+uses = "core/image-rpi-verified"
+inputs.kernel = { rule = { node = "kernel", output = "kernel" } }
+inputs.initrd = { rule = { node = "initrd", output = "initrd" } }
+secrets.boot-key = { input = "boot-key" }
+secrets.bundle-key = { input = "bundle-key" }
+parameters.cmdline-extra = { parameter = "cmdline-extra" }
+parameters.panic-timeout = { parameter = "panic-timeout" }
+parameters.boot-config = { parameter = "boot-config" }
+parameters.signing-time = { parameter = "signing-time" }
+parameters.config-size = { parameter = "config-size" }
+parameters.boot-size = { parameter = "boot-size" }
+parameters.boot-image-size = { parameter = "boot-image-size" }
+parameters.root-compression = { parameter = "root-compression" }
+parameters.disk-size = { parameter = "disk-size" }
+
+[execution.outputs]
+image = { rule = { node = "release", output = "image" } }
+bundle = { rule = { node = "release", output = "bundle" } }
+boot-image = { rule = { node = "release", output = "boot-image" } }
+boot-signature = { rule = { node = "release", output = "boot-signature" } }
+root-hash = { rule = { node = "release", output = "root-hash" } }
+hash-offset = { rule = { node = "release", output = "hash-offset" } }
+data-size = { rule = { node = "release", output = "data-size" } }

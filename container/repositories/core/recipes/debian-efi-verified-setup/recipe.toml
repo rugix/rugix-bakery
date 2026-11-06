@@ -1,0 +1,24 @@
+description = "Configure Debian for signed systemd-boot UKIs and verified A/B roots."
+category = "Verified Boot"
+priority = 1000
+dependencies = ["debian-verified-root"]
+
+[inputs.system-config]
+kind = "file"
+description = "Rugix Ctrl system configuration. Defaults to the standard verified A/B layout."
+
+[inputs.bootstrap-config]
+kind = "file"
+description = "Rugix bootstrap layout. Optional @SYSTEM_SIZE@ placeholders use system_size."
+
+[input-defaults]
+system-config = { path = "recipes/debian-efi-verified-setup/files/system.toml" }
+bootstrap-config = { path = "recipes/debian-efi-verified-setup/files/bootstrap.toml.in" }
+
+[parameters.system_size]
+description = "Default minimum A/B system capacity in bytes after bootstrap."
+default = 4294967296
+
+[parameters.secondary_config]
+description = "Use the secondary configuration partition layout. Must match the EFI image rule's secondary-config parameter."
+default = false

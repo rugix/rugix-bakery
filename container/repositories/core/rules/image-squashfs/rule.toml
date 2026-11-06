@@ -6,7 +6,7 @@ kind = "directory"
 description = "Directory tree to package as a read-only filesystem."
 
 [parameters.compression]
-description = "Compression algorithm accepted by mksquashfs, such as zstd or xz."
+description = "Compression algorithm accepted by mksquashfs, such as zstd or xz, or none."
 default = "zstd"
 
 [parameters.block-size]
@@ -22,6 +22,6 @@ type = "run"
 command = ["rugix-bakery", "internal", "exec-rule", "image-squashfs"]
 
 [execution.outputs.image]
-description = "Compressed SquashFS filesystem image."
+description = "SquashFS filesystem image."
 kind = "file"
 path = "image.squashfs"

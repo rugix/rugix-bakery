@@ -1,0 +1,31 @@
+description = "Assemble a UKI from a kernel, generated initrd, and boot parameters."
+category = "Boot Artifacts"
+
+[inputs.stub]
+kind = "file"
+description = "Systemd EFI stub matching the target architecture."
+
+[inputs.kernel]
+kind = "file"
+description = "Kernel image to embed."
+
+[inputs.initrd]
+kind = "file"
+description = "Initrd to embed."
+
+[inputs.cmdline]
+kind = "file"
+description = "Text file containing the kernel command line."
+
+[inputs.os-release]
+kind = "file"
+description = "OS identification file to embed."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "uki"]
+
+[execution.outputs.image]
+description = "Unsigned unified kernel image (UKI)."
+kind = "file"
+path = "boot.efi"

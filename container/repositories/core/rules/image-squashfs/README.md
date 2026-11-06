@@ -1,7 +1,9 @@
 ## Behavior
 
-SquashFS determines the image size from its compressed contents. The rule uses
-`mksquashfs` without appending to an existing image.
+SquashFS determines the image size from its contents. The rule uses
+`mksquashfs` without appending to an existing image. `compression` selects a
+compressor supported by `mksquashfs`, such as `zstd` or `xz`. `none` stores
+data, metadata, fragments, and extended attributes uncompressed.
 
 The build source epoch fixes the filesystem creation time and clamps file timestamps.
 It defaults to zero. The rule uses one compression worker and reproducible

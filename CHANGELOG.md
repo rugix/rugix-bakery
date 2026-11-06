@@ -11,7 +11,17 @@
 - Track declared artifact contents and registered project dependencies when
   caching rules and layers. Include secret changes using cache-local fingerprints.
 - Add rule, recipe, and layer inspection with JSON catalogs for documentation.
+- Add verified boot for EFI and Raspberry Pi 4/CM4 and Pi 5: rules for
+  SquashFS root images with dm-verity, signed UKIs and systemd-boot, signed
+  Raspberry Pi boot images, signed update bundles, and GPT factory images, with
+  A/B release compositions and matching Debian setup recipes.
+- Add `free-percent`, `minimum-size`, and `size-alignment` to `core/image-fat`
+  for automatic capacity with headroom, and `compression = "none"` to
+  `core/image-squashfs`.
 
+- Install Rugix Ctrl Debian packages with APT in `core/rugix-ctrl`, so that
+  their dependencies are installed. Rugix Ctrl 1.4.0 depends on
+  `ca-certificates`.
 - Update `crypto-bigint`, `ctutils`, and `tokio` to resolve security advisories.
 - Accept `--param-file` in the `test` command, for example, to authorize an SSH
   key for test workflows without a separate layer.

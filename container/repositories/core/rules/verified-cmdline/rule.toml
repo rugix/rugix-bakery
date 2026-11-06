@@ -1,0 +1,35 @@
+description = "Bind a verified root hash into boot arguments."
+category = "Verified Boot"
+
+[inputs.root-hash]
+kind = "file"
+description = "SHA-256 dm-verity root hash as hexadecimal text."
+
+[inputs.hash-offset]
+kind = "file"
+description = "Appended hash-area byte offset as decimal text."
+
+[inputs.data-size]
+kind = "file"
+description = "Authenticated data length in bytes, excluding appended hashes."
+
+[parameters.platform]
+default = "efi"
+description = "Boot slot selection method: efi or rpi."
+
+[parameters.extra]
+default = ""
+description = "Additional kernel arguments. Verified-root arguments cannot be overridden."
+
+[parameters.panic-timeout]
+default = 10
+description = "Kernel panic reboot delay in seconds. Zero leaves the system stopped."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "verified-cmdline"]
+
+[execution.outputs.cmdline]
+kind = "file"
+path = "cmdline"
+description = "Kernel command line to embed in the authenticated boot artifact."

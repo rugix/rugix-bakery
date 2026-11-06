@@ -151,6 +151,9 @@ pub fn ext4() -> BakeryResult<()> {
 #[serde(rename_all = "kebab-case")]
 struct Fat {
     size: u64,
+    minimum_size: u64,
+    free_percent: u64,
+    size_alignment: u64,
     label: String,
     volume_id: String,
     sectors_per_cluster: u64,
@@ -228,7 +231,7 @@ pub fn fat() -> BakeryResult<()> {
     }
     let size = if p.size == 0 {
         sectors = sectors.max(1);
-        let clusters = loop {
+        loop {
             let cluster = sectors * 512;
             let required = file_sizes
                 .iter()
@@ -238,17 +241,32 @@ pub fn fat() -> BakeryResult<()> {
                     .iter()
                     .map(|slots| (slots * 32).div_ceil(cluster))
                     .sum::<u64>();
-            let clusters = 65525.max(required + required / 100 + 32);
-            if clusters <= 0x0ffffff5 {
-                break clusters;
+            let reserve = required
+                .checked_mul(p.free_percent)
+                .and_then(|value| value.checked_add(99))
+                .map(|value| value / 100)
+                .ok_or_else(|| reportify::whatever!("FAT free space overflow"))?;
+            let clusters = 65525.max(
+                required
+                    .checked_add(reserve)
+                    .and_then(|value| value.checked_add(required / 100 + 32))
+                    .ok_or_else(|| reportify::whatever!("FAT size overflow"))?,
+            );
+            let fat_sectors = ((clusters + 2) * 4).div_ceil(512);
+            let size = rounded_capacity(
+                32 * 512 + 2 * fat_sectors * 512 + clusters * sectors * 512,
+                p.minimum_size,
+                p.size_alignment,
+                1048576,
+            )?;
+            if size / (sectors * 512) <= 0x0ffffff5 {
+                break size;
             }
             if p.sectors_per_cluster != 0 || sectors >= 128 {
                 bail!("tree exceeds FAT32 cluster capacity");
             }
             sectors *= 2;
-        };
-        let fat_sectors = ((clusters + 2) * 4).div_ceil(512);
-        (32 * 512 + 2 * fat_sectors * 512 + clusters * sectors * 512).div_ceil(1048576) * 1048576
+        }
     } else {
         p.size
     };
@@ -297,6 +315,11 @@ struct Squashfs {
 pub fn squashfs() -> BakeryResult<()> {
     let p: Squashfs = parameters()?;
     let epoch = super::source_date_epoch()?;
+    let compression: &[&str] = if p.compression == "none" {
+        &["-noI", "-noD", "-noF", "-noX"]
+    } else {
+        &["-comp", &p.compression]
+    };
     run(epoch_command("mksquashfs", epoch)?
         .args([
             "/run/rugix/bakery/work/inputs/tree",
@@ -304,10 +327,26 @@ pub fn squashfs() -> BakeryResult<()> {
             "-noappend",
             "-processors",
             "1",
-            "-comp",
-            &p.compression,
-            "-b",
         ])
+        .args(compression)
+        .arg("-b")
         .arg(p.block_size.to_string())
         .args(options(&p.mkfs_options)?))
+}
+
+/// Apply automatic capacity floors and rounding without changing explicit sizes.
+fn rounded_capacity(
+    size: u64,
+    minimum: u64,
+    alignment: u64,
+    granularity: u64,
+) -> BakeryResult<u64> {
+    if alignment != 0 && !alignment.is_power_of_two() {
+        bail!("automatic image size alignment must be a power of two");
+    }
+    let alignment = alignment.max(granularity);
+    size.max(minimum)
+        .div_ceil(alignment)
+        .checked_mul(alignment)
+        .ok_or_else(|| reportify::whatever!("image size overflow"))
 }

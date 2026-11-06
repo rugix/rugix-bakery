@@ -1,0 +1,4 @@
+description = "Install Debian initramfs hooks that verify A/B root partitions before mounting them."
+category = "Verified Boot"
+priority = 100
+dependencies = ["rugix-ctrl", "pkg-update"]

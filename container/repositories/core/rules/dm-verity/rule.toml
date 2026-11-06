@@ -1,0 +1,40 @@
+description = "Create a detached dm-verity hash tree and root hash for a data image."
+category = "Integrity"
+
+[inputs.image]
+kind = "file"
+description = "Data image with a positive length divisible by data-block-size."
+
+[parameters.size]
+description = "Hash-tree capacity in bytes. Zero allocates the required space, rounded up to 1 MiB."
+default = 0
+
+[parameters.hash-algorithm]
+description = "Digest algorithm supported by veritysetup and OpenSSL, such as sha256 or sha512."
+default = "sha256"
+
+[parameters.data-block-size]
+description = "Data block size in bytes."
+default = 4096
+
+[parameters.hash-block-size]
+description = "Hash block size in bytes."
+default = 4096
+
+[parameters.salt]
+description = "Hexadecimal salt. Empty uses the SHA-256 digest of the data image."
+default = ""
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "dm-verity"]
+
+[execution.outputs.hash-tree]
+description = "Detached dm-verity hash-tree image."
+kind = "file"
+path = "verity.img"
+
+[execution.outputs.root-hash]
+description = "Root hash as hexadecimal text, followed by a newline."
+kind = "file"
+path = "root.hash"

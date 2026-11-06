@@ -57,6 +57,8 @@ variant PartitionTableType {
 
 /// Partition of an image.
 record ImagePartition {
+    /// GPT partition name.
+    name?: string,
     /// Size of the partition.
     size?: NumBytes,
     /// Filesystem of the partition.

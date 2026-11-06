@@ -22,12 +22,18 @@ from rugix_testkit import BakeryBuilder
         ("archive-tree", 'clamp-mtime = "2000-01-01T00:00:00Z"\n', 1704067200),
         ("image-ext4", "", 0),
         ("image-ext4", "", 2100000000),
+        (
+            "image-fat",
+            "minimum-size = 67108865\nsize-alignment = 67108864\nfree-percent = 50\n",
+            1700000000,
+        ),
         ("image-ext4", "size = 67108864\n", 1700000000),
         ("image-fat", "", 0),
         ("image-fat", "size = 67108864\n", 1700000000),
         ("image-fat", "size = 16777216\n", 1700000000),
         ("image-squashfs", "", 0),
         ("image-squashfs", 'compression = "xz"\n', 1700000000),
+        ("image-squashfs", 'compression = "none"\n', 1700000000),
     ],
 )
 def test_core_rule_reproducibility(

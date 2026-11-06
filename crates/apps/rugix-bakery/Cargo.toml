@@ -27,6 +27,7 @@ thiserror = "1.0.43"
 toml = "0.8.8"
 url = { version = "2.4.0", features = ["serde"] }
 uuid = { version = "1.8.0", features = ["v4", "v5"] }
+zeroize.workspace = true
 
 nix = { workspace = true, features = ["signal"] }
 tokio.workspace = true
@@ -43,6 +44,7 @@ rugix-fs.workspace = true
 rugix-cli.workspace = true
 rugix-common.workspace = true
 rugix-bundle.workspace = true
+rugix-pki.workspace = true
 si-crypto-hashes.workspace = true
 serde_json = { workspace = true, features = ["raw_value"] }
 rugix-version.workspace = true

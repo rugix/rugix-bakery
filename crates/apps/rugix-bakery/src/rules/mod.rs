@@ -14,16 +14,37 @@ use sha2::{Digest, Sha256};
 
 use crate::BakeryResult;
 
+mod boot;
+mod disk;
 mod filesystems;
+mod integrity;
 mod layout;
 mod sbom;
 mod standard;
+mod verified;
 
 /// Execute a built-in implementation using mounted rule inputs and outputs.
 #[tracing::instrument]
 pub fn execute(name: &str) -> BakeryResult<()> {
     match name {
+        "write-text" => write_text(),
         "image-ext4" => filesystems::ext4(),
+        "image-gpt" => disk::execute(),
+        "dm-verity" => integrity::verity(),
+        "append-verity" => integrity::append_verity(),
+        "efi-stub" | "systemd-boot" => boot::select_efi(name),
+        "initrd-debian" => boot::initrd(),
+        "kernel-debian" => verified::kernel(),
+        "uki" => boot::uki(),
+        "sign-efi" => boot::sign_efi(),
+        "sign-bundle-rugix" => boot::sign_bundle(),
+        "sign-rpi" => verified::sign_rpi(),
+        "verified-cmdline" => verified::cmdline(),
+        "prepare-efi-esp" => verified::efi_esp(),
+        "prepare-rpi-boot" => verified::rpi_boot(),
+        "prepare-rpi-config" => verified::rpi_config(),
+        "layout-efi-ab" => verified::layout(false),
+        "layout-rpi-ab" => verified::layout(true),
         "image-fat" => filesystems::fat(),
         "image-squashfs" => filesystems::squashfs(),
         "bundle-rugix" => {
@@ -55,6 +76,17 @@ pub fn execute(name: &str) -> BakeryResult<()> {
         "archive-tree" => standard::archive_tree(),
         _ => bail!("unknown internal rule {name:?}"),
     }
+}
+
+/// Materialize text supplied by a composition as an ordinary file artifact.
+fn write_text() -> BakeryResult<()> {
+    #[derive(serde::Deserialize)]
+    struct Parameters {
+        content: String,
+    }
+    let p: Parameters = parameters()?;
+    fs::write("/run/rugix/bakery/work/outputs/file", p.content)
+        .whatever("unable to write text artifact")
 }
 
 /// Decode the executor's parameter transport into a rule-specific type.

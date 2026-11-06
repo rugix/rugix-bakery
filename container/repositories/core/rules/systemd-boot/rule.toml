@@ -1,0 +1,14 @@
+description = "Select the installed systemd-boot executable for an explicit architecture."
+category = "Boot Artifacts"
+
+[parameters.architecture]
+description = "Target architecture: amd64 or arm64. Must match the installed EFI artifacts."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "systemd-boot"]
+
+[execution.outputs.image]
+description = "Unsigned systemd-boot EFI executable for the selected architecture."
+kind = "file"
+path = "systemd-boot.efi"

@@ -1,0 +1,24 @@
+description = "Sign a Raspberry Pi boot image with the pinned upstream signing tool."
+category = "Signing"
+secrets = ["key"]
+
+[inputs.image]
+kind = "file"
+description = "FAT boot.img to authenticate."
+
+[inputs.public-key]
+kind = "file"
+description = "PEM-encoded RSA-2048 public key matching the private key."
+
+[parameters.signing-time]
+default = ""
+description = "Timestamp in the signature as Unix seconds. Empty uses the build source epoch."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "sign-rpi"]
+
+[execution.outputs.signature]
+kind = "file"
+path = "boot.sig"
+description = "Verified Raspberry Pi RSA-2048 signature."

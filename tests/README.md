@@ -44,6 +44,11 @@ The tests cover:
   insertion orders, inode numbers, access times, and build times produce identical
   ext4, FAT32, and SquashFS artifacts. Bundle tests compare independently built
   outputs and extracted payloads.
+- Verified boot: an EFI system with a dm-verity root boots with Secure Boot,
+  updates, rolls back, and commits. Boots with a modified UKI, a corrupted root,
+  or a second disk carrying the same root partition fail. A Raspberry Pi release
+  signs its boot image and embeds the root hash in the signed command line.
+  Rule tests cover reproducible hash trees, signatures, UKIs, and GPT images.
 - Installing released Rugix Ctrl Debian packages (extended).
 - Reproducible builds of a pinned Debian snapshot (extended).
 
@@ -52,9 +57,11 @@ The tests cover:
 Prerequisites:
 
 - A container runtime (Podman or Docker).
-- `qemu-system-x86_64` with OVMF firmware. VMs use KVM when `/dev/kvm` is
-  accessible.
+- `qemu-system-x86_64` with OVMF firmware, including a Secure Boot build. VMs
+  use KVM when `/dev/kvm` is accessible. Set `RUGIX_OVMF_CODE_SECBOOT_AMD64`
+  and `RUGIX_OVMF_VARS_AMD64` if the Secure Boot firmware is not found.
 - mtools for inspecting the FAT partitions of Raspberry Pi images.
+- OpenSSL for creating and checking test signing keys.
 
 The tests use the Bakery image named by `RUGIX_BAKERY_IMAGE`, which defaults
 to the `dev` image that `mise run build` creates. From the repository root, run
@@ -68,4 +75,4 @@ mise run test:system -n 4
 Tests marked as `extended` only run when `RUGIX_TESTS_EXTENDED=1` is set. They
 download from GitHub and the Debian snapshot archive, and the reproducibility
 test bakes a system twice from scratch. For the focused artifact checks, run
-`mise run test:system test_core_reproducibility.py test_bundle_rules.py`.
+`mise run test:system test_core_reproducibility.py test_bundle_rules.py test_verified_boot.py`.

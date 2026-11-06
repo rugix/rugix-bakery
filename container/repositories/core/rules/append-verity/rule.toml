@@ -1,0 +1,33 @@
+description = "Append a detached verity hash tree to a data image."
+category = "Integrity"
+
+[inputs.image]
+kind = "file"
+description = "Original data image authenticated by the hash tree."
+
+[inputs.hash-tree]
+kind = "file"
+description = "Detached verity image including its superblock."
+
+[parameters.alignment]
+description = "Power-of-two byte alignment of the hash area, at least 512. Must suit the hash block size."
+default = 4096
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "append-verity"]
+
+[execution.outputs.image]
+kind = "file"
+path = "image"
+description = "Data image followed by alignment padding and the verity hash image."
+
+[execution.outputs.hash-offset]
+kind = "file"
+path = "hash-offset"
+description = "Hash-area byte offset as decimal text."
+
+[execution.outputs.data-size]
+kind = "file"
+path = "data-size"
+description = "Original data length in bytes as decimal text, excluding padding and hashes."

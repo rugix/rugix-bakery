@@ -1,0 +1,31 @@
+description = "Package a kernel, initrd, firmware and authenticated command line for Raspberry Pi."
+category = "Verified Boot"
+
+[inputs.config]
+kind = "file"
+description = "Firmware config.txt selecting kernel8.img and initrd, including any board-specific settings."
+
+[inputs.boot]
+kind = "directory"
+description = "Raspberry Pi firmware tree containing start4.elf, fixup4.dat, DTBs, and overlays."
+
+[inputs.kernel]
+kind = "file"
+description = "ARM64 Linux kernel image."
+
+[inputs.initrd]
+kind = "file"
+description = "Initrd implementing the verified-root boot contract."
+
+[inputs.cmdline]
+kind = "file"
+description = "Authenticated kernel command line."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "prepare-rpi-boot"]
+
+[execution.outputs.tree]
+kind = "directory"
+path = "boot"
+description = "Contents of the signed boot ramdisk."
