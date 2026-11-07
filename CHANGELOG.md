@@ -5,7 +5,8 @@
 - Introduce repository-defined build rules with artifact inputs and outputs,
   parameters, sensitive inputs, tooling environments, and reusable compositions.
 - Add system `rules` and `outputs` to compose build rules and publish named
-  artifacts. Extend the predefined pipeline through its reserved `standard` node.
+  artifacts. Use the predefined pipeline's outputs in system rules through the
+  reserved `target` node.
 - Add `bake system` to publish system artifacts. Repeat `--artifact` to build only
   selected artifacts and their dependencies.
 - Configure predefined-pipeline bundles in `[systems.<name>.bundle]`. Bundles

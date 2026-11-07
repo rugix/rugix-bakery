@@ -350,21 +350,21 @@ impl Planner {
         &mut self,
         config: &crate::config::systems::SystemConfig,
         inputs: BTreeMap<Str, Artifact>,
-        standard: BTreeMap<Str, Artifact>,
+        pipeline: BTreeMap<Str, Artifact>,
     ) -> BakeryResult<BTreeMap<Str, Artifact>> {
         let mut scope =
             Scope::with_rules(self.repositories.root_repository, config.rules.as_ref())?;
         if config
             .rules
             .as_ref()
-            .is_some_and(|rules| rules.contains_key("standard"))
+            .is_some_and(|rules| rules.contains_key("target"))
         {
-            bail!("system rule name standard is reserved");
+            bail!("system rule name target is reserved for the predefined pipeline");
         }
         scope.inputs = inputs;
-        scope.completed.insert("standard".into(), standard.clone());
+        scope.completed.insert("target".into(), pipeline.clone());
         let mut outputs = BTreeMap::new();
-        for (name, artifact) in standard {
+        for (name, artifact) in pipeline {
             let filename = match name.as_str() {
                 "image" => "system.img",
                 "bundle" => "system.rugixb",
@@ -675,7 +675,7 @@ uses = "copy"
         assert_eq!(planner.finish(outputs).tasks.len(), 1);
         for body in [
             "[rules.unused]\nuses = \"copy\"",
-            "[rules.standard]\nuses = \"copy\"",
+            "[rules.target]\nuses = \"copy\"",
             "[outputs]\n\"../escape\" = { input = \"context\" }",
             "[outputs]\n\"build-context.json\" = { input = \"context\" }",
             "",

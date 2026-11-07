@@ -25,12 +25,12 @@ pub fn assemble(
 ) -> BakeryResult<()> {
     let inputs = planner.release(&layer, config.architecture, release, system);
     let context_artifact = inputs["context"].clone();
-    let standard = if config.target.is_some() || config.image.is_some() {
+    let pipeline = if config.target.is_some() || config.image.is_some() {
         super::pipeline::plan(&mut planner, inputs.clone(), config, bundle_options)
     } else {
         BTreeMap::new()
     };
-    let mut outputs = planner.system_graph(config, inputs, standard)?;
+    let mut outputs = planner.system_graph(config, inputs, pipeline)?;
     outputs.insert("build-context.json".into(), context_artifact);
     selection.select(&mut outputs)?;
     let plan = planner.finish(outputs);
