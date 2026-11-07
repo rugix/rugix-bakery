@@ -195,6 +195,9 @@ pub enum BakeCommand {
         /// Output directory (default: build/<system>).
         #[clap(long)]
         output: Option<PathBuf>,
+        /// Disable compression of the predefined pipeline's bundle.
+        #[clap(long)]
+        disable_compression: bool,
         #[clap(flatten)]
         release: ReleaseInfoArgs,
         #[clap(long)]

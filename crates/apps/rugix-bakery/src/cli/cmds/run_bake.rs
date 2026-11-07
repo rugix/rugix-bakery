@@ -16,12 +16,14 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
             system,
             artifact,
             output,
+            disable_compression,
             release,
             source_date,
             params,
             mixins,
         } => {
             let overrides = oven::load_parameter_overrides(&params.param_files)?;
+            let bundle_overrides = disable_compression.then(oven::BundleOpts::uncompressed);
             let output = output
                 .clone()
                 .unwrap_or_else(|| Path::new("build").join(system));
@@ -38,7 +40,7 @@ pub fn run(args: &args::Args, cmd: &args::BakeCommand) -> BakeryResult<()> {
                 source_epoch(source_date)?,
                 &overrides,
                 &mixins.selection(),
-                None,
+                bundle_overrides.as_ref(),
                 &selection,
             )?;
         }

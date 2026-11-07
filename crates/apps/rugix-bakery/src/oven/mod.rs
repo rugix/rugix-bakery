@@ -89,7 +89,7 @@ pub fn bake_system(
     if !standard
         && bundle_options.is_some_and(|opts| opts.disable_compression || opts.chunker.is_some())
     {
-        bail!("bundle CLI overrides require a predefined-pipeline system");
+        bail!("--disable-compression and --chunker require a system with target or image; configure bundle encoding in the system's rules instead");
     }
     let configured = system_config.bundle.as_ref();
     let mut resolved = BundleOpts {
@@ -399,6 +399,14 @@ pub struct BundleOpts {
 }
 
 impl BundleOpts {
+    /// Override only the compression of the configured bundle.
+    pub fn uncompressed() -> Self {
+        Self {
+            disable_compression: true,
+            chunker: None,
+        }
+    }
+
     pub fn chunker_algorithm(&self) -> ChunkerAlgorithm {
         self.chunker.clone().unwrap_or(ChunkerAlgorithm::Casync {
             avg_block_size_kib: 64,

@@ -11,6 +11,7 @@
   selected artifacts and their dependencies.
 - Configure predefined-pipeline bundles in `[systems.<name>.bundle]`. Bundles
   are enabled by default for supported targets and disabled for unknown targets.
+  `bake system --disable-compression` overrides compression for one build.
 - Add `hash` outputs to `core/bundle-rugix` and `core/sign-bundle-rugix`.
   Standard bundles publish their hash as `system.rugixb-hash`.
 - Deprecate `bake image` and `bake bundle`; both commands remain available.

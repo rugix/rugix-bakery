@@ -180,6 +180,26 @@ def test_standard_bundle_uses_graph_payloads(env_project: BakeryBuilder) -> None
     ).read_text()
 
 
+def test_system_compression_override_matches_configuration(
+    env_project: BakeryBuilder,
+) -> None:
+    """`bake system --disable-compression` builds the bundle that `compression = false` builds."""
+    project = env_project.project_dir
+    prepare(project)
+    output = project / "build/device"
+    env_project.run(["bake", "system", "device", *RELEASE])
+    compressed = digest(output / "system.rugixb")
+    env_project.run(["bake", "system", "device", "--disable-compression", *RELEASE])
+    uncompressed = digest(output / "system.rugixb")
+    assert uncompressed != compressed
+    config = project / "rugix-bakery.toml"
+    config.write_text(
+        config.read_text() + "\n[systems.device.bundle]\ncompression = false\n"
+    )
+    env_project.run(["bake", "system", "device", *RELEASE])
+    assert digest(output / "system.rugixb") == uncompressed
+
+
 def test_default_source_date_survives_noop_builds(
     env_project: BakeryBuilder, capfd: pytest.CaptureFixture[str]
 ) -> None:
