@@ -3080,6 +3080,8 @@ pub mod foreign {
     )]
     #[doc = "Number of bytes.\n"]
     pub type NumBytes = ::sidex::serde::Serde<::byte_calc::NumBytes>;
+    #[doc = "Bundle payload chunking algorithm, as defined by rugix-bundle.\n"]
+    pub type ChunkerAlgorithm = rugix_bundle::manifest::ChunkerAlgorithm;
 }
 pub mod images {
     #![doc = "Image configuration.\n"]
@@ -9153,8 +9155,16 @@ pub mod systems {
         pub target: ::std::option::Option<Target>,
         #[doc = "System image configuration.\n"]
         pub image: ::std::option::Option<SystemImageConfig>,
-        #[doc = "Repository-defined image assembly, receiving the existing layer build.\n"]
-        pub build: ::std::option::Option<super::rules::RuleInvocation>,
+        #[doc = "System graph rules.\n"]
+        pub rules: ::std::option::Option<
+            ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+        >,
+        #[doc = "Published file names and artifact sources.\n"]
+        pub outputs: ::std::option::Option<
+            ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+        >,
+        #[doc = "Predefined pipeline bundle encoding.\n"]
+        pub bundle: ::std::option::Option<SystemBundleConfig>,
         #[doc = "Additional options.\n"]
         pub options: ::std::option::Option<SystemOptions>,
     }
@@ -9189,12 +9199,26 @@ pub mod systems {
                 .with_docs("System image configuration.\n")
                 .optional(),
                 ::sidex::shape::FieldShape::new(
-                    "build",
-                    ::sidex::shape::shape_of::<super::rules::RuleInvocation>,
+                    "rules",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+                    >,
                 )
-                .with_docs(
-                    "Repository-defined image assembly, receiving the existing layer build.\n",
+                .with_docs("System graph rules.\n")
+                .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "outputs",
+                    ::sidex::shape::shape_of::<
+                        ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+                    >,
                 )
+                .with_docs("Published file names and artifact sources.\n")
+                .optional(),
+                ::sidex::shape::FieldShape::new(
+                    "bundle",
+                    ::sidex::shape::shape_of::<SystemBundleConfig>,
+                )
+                .with_docs("Predefined pipeline bundle encoding.\n")
                 .optional(),
                 ::sidex::shape::FieldShape::new(
                     "options",
@@ -9234,10 +9258,18 @@ pub mod systems {
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 5usize => self
-                    .build
+                    .rules
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 6usize => self
+                    .outputs
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                7usize => self
+                    .bundle
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                8usize => self
                     .options
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
@@ -9257,8 +9289,14 @@ pub mod systems {
             let mut __field_2 = ::std::option::Option::<Architecture>::None;
             let mut __field_3 = ::std::option::Option::<Target>::None;
             let mut __field_4 = ::std::option::Option::<SystemImageConfig>::None;
-            let mut __field_5 = ::std::option::Option::<super::rules::RuleInvocation>::None;
-            let mut __field_6 = ::std::option::Option::<SystemOptions>::None;
+            let mut __field_5 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+            >::None;
+            let mut __field_6 = ::std::option::Option::<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+            >::None;
+            let mut __field_7 = ::std::option::Option::<SystemBundleConfig>::None;
+            let mut __field_8 = ::std::option::Option::<SystemOptions>::None;
             decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
                 match index {
                     0usize => {
@@ -9289,12 +9327,28 @@ pub mod systems {
                         )
                     }
                     5usize => {
-                        __field_5 = ::std::option::Option::Some(
-                            <super::rules::RuleInvocation as ::sidex::Decode>::decode(decoder)?,
-                        )
+                        __field_5 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            super::rules::RuleInvocation,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
                     }
                     6usize => {
-                        __field_6 = ::std::option::Option::Some(
+                        __field_6 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            super::rules::ArtifactSource,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    7usize => {
+                        __field_7 = ::std::option::Option::Some(
+                            <SystemBundleConfig as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    8usize => {
+                        __field_8 = ::std::option::Option::Some(
                             <SystemOptions as ::sidex::Decode>::decode(decoder)?,
                         )
                     }
@@ -9310,8 +9364,10 @@ pub mod systems {
                     .ok_or_else(|| ::sidex::DecodeError::new("missing field `architecture`"))?,
                 target: __field_3,
                 image: __field_4,
-                build: __field_5,
-                options: __field_6,
+                rules: __field_5,
+                outputs: __field_6,
+                bundle: __field_7,
+                options: __field_8,
             })
         }
     }
@@ -9327,7 +9383,9 @@ pub mod systems {
                 mixins: ::std::default::Default::default(),
                 target: ::std::default::Default::default(),
                 image: ::std::default::Default::default(),
-                build: ::std::default::Default::default(),
+                rules: ::std::default::Default::default(),
+                outputs: ::std::default::Default::default(),
+                bundle: ::std::default::Default::default(),
                 options: ::std::default::Default::default(),
             }
         }
@@ -9390,20 +9448,57 @@ pub mod systems {
             self.image = image;
             self
         }
-        #[doc = "Sets the value of `build`."]
-        pub fn set_build(
+        #[doc = "Sets the value of `rules`."]
+        pub fn set_rules(
             &mut self,
-            build: ::std::option::Option<super::rules::RuleInvocation>,
+            rules: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+            >,
         ) -> &mut Self {
-            self.build = build;
+            self.rules = rules;
             self
         }
-        #[doc = "Sets the value of `build`."]
-        pub fn with_build(
+        #[doc = "Sets the value of `rules`."]
+        pub fn with_rules(
             mut self,
-            build: ::std::option::Option<super::rules::RuleInvocation>,
+            rules: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
+            >,
         ) -> Self {
-            self.build = build;
+            self.rules = rules;
+            self
+        }
+        #[doc = "Sets the value of `outputs`."]
+        pub fn set_outputs(
+            &mut self,
+            outputs: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+            >,
+        ) -> &mut Self {
+            self.outputs = outputs;
+            self
+        }
+        #[doc = "Sets the value of `outputs`."]
+        pub fn with_outputs(
+            mut self,
+            outputs: ::std::option::Option<
+                ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
+            >,
+        ) -> Self {
+            self.outputs = outputs;
+            self
+        }
+        #[doc = "Sets the value of `bundle`."]
+        pub fn set_bundle(
+            &mut self,
+            bundle: ::std::option::Option<SystemBundleConfig>,
+        ) -> &mut Self {
+            self.bundle = bundle;
+            self
+        }
+        #[doc = "Sets the value of `bundle`."]
+        pub fn with_bundle(mut self, bundle: ::std::option::Option<SystemBundleConfig>) -> Self {
+            self.bundle = bundle;
             self
         }
         #[doc = "Sets the value of `options`."]
@@ -9924,6 +10019,153 @@ pub mod systems {
     }
     #[automatically_derived]
     impl<'de> ::serde::Deserialize<'de> for SystemImageConfig {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "Bundle encoding for the predefined pipeline.\n"]
+    #[derive(Clone, Debug)]
+    pub struct SystemBundleConfig {
+        #[doc = "Include an update bundle. Defaults to true for supported targets and false otherwise.\n"]
+        pub enabled: ::std::option::Option<bool>,
+        #[doc = "Compress bundle payloads. Defaults to true.\n"]
+        pub compression: ::std::option::Option<bool>,
+        #[doc = "Bundle payload chunking algorithm. Defaults to casync-64.\n"]
+        pub chunker: ::std::option::Option<super::foreign::ChunkerAlgorithm>,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for SystemBundleConfig {
+        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::systems::SystemBundleConfig" , :: sidex :: shape :: ShapeKind :: Record (:: sidex :: shape :: RecordShape :: new (& [:: sidex :: shape :: FieldShape :: new ("enabled" , :: sidex :: shape :: shape_of :: < bool > ,) . with_docs ("Include an update bundle. Defaults to true for supported targets and false otherwise.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("compression" , :: sidex :: shape :: shape_of :: < bool > ,) . with_docs ("Compress bundle payloads. Defaults to true.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("chunker" , :: sidex :: shape :: shape_of :: < super :: foreign :: ChunkerAlgorithm > ,) . with_docs ("Bundle payload chunking algorithm. Defaults to casync-64.\n") . optional ()]))) . with_docs ("Bundle encoding for the predefined pipeline.\n") . with_attrs (& [:: sidex :: shape :: Attr :: List { path : "json" , args : & [:: sidex :: shape :: Attr :: Assign { path : "rename_all" , value : :: sidex :: shape :: AttrValue :: String ("kebab-case") }] }]) ;
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for SystemBundleConfig {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for SystemBundleConfig {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => self
+                    .enabled
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                1usize => self
+                    .compression
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                2usize => self
+                    .chunker
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for SystemBundleConfig {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<bool>::None;
+            let mut __field_1 = ::std::option::Option::<bool>::None;
+            let mut __field_2 = ::std::option::Option::<super::foreign::ChunkerAlgorithm>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 =
+                            ::std::option::Option::Some(<bool as ::sidex::Decode>::decode(decoder)?)
+                    }
+                    1usize => {
+                        __field_1 =
+                            ::std::option::Option::Some(<bool as ::sidex::Decode>::decode(decoder)?)
+                    }
+                    2usize => {
+                        __field_2 = ::std::option::Option::Some(
+                            <super::foreign::ChunkerAlgorithm as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                enabled: __field_0,
+                compression: __field_1,
+                chunker: __field_2,
+            })
+        }
+    }
+    impl SystemBundleConfig {
+        #[doc = "Creates a new [`SystemBundleConfig`]."]
+        pub fn new() -> Self {
+            Self {
+                enabled: ::std::default::Default::default(),
+                compression: ::std::default::Default::default(),
+                chunker: ::std::default::Default::default(),
+            }
+        }
+        #[doc = "Sets the value of `enabled`."]
+        pub fn set_enabled(&mut self, enabled: ::std::option::Option<bool>) -> &mut Self {
+            self.enabled = enabled;
+            self
+        }
+        #[doc = "Sets the value of `enabled`."]
+        pub fn with_enabled(mut self, enabled: ::std::option::Option<bool>) -> Self {
+            self.enabled = enabled;
+            self
+        }
+        #[doc = "Sets the value of `compression`."]
+        pub fn set_compression(&mut self, compression: ::std::option::Option<bool>) -> &mut Self {
+            self.compression = compression;
+            self
+        }
+        #[doc = "Sets the value of `compression`."]
+        pub fn with_compression(mut self, compression: ::std::option::Option<bool>) -> Self {
+            self.compression = compression;
+            self
+        }
+        #[doc = "Sets the value of `chunker`."]
+        pub fn set_chunker(
+            &mut self,
+            chunker: ::std::option::Option<super::foreign::ChunkerAlgorithm>,
+        ) -> &mut Self {
+            self.chunker = chunker;
+            self
+        }
+        #[doc = "Sets the value of `chunker`."]
+        pub fn with_chunker(
+            mut self,
+            chunker: ::std::option::Option<super::foreign::ChunkerAlgorithm>,
+        ) -> Self {
+            self.chunker = chunker;
+            self
+        }
+    }
+    impl ::std::default::Default for SystemBundleConfig {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for SystemBundleConfig {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for SystemBundleConfig {
         fn deserialize<__D: ::serde::Deserializer<'de>>(
             deserializer: __D,
         ) -> ::std::result::Result<Self, __D::Error> {

@@ -79,11 +79,30 @@ path = "settings"
         stream.write(
             "cp /run/rugix/bakery/work/parameters.json /run/rugix/bakery/work/outputs/settings\n"
         )
-    with (project / "rules/image/rule.toml").open("a") as config:
-        config.write(
-            'settings = { select = { source = { input = "rootfs" }, '
-            'path = "etc/settings", kind = "file" } }\n'
+    image_rule = project / "rules/image/rule.toml"
+    outputs = "[execution.outputs]\n"
+    image_text = image_rule.read_text()
+    assert image_text.count(outputs) == 1
+    image_rule.write_text(
+        image_text.replace(
+            outputs,
+            outputs + 'settings = { select = { source = { input = "rootfs" }, '
+            'path = "etc/settings", kind = "file" } }\n',
+            1,
         )
+    )
+    project_config = project / "rugix-bakery.toml"
+    outputs = "[systems.device.outputs]\n"
+    project_text = project_config.read_text()
+    assert project_text.count(outputs) == 1
+    project_config.write_text(
+        project_text.replace(
+            outputs,
+            outputs
+            + 'settings = { rule = { node = "release", output = "settings" } }\n',
+            1,
+        )
+    )
     # A project namesake must not replace the recipe repository's implementation.
     shadow = project / "rules/app"
     shadow.mkdir()

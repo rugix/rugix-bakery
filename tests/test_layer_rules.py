@@ -115,7 +115,13 @@ release = { select = { source = { input = "rootfs" }, path = "etc/rugix/system-b
     with (project / "rugix-bakery.toml").open("a") as config:
         config.write(
             '\n[systems.device]\nlayer = "device"\narchitecture = "amd64"\n'
-            '[systems.device.build]\nuses = "image"\n'
+            '[systems.device.rules.release]\nuses = "image"\n'
+            "[systems.device.outputs]\n"
+            '"system.img" = { rule = { node = "release", output = "image" } }\n'
+            '"application" = { rule = { node = "release", output = "application" } }\n'
+            '"token" = { rule = { node = "release", output = "token" } }\n'
+            '"boot-context" = { rule = { node = "release", output = "boot-context" } }\n'
+            '"release" = { rule = { node = "release", output = "release" } }\n'
         )
 
 

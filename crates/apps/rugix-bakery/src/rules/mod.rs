@@ -66,7 +66,8 @@ pub fn execute(name: &str) -> BakeryResult<()> {
                 "/run/rugix/bakery/work/outputs/update.rugixb",
             ]))?;
             fs::remove_dir_all("/run/rugix/bakery/work/outputs/.bundle")
-                .whatever("unable to remove bundle workspace")
+                .whatever("unable to remove bundle workspace")?;
+            write_bundle_hash()
         }
         "image-layout" => standard::image_layout(),
         "initialize-boot" => standard::initialize_boot(),
@@ -176,4 +177,17 @@ fn copy_tree(source: &Path, destination: &Path) -> BakeryResult<()> {
         .args(["--archive", "--reflink=auto", "--"])
         .arg(source)
         .arg(destination))
+}
+
+/// Export the encoded bundle identity as an explicit rule output.
+pub fn write_bundle_hash() -> BakeryResult<()> {
+    let hash = rugix_bundle::bundle_hash(std::path::Path::new(
+        "/run/rugix/bakery/work/outputs/update.rugixb",
+    ))
+    .whatever("unable to hash bundle")?;
+    fs::write(
+        "/run/rugix/bakery/work/outputs/update.rugixb-hash",
+        hash.to_string(),
+    )
+    .whatever("unable to write bundle hash")
 }

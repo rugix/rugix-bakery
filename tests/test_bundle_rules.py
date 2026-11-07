@@ -25,6 +25,8 @@ def test_bundle_rule_uses_bakery_tooling(env_project: BakeryBuilder) -> None:
     env_project.run(["bake", "rule", "invocation.toml", "build/release"])
     bundle = project / "build/release/bundle"
     first = bundle.read_bytes()
+    first_hash = (project / "build/release/hash").read_text()
+    assert first_hash.strip()
     env_project.run(
         ["bundler", "extract", "build/release/bundle", "0", "extracted.bin"]
     )
@@ -32,3 +34,4 @@ def test_bundle_rule_uses_bakery_tooling(env_project: BakeryBuilder) -> None:
     shutil.rmtree(project / ".rugix/rules")
     env_project.run(["bake", "rule", "invocation.toml", "build/release"])
     assert bundle.read_bytes() == first
+    assert (project / "build/release/hash").read_text() == first_hash

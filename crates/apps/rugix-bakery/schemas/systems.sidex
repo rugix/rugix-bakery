@@ -1,7 +1,7 @@
 //! System configuration.
 
-import foreign::NumBytes
-import rules::RuleInvocation
+import foreign::{NumBytes, ChunkerAlgorithm}
+import rules::{RuleInvocation, ArtifactSource}
 import images::{ImageLayout, SquashfsOptions}
 
 record SystemConfig {
@@ -15,8 +15,12 @@ record SystemConfig {
     target?: Target,
     /// System image configuration.
     image?: SystemImageConfig,
-    /// Repository-defined image assembly, receiving the existing layer build.
-    build?: RuleInvocation,
+    /// System graph rules.
+    rules?: [string: RuleInvocation],
+    /// Published file names and artifact sources.
+    outputs?: [string: ArtifactSource],
+    /// Predefined pipeline bundle encoding.
+    bundle?: SystemBundleConfig,
     /// Additional options.
     options?: SystemOptions,
 }
@@ -64,4 +68,15 @@ record SystemImageConfig {
      size?: NumBytes,
      /// Layout of the image.
      layout?: ImageLayout,
+}
+
+/// Bundle encoding for the predefined pipeline.
+#[json(rename_all = "kebab-case")]
+record SystemBundleConfig {
+    /// Include an update bundle. Defaults to true for supported targets and false otherwise.
+    enabled?: bool,
+    /// Compress bundle payloads. Defaults to true.
+    compression?: bool,
+    /// Bundle payload chunking algorithm. Defaults to casync-64.
+    chunker?: ChunkerAlgorithm,
 }

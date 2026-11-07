@@ -19,6 +19,7 @@ mod execute;
 mod graph;
 mod layers;
 mod planner;
+mod reachable;
 mod release;
 mod results;
 mod runtime;
@@ -80,6 +81,7 @@ pub fn publish(
         bail!("build output must not contain the project or its source artifacts");
     }
     for (name, source) in artifacts {
+        validate_publication_name(name)?;
         let filename = name.as_str();
         run!([
             "cp",
@@ -123,6 +125,14 @@ pub fn copy_file(source: &Path, destination: &Path) -> BakeryResult<()> {
     Ok(())
 }
 
+/// Published names stay within the output directory.
+pub fn validate_publication_name(name: &str) -> BakeryResult<()> {
+    if name.is_empty() || name == "." || name == ".." || name.contains('/') || name.contains('\\') {
+        bail!("invalid published artifact name {name:?}: expected a flat file name");
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -160,9 +170,16 @@ mod tests {
         let output = project.join("build");
         publish(&artifacts, &output, &project).unwrap();
         assert_eq!(fs::read(output.join("image")).unwrap(), b"image contents");
-        assert_eq!(
-            fs::read(output.join("system.img")).unwrap(),
-            b"image contents"
-        );
+        publish(
+            &BTreeMap::from([("only".into(), source.clone())]),
+            &output,
+            &project,
+        )
+        .unwrap();
+        assert!(!output.join("image").exists());
+        assert_eq!(fs::read(output.join("only")).unwrap(), b"image contents");
+        let invalid = BTreeMap::from([("../escape".into(), source.clone())]);
+        assert!(publish(&invalid, &output, &project).is_err());
+        assert!(output.join("only").exists());
     }
 }

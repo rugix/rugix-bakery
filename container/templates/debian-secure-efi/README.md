@@ -61,7 +61,7 @@ so the script refuses to overwrite them.
 Now build the image:
 
 ```sh
-./run-bakery bake image efi --release-version v1
+./run-bakery bake system efi --release-version v1
 ```
 
 The two files you need are in `build/efi/`:
@@ -146,7 +146,7 @@ For a new release, change your project and build it again with a new version,
 using the same `keys/` directory:
 
 ```sh
-./run-bakery bake image efi --release-version v2
+./run-bakery bake system efi --release-version v2
 ```
 
 Use the resulting `build/efi/system.rugixb` with

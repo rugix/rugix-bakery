@@ -4,8 +4,17 @@
 
 - Introduce repository-defined build rules with artifact inputs and outputs,
   parameters, sensitive inputs, tooling environments, and reusable compositions.
-- Run existing layer, recipe, image, SBOM, and bundle builds through one executor
-  while preserving existing system configurations and published artifact names.
+- Add system `rules` and `outputs` to compose build rules and publish named
+  artifacts. Use the predefined pipeline's outputs in system rules through the
+  reserved `target` node.
+- Add `bake system` to publish system artifacts. Repeat `--artifact` to build only
+  selected artifacts and their dependencies.
+- Configure predefined-pipeline bundles in `[systems.<name>.bundle]`. Bundles
+  are enabled by default for supported targets and disabled for unknown targets.
+  `bake system --disable-compression` overrides compression for one build.
+- Add `hash` outputs to `core/bundle-rugix` and `core/sign-bundle-rugix`.
+  Standard bundles publish their hash as `system.rugixb-hash`.
+- Deprecate `bake image` and `bake bundle`; both commands remain available.
 - Provide generic filesystem, disk assembly, archive, and bundle rules, with
   reproducible outputs and automatic filesystem sizing.
 - Track declared artifact contents and registered project dependencies when

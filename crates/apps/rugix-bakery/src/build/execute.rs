@@ -117,12 +117,20 @@ impl Executor {
         project_mounts: &[BindMount],
     ) -> BakeryResult<BTreeMap<Str, PathBuf>> {
         let mut results = Vec::new();
-        for task in &plan.tasks {
+        let needed = super::reachable::reachable(plan);
+        for (index, task) in plan.tasks.iter().enumerate() {
+            if needed[index].is_empty() {
+                results.push(BTreeMap::new());
+                continue;
+            }
             rugix_tasks::check_canceled();
             let outputs = match task {
                 Task::Graph(task) => {
                     let inputs = self.artifacts.resolve_all(&task.inputs, &results)?;
-                    let expanded = (task.expand)(&inputs)?;
+                    let mut expanded = (task.expand)(&inputs, &needed[index])?;
+                    expanded
+                        .outputs
+                        .retain(|name, _| needed[index].contains(name));
                     self.execute_plan(&expanded, bakery_identity, project_mounts)?
                 }
                 Task::Run(task) => {
@@ -352,5 +360,71 @@ fn mount(source: &Path, target: &str, read_only: bool) -> BindMount {
         source: source.to_owned(),
         target: target.into(),
         read_only,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::build::{Artifact, ArtifactLocation};
+
+    /// Deferred graphs receive only needed ports and prune their own unused tasks.
+    #[test]
+    fn prune_deferred_outputs() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut executor = Executor::new(
+            directory.path(),
+            &directory.path().join("cache"),
+            &directory.path().join("envs"),
+            EnvStorage::Auto,
+            ExecutionContext::resolve(Some(0)).unwrap(),
+        )
+        .unwrap();
+        let unwanted = || {
+            Task::Graph(super::super::graph::GraphTask {
+                inputs: BTreeMap::new(),
+                expand: Box::new(|_, _| panic!("unreachable work executed")),
+            })
+        };
+        let output = Artifact {
+            kind: ArtifactKind::File,
+            source: ArtifactLocation::Output {
+                task: 1,
+                name: "image".into(),
+            },
+        };
+        let plan = Plan {
+            tasks: vec![
+                unwanted(),
+                Task::Graph(super::super::graph::GraphTask {
+                    inputs: BTreeMap::new(),
+                    expand: Box::new(move |_, needed| {
+                        assert_eq!(needed, &std::collections::BTreeSet::from(["image".into()]));
+                        Ok(Plan {
+                            tasks: vec![Task::Graph(super::super::graph::GraphTask {
+                                inputs: BTreeMap::new(),
+                                expand: Box::new(|_, _| panic!("unused expanded task executed")),
+                            })],
+                            outputs: BTreeMap::from([
+                                ("image".into(), Artifact::json(&42).unwrap()),
+                                (
+                                    "bundle".into(),
+                                    Artifact {
+                                        kind: ArtifactKind::File,
+                                        source: ArtifactLocation::Output {
+                                            task: 0,
+                                            name: "bundle".into(),
+                                        },
+                                    },
+                                ),
+                            ]),
+                        })
+                    }),
+                }),
+            ],
+            outputs: BTreeMap::from([("system.img".into(), output)]),
+        };
+        let outputs = executor.execute_plan(&plan, None, &[]).unwrap();
+        assert_eq!(fs::read(&outputs["system.img"]).unwrap(), b"42");
     }
 }

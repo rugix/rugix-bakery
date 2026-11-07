@@ -8,6 +8,7 @@ import struct
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import pytest
 from rugix_testkit import (
@@ -107,6 +108,29 @@ def secure_boot_firmware(
     return code, variables
 
 
+def test_efi_verified_inventory_selection(
+    bakery: BakeryBuilder, verified_keys: Path
+) -> None:
+    """A verified system can publish its independent SBOM without replacing shared artifacts."""
+    with TemporaryDirectory(dir=bakery.project_dir / ".rugix-testkit") as directory:
+        output = Path(directory) / "inventory"
+        bakery.run(
+            [
+                "bake",
+                "system",
+                SYSTEM,
+                "--artifact",
+                "sbom.spdx.json",
+                "--output",
+                str(output.relative_to(bakery.project_dir)),
+            ]
+        )
+        assert {path.name for path in output.iterdir()} == {
+            "sbom.spdx.json",
+            "build-context.json",
+        }
+
+
 def test_efi_verified_boot_and_update(
     bakery: BakeryBuilder,
     start_vm: Callable[[VMConfig], VMHandle],
@@ -123,7 +147,7 @@ def test_efi_verified_boot_and_update(
     assert rugix.assert_boot(default="a", active="a").boot_flow == "systemd-boot"
     _assert_verified(vm, root_hash, partition=2)
 
-    url = bundle_url(output / "system.rugixb")
+    url = bundle_url(bakery.bake_bundle(SYSTEM))
     _install(vm, rugix, url, verified_keys)
     rugix.assert_boot(default="a", active="b")
     _assert_verified(vm, root_hash, partition=3)

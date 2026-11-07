@@ -90,6 +90,6 @@ Custom system configurations can use `@SYSTEM_A_PARTITION@`,
 `@SYSTEM_B_PARTITION@`, and `@DATA_PARTITION@` placeholders for these
 partition numbers. Custom bootstrap plans can use `@SECONDARY_CONFIG@` to
 insert the secondary partition entry after `config` and before `system-a`,
-as shown in the [bundled template](files/bootstrap.toml.in). It expands to a named partition with
+as shown in the [bundled template](https://github.com/rugix/rugix-bakery/blob/main/container/repositories/core/recipes/debian-efi-verified-setup/files/bootstrap.toml.in). It expands to a named partition with
 `size = 0`, preserving its factory capacity, or to empty text when disabled.
 Custom configurations without these placeholders are used as supplied.

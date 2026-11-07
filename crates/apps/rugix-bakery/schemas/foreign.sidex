@@ -4,3 +4,8 @@
 #[rust(type = "::sidex::serde::Serde<::byte_calc::NumBytes>")]
 #[json(type = "string | number")]
 opaque NumBytes
+
+/// Bundle payload chunking algorithm, as defined by rugix-bundle.
+#[rust(type = "rugix_bundle::manifest::ChunkerAlgorithm")]
+#[json(type = "string")]
+opaque ChunkerAlgorithm

@@ -26,7 +26,7 @@ pub enum Command {
     /// Internal implementation entry points.
     #[clap(subcommand, hide = true)]
     Internal(InternalCommand),
-    /// Build an image, layer, or update bundle.
+    /// Build system artifacts, layers, or rules.
     #[clap(subcommand)]
     Bake(BakeCommand),
     /// Inspect, build, and enter tooling environments.
@@ -186,7 +186,28 @@ pub enum BakeCommand {
         /// Directory in which to publish named outputs.
         output: PathBuf,
     },
-    /// Bake a system
+    /// Bake and publish a system's artifacts.
+    System {
+        system: String,
+        /// Published artifact to build (repeatable; default: all).
+        #[clap(long)]
+        artifact: Vec<String>,
+        /// Output directory (default: build/<system>).
+        #[clap(long)]
+        output: Option<PathBuf>,
+        /// Disable compression of the predefined pipeline's bundle.
+        #[clap(long)]
+        disable_compression: bool,
+        #[clap(flatten)]
+        release: ReleaseInfoArgs,
+        #[clap(long)]
+        source_date: Option<jiff::Timestamp>,
+        #[clap(flatten)]
+        params: ParamFileArgs,
+        #[clap(flatten)]
+        mixins: MixinArgs,
+    },
+    /// Bake an image (deprecated; use bake system).
     Image {
         /// The name of the system to bake.
         system: String,
@@ -213,7 +234,7 @@ pub enum BakeCommand {
         #[clap(flatten)]
         params: ParamFileArgs,
     },
-    /// Bake a bundle.
+    /// Bake a bundle (deprecated; use bake system).
     Bundle {
         /// Source timestamp in RFC 3339 format; overrides SOURCE_DATE_EPOCH (default: 0).
         #[clap(long)]

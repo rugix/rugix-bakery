@@ -17,7 +17,7 @@ use url::Url;
 use xscript::{run, Run};
 
 use crate::config::recipes::ParameterValue;
-use crate::config::systems::{Architecture, SystemConfig};
+use crate::config::systems::{Architecture, SystemConfig, Target};
 use crate::project::library::{Library, MixinIdx};
 use crate::project::ProjectRef;
 use crate::utils::caching::{download, Hasher};
@@ -75,20 +75,45 @@ pub fn bake_system(
     param_overrides: &ParameterOverrides,
     mixin_selection: &MixinSelection,
     bundle_options: Option<&BundleOpts>,
+    selection: &ArtifactSelection,
 ) -> BakeryResult<()> {
     let context = ExecutionContext::resolve(source_date_epoch)?;
     let system_config = project
         .config()
         .get_system_config(system)
-        .ok_or_else(|| whatever!("unable to find image {system}"))?;
-    if system_config.build.is_some()
-        && (system_config.target.is_some()
-            || system_config.image.is_some()
-            || system_config.options.is_some())
-    {
-        bail!("repository-defined builds cannot be combined with target, image, or options; configure the assembly rule instead");
+        .ok_or_else(|| whatever!("unable to find system {system}"))?;
+    let standard = system_config.target.is_some() || system_config.image.is_some();
+    if !standard && (system_config.options.is_some() || system_config.bundle.is_some()) {
+        bail!("options and bundle require target or image");
     }
-    info!("baking image `{system}`");
+    if !standard
+        && bundle_options.is_some_and(|opts| opts.disable_compression || opts.chunker.is_some())
+    {
+        bail!("--disable-compression and --chunker require a system with target or image; configure bundle encoding in the system's rules instead");
+    }
+    let configured = system_config.bundle.as_ref();
+    let mut resolved = BundleOpts {
+        disable_compression: configured.and_then(|b| b.compression) == Some(false),
+        chunker: configured.and_then(|bundle| bundle.chunker.clone()),
+    };
+    if let Some(overrides) = bundle_options {
+        resolved.disable_compression |= overrides.disable_compression;
+        if overrides.chunker.is_some() {
+            resolved.chunker = overrides.chunker.clone();
+        }
+    }
+    let supports_bundle = matches!(
+        system_config.target,
+        Some(Target::GenericGrubEfi | Target::RpiTryboot | Target::RpiUboot | Target::Bsp)
+    );
+    let bundle_enabled = configured
+        .and_then(|bundle| bundle.enabled)
+        .unwrap_or(supports_bundle);
+    if bundle_enabled && !supports_bundle {
+        bail!("bundle.enabled = true requires a target that supports bundles (generic-grub-efi, rpi-tryboot, rpi-uboot, or bsp)");
+    }
+    let bundle_options = bundle_enabled.then_some(&resolved);
+    info!("baking system `{system}`");
     let layer_bakery = LayerBakery::new(project, system_config.architecture, param_overrides);
     let mut planner = Planner::new(project.repositories()?)?.with_layers(project, param_overrides);
     let baked_layer =
@@ -103,6 +128,7 @@ pub fn bake_system(
         system,
         output,
         context,
+        selection,
     )
 }
 
@@ -373,6 +399,14 @@ pub struct BundleOpts {
 }
 
 impl BundleOpts {
+    /// Override only the compression of the configured bundle.
+    pub fn uncompressed() -> Self {
+        Self {
+            disable_compression: true,
+            chunker: None,
+        }
+    }
+
     pub fn chunker_algorithm(&self) -> ChunkerAlgorithm {
         self.chunker.clone().unwrap_or(ChunkerAlgorithm::Casync {
             avg_block_size_kib: 64,
@@ -381,16 +415,9 @@ impl BundleOpts {
 }
 
 pub fn bake_bundle(
-    project: &ProjectRef,
-    system: &str,
     system_path: &Path,
     output: &Path,
-    opts: &BundleOpts,
 ) -> BakeryResult<si_crypto_hashes::HashDigest> {
-    let system_config = project.config().resolve_system_config(system)?;
-    if system_config.build.is_some() && (opts.disable_compression || opts.chunker.is_some()) {
-        bail!("configure bundle encoding through the repository-defined assembly rule");
-    }
     let source = system_path.join("system.rugixb");
     if !source.is_file() {
         bail!("system assembly did not export a bundle artifact");
@@ -434,7 +461,7 @@ fn bsp_bundle_config(system_path: &Path, opts: &BundleOpts) -> BakeryResult<Bund
     let bundle = bsp.bundle.as_ref();
     let payloads_list = bundle.map(|b| &b.payloads).filter(|p| !p.is_empty());
     let Some(payloads_list) = payloads_list else {
-        bail!("rugix-bsp.toml has no [[bundle.payloads]] entries");
+        bail!("rugix-bsp.toml has no [[bundle.payloads]] entries; set [systems.<name>.bundle] enabled = false to disable bundles");
     };
 
     let compression = if opts.disable_compression {
@@ -474,4 +501,41 @@ fn bsp_bundle_config(system_path: &Path, opts: &BundleOpts) -> BakeryResult<Bund
         manifest::UpdateType::Full,
         payloads,
     ))
+}
+
+/// Published artifacts needed by a command.
+pub enum ArtifactSelection {
+    All,
+    Exclude(Vec<String>),
+    Names(Vec<String>),
+}
+
+impl ArtifactSelection {
+    pub fn select(&self, outputs: &mut BTreeMap<Str, Artifact>) -> BakeryResult<()> {
+        match self {
+            Self::All => {}
+            Self::Exclude(names) => {
+                outputs.retain(|name, _| !names.iter().any(|excluded| excluded == name.as_str()))
+            }
+            Self::Names(names) => {
+                for name in names {
+                    if !outputs.contains_key(name.as_str()) {
+                        bail!(
+                            "unknown system artifact {name:?}; available artifacts: {}",
+                            outputs
+                                .keys()
+                                .map(|name| name.as_str())
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        );
+                    }
+                }
+                outputs.retain(|name, _| {
+                    name == "build-context.json"
+                        || names.iter().any(|requested| requested == name.as_str())
+                });
+            }
+        }
+        Ok(())
+    }
 }

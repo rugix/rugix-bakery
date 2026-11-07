@@ -33,14 +33,19 @@ For example, select the wrapper in a system definition:
 layer = "rpi"
 architecture = "arm64"
 
-[systems.rpi.build]
+[systems.rpi.rules.release]
 uses = "core/image-debian-rpi-verified"
 parameters.cmdline-extra = "console=serial0,115200 console=tty1"
 inputs.boot-public-key = { path = "keys/rpi.pub" }
 inputs.bundle-certificate = { path = "keys/bundle.crt" }
 secrets.boot-key = { path = "keys/rpi.key" }
 secrets.bundle-key = { path = "keys/bundle.key" }
+
+[systems.rpi.outputs]
+"system.img" = { rule = { node = "release", output = "image" } }
+"system.rugixb" = { rule = { node = "release", output = "bundle" } }
+"system.rugixb-hash" = { rule = { node = "release", output = "bundle-hash" } }
 ```
 
 Bakery supplies the built layer's `rootfs`, `boot`, and `config` trees. Run
-`./run-bakery bake image rpi --release-version v1`.
+`./run-bakery bake system rpi --release-version v1`.

@@ -40,7 +40,7 @@ def test_development_keys(tmp_path: Path) -> None:
     assert (keys / "ssh.pub").read_text().startswith(ssh.decode().strip())
     config = tomllib.loads((project / "rugix-bakery.toml").read_text())
     for system in config["systems"].values():
-        build = system["build"]
+        build = system["rules"]["release"]
         for ref in [*build["inputs"].values(), *build["secrets"].values()]:
             assert (project / ref["path"]).is_file()
     for key in [*keys.glob("*.key"), keys / "ssh"]:

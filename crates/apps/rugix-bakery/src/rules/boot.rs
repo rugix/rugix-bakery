@@ -159,5 +159,5 @@ pub fn sign_bundle() -> BakeryResult<()> {
         Path::new("/run/rugix/bakery/work/outputs/update.rugixb"),
     )
     .whatever("unable to append bundle signature")?;
-    Ok(())
+    super::write_bundle_hash()
 }

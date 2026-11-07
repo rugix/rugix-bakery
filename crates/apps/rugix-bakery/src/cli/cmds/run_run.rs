@@ -28,8 +28,12 @@ pub fn run(args: &args::Args, cmd: &args::RunCommand) -> BakeryResult<()> {
         &param_overrides,
         &cmd.mixins.selection(),
         None,
+        &oven::ArtifactSelection::Exclude(vec![
+            "system.rugixb".into(),
+            "system.rugixb-hash".into(),
+        ]),
     )
-    .whatever("error baking image")?;
+    .whatever("error baking system")?;
 
     let image_path = output.join("system.img");
 

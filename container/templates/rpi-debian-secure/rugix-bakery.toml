@@ -2,10 +2,15 @@
 layer = "customized"
 architecture = "arm64"
 
-[systems.pi.build]
+[systems.pi.rules.release]
 uses = "core/image-debian-rpi-verified"
 parameters.cmdline-extra = "console=serial0,115200 console=tty1"
 inputs.boot-public-key = { path = "keys/boot.pub" }
 inputs.bundle-certificate = { path = "keys/bundle.crt" }
 secrets.boot-key = { path = "keys/boot.key" }
 secrets.bundle-key = { path = "keys/bundle.key" }
+
+[systems.pi.outputs]
+"system.img" = { rule = { node = "release", output = "image" } }
+"system.rugixb" = { rule = { node = "release", output = "bundle" } }
+"system.rugixb-hash" = { rule = { node = "release", output = "bundle-hash" } }

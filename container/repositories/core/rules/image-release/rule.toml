@@ -49,3 +49,4 @@ secrets.key = { input = "key" }
 [execution.outputs]
 image = { rule = { node = "disk", output = "image" } }
 bundle = { rule = { node = "signed", output = "bundle" } }
+bundle-hash = { rule = { node = "signed", output = "hash" } }

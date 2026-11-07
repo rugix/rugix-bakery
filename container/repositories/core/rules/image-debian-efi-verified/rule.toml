@@ -83,6 +83,7 @@ parameters.disk-size = { parameter = "disk-size" }
 [execution.outputs]
 image = { rule = { node = "release", output = "image" } }
 bundle = { rule = { node = "release", output = "bundle" } }
+bundle-hash = { rule = { node = "release", output = "bundle-hash" } }
 uki = { rule = { node = "release", output = "uki" } }
 bootloader = { rule = { node = "release", output = "bootloader" } }
 root-hash = { rule = { node = "release", output = "root-hash" } }
