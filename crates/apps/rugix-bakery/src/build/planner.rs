@@ -58,7 +58,8 @@ impl Artifact {
 
     /// Resolve an existing file or directory without traversing its contents.
     pub fn from_path(path: &Path) -> BakeryResult<Self> {
-        let path = fs::canonicalize(path).whatever("unable to resolve input artifact")?;
+        let path = fs::canonicalize(path)
+            .whatever_with(|_| format!("unable to resolve input artifact `{}`", path.display()))?;
         let metadata = fs::metadata(&path).whatever("unable to inspect input artifact")?;
         let kind = if metadata.is_file() {
             ArtifactKind::File
@@ -452,6 +453,7 @@ impl Planner {
             }
             ArtifactSource::Path(path) => {
                 Artifact::from_path(&self.repositories[scope.repository].source.dir.join(path))
+                    .whatever_with(|_| format!("while resolving {{path input {path:?}}}"))
             }
             ArtifactSource::Rule(reference) => {
                 if !scope.completed.contains_key(&reference.node) {
