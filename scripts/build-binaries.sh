@@ -17,9 +17,9 @@ if [ "${#targets[@]}" -eq 0 ]; then
 fi
 for target in "${targets[@]}"; do
     echo ">> building binaries for ${target}"
-    cargo build --locked --release --target "${target}" "${bin_args[@]}"
+    cargo build --locked --release --features xz2/static --target "${target}" "${bin_args[@]}"
 
-    cargo cyclonedx -f json --target "${target}"
+    cargo cyclonedx -f json --features xz2/static --target "${target}"
 
     out_dir="build/binaries/${target}"
     rm -rf "${out_dir}"

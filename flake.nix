@@ -29,6 +29,11 @@
             RUGIX_OVMF_VARS_AMD64 = "${pkgs.OVMF.fd}/FV/OVMF_VARS.fd";
           };
           default = pkgs.mkShell {
+            LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+              pkgs.xz
+              pkgs.openssl
+              pkgs.stdenv.cc.cc.lib
+            ];
             CC_x86_64_unknown_linux_musl = "x86_64-unknown-linux-musl-gcc";
             CXX_x86_64_unknown_linux_musl = "x86_64-unknown-linux-musl-g++";
             AR_x86_64_unknown_linux_musl = "x86_64-unknown-linux-musl-ar";
