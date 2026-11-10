@@ -54,14 +54,11 @@ The tests cover:
 
 ## Running the Tests
 
-Prerequisites:
-
-- A container runtime (Podman or Docker).
-- `qemu-system-x86_64` with OVMF firmware, including a Secure Boot build. VMs
-  use KVM when `/dev/kvm` is accessible. Set `RUGIX_OVMF_CODE_SECBOOT_AMD64`
-  and `RUGIX_OVMF_VARS_AMD64` if the Secure Boot firmware is not found.
-- mtools for inspecting the FAT partitions of Raspberry Pi images.
-- OpenSSL for creating and checking test signing keys.
+The mise test task obtains QEMU, OVMF, and mtools, plus swtpm and OpenSSL
+from the pinned Nix environment. Install Nix with flakes enabled, mise,
+and the repository's Python tools with `mise install`. The host must support
+Podman or Docker for Rugix Bakery's container builds. VMs use KVM when
+`/dev/kvm` is accessible; otherwise, QEMU uses software emulation.
 
 The tests use the Bakery image named by `RUGIX_BAKERY_IMAGE`, which defaults
 to the `dev` image that `mise run build` creates. From the repository root, run

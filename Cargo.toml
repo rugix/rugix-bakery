@@ -6,7 +6,6 @@ members = [
     "repos/rugix/crates/apps/rugix-ctrl",
     "repos/rugix/crates/apps/rugix-bundler",
     "repos/rugix/crates/apps/rugix-util",
-    "xtask",
 ]
 resolver = "2"
 

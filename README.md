@@ -63,6 +63,37 @@ Pi OS without maintaining a full source-based distribution build. If your
 product already uses Yocto, integrate Rugix Ctrl directly with the official
 [open-source Yocto layers](https://github.com/rugix/meta-rugix).
 
+
+## Development Environment
+
+Install Nix with flakes enabled, [mise](https://mise.jdx.dev/), and rustup.
+The Nix development environments support x86-64 and AArch64 Linux.
+Native dependencies and musl cross compilers are pinned in `flake.lock`.
+Rustup reads the dated nightly and cross targets from `rust-toolchain.toml`.
+Initialize the Rugix submodule and install Sidex and the Python tools:
+
+~~~sh
+git submodule update --init --recursive
+mise install
+~~~
+Run tasks directly, for example `mise run codegen` or `mise run build`.
+Mise enters the pinned Nix shell for tasks that need native dependencies and cross compilers.
+An interactive `nix develop` shell remains available for exploration.
+
+Use `mise run doc` for Rust documentation. To build and stage binaries for only
+one target, for example, run `mise run build-binaries aarch64-unknown-linux-musl`.
+
+The same `scripts/build-binaries.sh` script builds binaries and SBOMs locally
+and in CI. It stages each target under `build/binaries/<target>/` and creates
+`build/binaries/<target>.tar`. `mise run build` also builds the local
+`ghcr.io/rugix/rugix-bakery:dev` image with Podman. Use
+`cd tests && RUGIX_DEV=true ./run-bakery bake image efi`
+to build a test system with that image.
+
+Run `mise run check` for Rust formatting, Clippy, dependency policy, and unit
+tests. The CI Clippy step currently allows failure because of a compiler ICE.
+See the [system test guide](tests/README.md) for image setup and VM tests.
+
 ## Support
 
 This repository is covered by

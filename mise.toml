@@ -1,97 +1,32 @@
-# Toolchain + tasks for local Rugix Bakery development.
-#
-# Mirrors what `cargo xtask build` does (build the rugix-* binaries for both
-# musl targets, then bake the container image), but uses Podman instead of
-# Docker so the dev image works on rootless setups. After running
-# `mise run build`, point run-bakery at it with:
-#
-#     RUGIX_DEV=true ./run-bakery bake image <system>
-#
-# RUGIX_DEV=true makes run-bakery use the `:dev` tag we build here and skip
-# the `docker pull` it normally does for released versions.
-
 [tools]
-"github:silitics/sidex" = { version = "0.4.1" }
-# We pin the same Rust version mise installs in the sibling rugix repo.
-# `targets` extends what `rust-toolchain.toml` lists so we can also build
-# x86_64-unknown-linux-musl (the host arch for the bakery container we
-# bake locally) alongside the aarch64 / armv7 targets the project ships.
-rust = { version = "1.95.0", profile = "default", targets = ["aarch64-unknown-linux-musl", "x86_64-unknown-linux-musl", "arm-unknown-linux-musleabihf"] }
+"github:silitics/sidex" = { version = "0.4.1", exe = "sidex" }
 # For the system tests.
 python = "3.11"
 uv = "latest"
 
-# We can't pull `pkgsCross.musl64.stdenv.cc` and the matching aarch64 cross
-# compiler through the `nix:` mise plugin (it only resolves flat nixhub
-# names, not pkgsCross paths). The build-binaries task brings them in via
-# `nix shell nixpkgs#pkgsCross.…` instead, mirroring what `devenv.nix`
-# declares so the binaries we produce here match a `devenv shell` build.
-
-[env]
-# x86_64-unknown-linux-musl
-CC_x86_64_unknown_linux_musl = "x86_64-unknown-linux-musl-gcc"
-CXX_x86_64_unknown_linux_musl = "x86_64-unknown-linux-musl-g++"
-AR_x86_64_unknown_linux_musl = "x86_64-unknown-linux-musl-ar"
-CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER = "x86_64-unknown-linux-musl-gcc"
-CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_STRIP = "x86_64-unknown-linux-musl-strip"
-# aarch64-unknown-linux-musl
-CC_aarch64_unknown_linux_musl = "aarch64-unknown-linux-musl-gcc"
-CXX_aarch64_unknown_linux_musl = "aarch64-unknown-linux-musl-g++"
-AR_aarch64_unknown_linux_musl = "aarch64-unknown-linux-musl-ar"
-CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER = "aarch64-unknown-linux-musl-gcc"
-CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_STRIP = "aarch64-unknown-linux-musl-strip"
+# Native dependencies and cross compilers come from the pinned Nix shell.
 
 [tasks.codegen]
 description = "Regenerate the Sidex Rust bindings and JSON schemas."
-run = "bash xtask/codegen.sh"
+run = "bash scripts/codegen.sh"
 
 [tasks.build-binaries]
+shell = "nix develop \"{{config_root}}\" --command bash -euo pipefail -c"
 description = "Build rugix-* binaries for aarch64 + x86_64 musl and stage them under build/binaries/"
-run = '''
-set -euo pipefail
-
-export RUGIX_GIT_VERSION="$(git describe --tags --always)"
-
-# Run inside a `nix shell` that brings the musl cross compilers onto PATH.
-# The CC_*/CARGO_TARGET_*_LINKER env vars in [env] above point cargo at
-# them by name, so cargo just finds the right linker once they're on PATH.
-nix shell \
-    nixpkgs#pkgsCross.musl64.stdenv.cc \
-    nixpkgs#pkgsCross.aarch64-multiplatform-musl.stdenv.cc \
-    --command bash <<'NIXSHELL'
-set -euo pipefail
-
-binaries=(rugix-bakery rugix-isolate rugix-bundler rugix-ctrl rugix-util)
-bin_args=()
-for bin in "${binaries[@]}"; do
-    bin_args+=(--bin "${bin}")
-done
-
-for target in aarch64-unknown-linux-musl x86_64-unknown-linux-musl; do
-    echo ">> building binaries for ${target}"
-    cargo build --release --target "${target}" "${bin_args[@]}"
-
-    out_dir="build/binaries/${target}"
-    rm -rf "${out_dir}"
-    mkdir -p "${out_dir}"
-    src_dir="${CARGO_TARGET_DIR:-target}/${target}/release"
-    for bin in "${binaries[@]}"; do
-        cp "${src_dir}/${bin}" "${out_dir}/${bin}"
-    done
-done
-NIXSHELL
-'''
+run = "bash scripts/build-binaries.sh \"$@\""
 
 [tasks.build-image]
+shell = "nix develop \"{{config_root}}\" --command bash -euo pipefail -c"
 description = "Build the rugix-bakery container image (tag :dev) with Podman"
 depends = ["build-binaries"]
 run = "podman build -t ghcr.io/rugix/rugix-bakery:dev -f container/Dockerfile ."
 
 [tasks.build]
 description = "Build rugix-* binaries and the rugix-bakery :dev container image (Podman)"
-depends = ["build-binaries", "build-image"]
+depends = ["build-image"]
 
 [tasks."test:system"]
+shell = "nix develop \"{{config_root}}#system-tests\" --command bash -euo pipefail -c"
 description = "Run the system tests against the :dev image (requires QEMU, OVMF, and mtools)"
 dir = "tests"
 run = 'uv run pytest "$@"'
@@ -104,3 +39,39 @@ uv run --group dev ruff check .
 uv run --group dev ruff format --check .
 uv run --group dev mypy .
 '''
+
+[tasks.doc]
+shell = "nix develop \"{{config_root}}\" --command bash -euo pipefail -c"
+description = "Generate Rust documentation, including private items."
+run = "cargo doc --workspace --document-private-items"
+
+[tasks.check]
+description = "Run formatting, dependency policy, Clippy, and unit tests."
+depends = ["check:fmt", "check:deny", "check:clippy", "test:unit"]
+
+[tasks.fmt]
+description = "Format Rust code."
+run = "cargo fmt"
+
+[tasks."check:fmt"]
+description = "Check Rust formatting."
+run = "cargo fmt --check"
+
+[tasks."check:deny"]
+shell = "nix develop \"{{config_root}}\" --command bash -euo pipefail -c"
+description = "Check dependency policy."
+run = "cargo deny check"
+
+[tasks."check:clippy"]
+shell = "nix develop \"{{config_root}}\" --command bash -euo pipefail -c"
+description = "Run Clippy across the workspace."
+run = "cargo clippy --all-targets --all-features"
+
+[tasks."test:unit"]
+shell = "nix develop \"{{config_root}}\" --command bash -euo pipefail -c"
+description = "Run Rust unit tests."
+run = "cargo test --all-features"
+
+[tasks."test:tooling"]
+description = "Test binary staging and release archive contents."
+run = "python -m unittest discover -s scripts/tests"
