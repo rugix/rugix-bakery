@@ -15,11 +15,13 @@ use reportify::{bail, whatever, ResultExt};
 use crate::config::recipes::ParameterValue;
 use crate::config::rules::{
     ArtifactKind, ArtifactSource, GraphRule, ParameterBinding, RuleDefinition, RuleExecution,
-    RuleInvocation, RunRule,
+    RuleInvocation, RuleReference, RunRule,
 };
 use crate::project::envs::Envs;
 use crate::project::repositories::{ProjectRepositories, RepositoryIdx};
 use crate::BakeryResult;
+
+use super::rule_parameters::{Implementation, RuleParameter};
 
 /// An external artifact or a declared output of an earlier command.
 #[derive(Clone, Debug)]
@@ -147,9 +149,10 @@ impl Planner {
         self.invoke(
             &mut caller,
             &RuleInvocation {
-                uses: name.into(),
+                uses: RuleReference::Rule(name.into()),
                 inputs: None,
                 secrets: None,
+                rules: None,
                 parameters: Some(
                     parameters
                         .into_iter()
@@ -185,91 +188,108 @@ impl Planner {
         caller: &mut Scope,
         invocation: &RuleInvocation,
     ) -> BakeryResult<BTreeMap<Str, Artifact>> {
-        let (repository, name) = crate::project::catalog::resolve(
-            &self.repositories,
-            caller.repository,
-            &invocation.uses,
-        )?;
+        let bindings = self.bind(caller, invocation.into())?;
+        match &invocation.uses {
+            RuleReference::Rule(uses) => self.instantiate(
+                Implementation {
+                    repository: caller.repository,
+                    uses: uses.clone(),
+                    bindings,
+                },
+                Some(caller),
+            ),
+            RuleReference::Parameter(reference) => {
+                self.call_rule_parameter(caller, &reference.rule_parameter, bindings)
+            }
+        }
+    }
+
+    /// Expand a rule with resolved bindings.
+    ///
+    /// An unbound input forwards the input of `caller` with the same name, or uses its
+    /// default if `caller` provides none. Rule parameter implementations have no
+    /// caller, so their unbound inputs use defaults.
+    pub(crate) fn instantiate(
+        &mut self,
+        implementation: Implementation,
+        mut caller: Option<&mut Scope>,
+    ) -> BakeryResult<BTreeMap<Str, Artifact>> {
+        let Implementation {
+            repository,
+            uses,
+            mut bindings,
+        } = implementation;
+        let (repository, name) =
+            crate::project::catalog::resolve(&self.repositories, repository, &uses)?;
         let directory = self.repositories[repository]
             .source
             .dir
             .join("rules")
             .join(name);
         if self.ancestry.contains(&directory) {
-            bail!("recursive rule composition involving {:?}", invocation.uses);
+            bail!("recursive rule composition involving {uses:?}");
         }
         let definition: RuleDefinition = crate::config::load_config(&directory.join("rule.toml"))?;
         let mut scope = Scope::new(repository);
         let declared_inputs = definition.inputs.unwrap_or_default();
-        reject_unknown(invocation.inputs.as_ref(), declared_inputs.keys(), "input")?;
+        reject_unknown(bindings.inputs.keys(), declared_inputs.keys(), "input")?;
         for (name, input) in declared_inputs {
             validate_name(&name)?;
-            let artifact = match invocation
-                .inputs
-                .as_ref()
-                .and_then(|inputs| inputs.get(&name))
-            {
-                Some(source) => self.artifact(caller, source, false)?,
-                None => match &input.default {
-                    Some(default) if !caller.provides_input(&name) => {
-                        self.artifact(&mut Scope::new(repository), default, false)?
-                    }
-                    _ => self.input(caller, &name).message(|| {
-                        format!(
-                            "while binding input {name:?} for rule {:?}",
-                            invocation.uses
-                        )
-                    })?,
-                },
+            let forwards = caller
+                .as_deref()
+                .is_some_and(|caller| input.default.is_none() || caller.provides_input(&name));
+            let artifact = match (
+                bindings.inputs.remove(&name),
+                &input.default,
+                caller.as_deref_mut(),
+            ) {
+                (Some(artifact), _, _) => artifact,
+                (None, _, Some(caller)) if forwards => self
+                    .input(caller, &name)
+                    .message(|| format!("while binding input {name:?} for rule {uses:?}"))?,
+                (None, Some(default), _) => {
+                    self.artifact(&mut Scope::new(repository), default, false)?
+                }
+                (None, None, _) => bail!("missing input {name:?} for rule {uses:?}"),
             };
             if artifact.kind != input.kind {
-                bail!("input {name:?} has an incompatible artifact kind");
+                bail!("input {name:?} of rule {uses:?} has an incompatible artifact kind");
             }
             scope.inputs.insert(name, artifact);
         }
         let declared_parameters = definition.parameters.unwrap_or_default();
         reject_unknown(
-            invocation.parameters.as_ref(),
+            bindings.parameters.keys(),
             declared_parameters.keys(),
             "parameter",
         )?;
         for (name, definition) in declared_parameters {
             validate_name(&name)?;
-            let value = match invocation
+            let value = bindings
                 .parameters
-                .as_ref()
-                .and_then(|parameters| parameters.get(&name))
-            {
-                Some(ParameterBinding::Value(value)) => value.clone(),
-                Some(ParameterBinding::Reference(reference)) => caller
-                    .parameters
-                    .get(&reference.parameter)
-                    .cloned()
-                    .ok_or_else(|| whatever!("unknown parameter {:?}", reference.parameter))?,
-                None => definition.default.ok_or_else(|| {
-                    whatever!("missing parameter {name:?} for rule {:?}", invocation.uses)
-                })?,
-            };
+                .remove(&name)
+                .or(definition.default)
+                .ok_or_else(|| whatever!("missing parameter {name:?} for rule {uses:?}"))?;
             scope.parameters.insert(name, value);
         }
         let declared_secrets = definition.secrets.unwrap_or_default();
-        reject_unknown(
-            invocation.secrets.as_ref(),
-            declared_secrets.iter(),
-            "secret",
-        )?;
+        reject_unknown(bindings.secrets.keys(), declared_secrets.iter(), "secret")?;
         for name in declared_secrets {
             validate_name(&name)?;
-            let source = invocation
+            let secret = bindings
                 .secrets
-                .as_ref()
-                .and_then(|secrets| secrets.get(&name))
-                .ok_or_else(|| {
-                    whatever!("missing secret {name:?} for rule {:?}", invocation.uses)
-                })?;
-            scope
-                .secrets
-                .insert(name, self.artifact(caller, source, true)?);
+                .remove(&name)
+                .ok_or_else(|| whatever!("missing secret {name:?} for rule {uses:?}"))?;
+            scope.secrets.insert(name, secret);
+        }
+        let rule_parameters = definition.rule_parameters.unwrap_or_default();
+        reject_unknown(
+            bindings.rules.keys(),
+            rule_parameters.keys(),
+            "rule parameter",
+        )?;
+        if !rule_parameters.is_empty() && !matches!(definition.execution, RuleExecution::Graph(_)) {
+            bail!("rule {uses:?} declares rule parameters but is not a graph");
         }
         self.ancestry.push(directory.clone());
         let outputs = match definition.execution {
@@ -308,7 +328,7 @@ impl Planner {
                     })
                     .collect();
                 self.plan.tasks.push(Task::Run(RunTask {
-                    name: invocation.uses.clone(),
+                    name: uses,
                     directory,
                     env,
                     run,
@@ -339,6 +359,8 @@ impl Planner {
                 }
                 let sources = graph.outputs.clone();
                 scope.graph = Some(graph);
+                self.select_rule_parameters(&mut scope, rule_parameters, bindings.rules)
+                    .message(|| format!("while selecting rule parameters of {uses:?}"))?;
                 let mut outputs = BTreeMap::new();
                 for (name, source) in sources {
                     outputs.insert(name, self.artifact(&mut scope, &source, false)?);
@@ -509,24 +531,24 @@ pub(crate) struct Scope {
     pub(crate) input_defaults: Map<Str, ArtifactSource>,
     input_visiting: HashSet<Str>,
     pub(crate) parameters: BTreeMap<Str, ParameterValue>,
-    secrets: BTreeMap<Str, Artifact>,
+    pub(crate) secrets: BTreeMap<Str, Artifact>,
+    /// Selected implementations of the rule parameters of this graph.
+    pub(crate) rule_parameters: BTreeMap<Str, RuleParameter>,
     pub(crate) graph: Option<GraphRule>,
     completed: HashMap<Str, BTreeMap<Str, Artifact>>,
     visiting: HashSet<Str>,
 }
 
 /// Reject misspelled bindings instead of silently ignoring configuration.
-fn reject_unknown<'a, T>(
-    supplied: Option<&Map<Str, T>>,
+pub(crate) fn reject_unknown<'a>(
+    supplied: impl Iterator<Item = &'a Str>,
     declared: impl Iterator<Item = &'a Str>,
     kind: &str,
 ) -> BakeryResult<()> {
     let declared: HashSet<_> = declared.collect();
-    if let Some(supplied) = supplied {
-        for name in supplied.keys() {
-            if !declared.contains(name) {
-                bail!("unknown {kind} binding {name:?}");
-            }
+    for name in supplied {
+        if !declared.contains(name) {
+            bail!("unknown {kind} binding {name:?}");
         }
     }
     Ok(())
@@ -578,6 +600,7 @@ impl Scope {
             input_visiting: HashSet::new(),
             parameters: BTreeMap::new(),
             secrets: BTreeMap::new(),
+            rule_parameters: BTreeMap::new(),
             graph: None,
             completed: HashMap::new(),
             visiting: HashSet::new(),
@@ -586,7 +609,7 @@ impl Scope {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use std::collections::{BTreeMap, HashMap};
     use std::fs;
     use std::path::Path;
@@ -600,7 +623,7 @@ mod tests {
 
     use super::{Artifact, ArtifactLocation, Planner};
 
-    fn repositories(root: &Path) -> Arc<ProjectRepositories> {
+    pub(crate) fn repositories(root: &Path) -> Arc<ProjectRepositories> {
         let mut repos = Vec::new();
         for (index, name) in ["project", "vendor", "tooling"].iter().enumerate() {
             let dir = root.join(name);
@@ -637,7 +660,7 @@ mod tests {
         })
     }
 
-    fn write(root: &Path, path: &str, contents: &str) {
+    pub(crate) fn write(root: &Path, path: &str, contents: &str) {
         let path = root.join(path);
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(path, contents).unwrap();

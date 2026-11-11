@@ -15,6 +15,7 @@ use sha2::{Digest, Sha256};
 use crate::BakeryResult;
 
 mod boot;
+mod bundles;
 mod disk;
 mod filesystems;
 mod integrity;
@@ -37,8 +38,12 @@ pub fn execute(name: &str) -> BakeryResult<()> {
         "kernel-debian" => verified::kernel(),
         "uki" => boot::uki(),
         "sign-efi" => boot::sign_efi(),
-        "sign-bundle-rugix" => boot::sign_bundle(),
+        "verify-efi" => boot::verify_efi(),
+        "sign-cms" => bundles::sign_cms(),
+        "prepare-bundle-signature" => bundles::prepare_signature(),
+        "attach-bundle-signature" => bundles::attach_signature(),
         "sign-rpi" => verified::sign_rpi(),
+        "verify-rpi" => verified::verify_rpi(),
         "verified-cmdline" => verified::cmdline(),
         "prepare-efi-esp" => verified::efi_esp(),
         "prepare-rpi-boot" => verified::rpi_boot(),
@@ -106,6 +111,40 @@ fn command(program: &str) -> Command {
 /// Read the source epoch supplied by the build executor.
 fn source_date_epoch() -> BakeryResult<u64> {
     Ok(crate::build::ExecutionContext::resolve(None)?.source_date_epoch)
+}
+
+/// Resolve the `signing-time` parameter of the default signers.
+fn signing_time() -> BakeryResult<u64> {
+    #[derive(serde::Deserialize)]
+    #[serde(rename_all = "kebab-case")]
+    struct Parameters {
+        signing_time: String,
+    }
+    let p: Parameters = parameters()?;
+    let time = if p.signing_time.is_empty() {
+        source_date_epoch()?
+    } else {
+        p.signing_time
+            .parse::<u64>()
+            .whatever("invalid signing-time")?
+    };
+    if time > 2524607999 {
+        bail!("signing-time must be between 0 and 2524607999");
+    }
+    Ok(time)
+}
+
+/// Check that the `key` secret is a valid RSA private key.
+fn check_rsa_key() -> BakeryResult<()> {
+    run(command("openssl")
+        .args([
+            "rsa",
+            "-in",
+            "/run/rugix/bakery/work/secrets/key",
+            "-check",
+            "-noout",
+        ])
+        .stdout(Stdio::null()))
 }
 
 fn epoch_command(program: &str, epoch: u64) -> BakeryResult<Command> {

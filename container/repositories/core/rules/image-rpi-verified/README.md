@@ -49,7 +49,7 @@ compressor such as `zstd` or `xz` for smaller images.
 
 `config-size`, `boot-size`, `boot-image-size`, and `disk-size` are optional
 factory capacity overrides. The signed boot image is loaded into
-RAM and must not exceed 180,000,000 bytes. `core/sign-rpi` enforces this
+RAM and must not exceed 180,000,000 bytes. `core/verify-rpi` enforces this
 conservative limit for the firmware's 180 MB RAM disk budget. The bootstrap
 plan controls deployed system capacities and data allocation. Once
 bootstrapped, future payloads must fit the deployed slots. `signing-time` is
@@ -69,9 +69,34 @@ filesystem must configure corresponding A/B boot groups.
 | `hash-offset` | Byte offset of the appended hash area, as decimal text |
 | `data-size` | SquashFS length in bytes before padding and hashes, as decimal text |
 
-Supply one PEM-encoded RSA certificate as `bundle-certificate`. The bundle
-embeds only this signer certificate, without intermediates. Issue it directly
+Supply one PEM-encoded certificate as `bundle-certificate`; the default
+bundle signer requires RSA. The bundle embeds only this signer certificate, without intermediates. Issue it directly
 from the root that Rugix Ctrl trusts. The signer must not be a CA certificate.
+
+## Signers
+
+Two rule parameters sign the release:
+
+- `rpi-signer` signs the boot image. It defaults to
+  [`core/sign-rpi`](../sign-rpi/README.md), which uses a private key file.
+- `bundle-signer` signs the update bundle's metadata. It defaults to
+  [`core/sign-cms`](../sign-cms/README.md), which uses a private key file.
+
+Bind the private keys of the default signers through `rules`:
+
+```toml
+rules.rpi-signer.secrets.key = { path = "keys/rpi.key" }
+rules.bundle-signer.secrets.key = { path = "keys/bundle.key" }
+```
+
+To keep private keys in an HSM or a KMS, bind your own rules instead. A
+replacement receives the same inputs and parameters as the default, listed
+under Rule Parameters, and may require additional inputs, parameters, and
+secrets, which its binding supplies. Bakery verifies every signature
+independently of the signer: [`core/verify-rpi`](../verify-rpi/README.md)
+checks the boot signature against `boot-public-key`, and
+[`core/attach-bundle-signature`](../attach-bundle-signature/README.md)
+checks the bundle signature against `bundle-certificate`.
 
 ## Customize Boot Settings
 
@@ -110,8 +135,8 @@ inputs.boot = { path = "firmware" }
 inputs.config = { tree = {} }
 inputs.boot-public-key = { path = "keys/rpi.pub" }
 inputs.bundle-certificate = { path = "keys/bundle.crt" }
-secrets.boot-key = { path = "keys/rpi.key" }
-secrets.bundle-key = { path = "keys/bundle.key" }
+rules.rpi-signer.secrets.key = { path = "keys/rpi.key" }
+rules.bundle-signer.secrets.key = { path = "keys/bundle.key" }
 ```
 
 Save the invocation as `build-rule.toml` and run

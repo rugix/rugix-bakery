@@ -22,7 +22,10 @@ requires a unique matching kernel. `kernel-flavor` selects the required
 installed kernel version suffix and defaults to `rpi-v8`. The selected kernel
 and firmware tree must support the target board. Automatic capacity defaults,
 optional size overrides, boot settings, remaining release inputs, signing
-policy, and outputs match the generic Raspberry Pi composition.
+policy, and outputs match the generic Raspberry Pi composition. The wrapper
+forwards its `rpi-signer` and `bundle-signer` rule parameters to it, so you can
+sign with an HSM or a KMS as described in
+[its signer documentation](../image-rpi-verified/README.md#signers).
 
 ## Example
 
@@ -38,8 +41,8 @@ uses = "core/image-debian-rpi-verified"
 parameters.cmdline-extra = "console=serial0,115200 console=tty1"
 inputs.boot-public-key = { path = "keys/rpi.pub" }
 inputs.bundle-certificate = { path = "keys/bundle.crt" }
-secrets.boot-key = { path = "keys/rpi.key" }
-secrets.bundle-key = { path = "keys/bundle.key" }
+rules.rpi-signer.secrets.key = { path = "keys/rpi.key" }
+rules.bundle-signer.secrets.key = { path = "keys/bundle.key" }
 
 [systems.rpi.outputs]
 "system.img" = { rule = { node = "release", output = "image" } }

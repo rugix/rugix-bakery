@@ -214,10 +214,11 @@ migration.
 ## Use Your Own Signing Keys
 
 The generated keys have no passphrases and are intended for development.
-To use your own keys, replace the signing inputs and secrets in
-`rugix-bakery.toml`, and set the trusted update root certificate in
-`layers/customized.toml`. Both certificates in `rugix-bakery.toml` must be
-PEM-encoded RSA certificates. The update signer certificate must be issued
+To use your own keys, replace the certificate inputs and the signer key
+bindings in `rugix-bakery.toml`, and set the trusted update root certificate in
+`layers/customized.toml`. The default signers require both certificates in
+`rugix-bakery.toml` to be PEM-encoded RSA certificates. The update signer
+certificate must be issued
 directly by the root certificate the device trusts. It needs `CA:FALSE` and
 digital-signature usage: it signs updates, but cannot issue certificates.
 
@@ -227,5 +228,9 @@ signed with it. To change the update
 root, ship an update, signed with the current keys, that installs the new root
 certificate.
 
+To keep the private keys in a hardware security module (HSM) or a key
+management service (KMS), replace the default signers with your own rules, as
+described in [Signing with an HSM or KMS](https://rugix.org/docs/bakery/next/advanced/hsm-signing).
+
 The [EFI build rule reference](https://github.com/rugix/rugix-bakery/tree/main/container/repositories/core/rules/image-efi-verified)
-covers signing inputs, certificate requirements, and image sizes.
+covers signing inputs, signers, certificate requirements, and image sizes.

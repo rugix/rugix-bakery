@@ -13,6 +13,10 @@ Bind private keys through `secrets` so Bakery handles them as sensitive inputs.
 The device's firmware must trust the signing certificate. Certificate enrollment
 and firmware trust configuration are separate provisioning steps.
 
+This rule is the default `efi-signer` of
+[`core/image-efi-verified`](../image-efi-verified/README.md#signers), which
+accepts other signers, for example HSM-backed ones.
+
 ## Example
 
 For example, sign a prepared UKI:

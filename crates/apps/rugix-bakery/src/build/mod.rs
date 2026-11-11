@@ -22,6 +22,7 @@ mod planner;
 mod reachable;
 mod release;
 mod results;
+mod rule_parameters;
 mod runtime;
 mod secrets;
 

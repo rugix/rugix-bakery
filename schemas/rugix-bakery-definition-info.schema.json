@@ -280,6 +280,22 @@
       ],
       "description": "Filesystem object accepted by an input or produced by an output."
     },
+    "rugix_bakery.rules.ArtifactOutput": {
+      "type": "object",
+      "description": "An artifact output with optional documentation.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/rugix_bakery.rules.ArtifactKind"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "unevaluatedProperties": false
+    },
     "rugix_bakery.rules.ArtifactSelection": {
       "type": "object",
       "description": "A path within a directory artifact. Symlinks must resolve inside that directory.",
@@ -369,6 +385,17 @@
         }
       ]
     },
+    "rugix_bakery.rules.InterfaceParameter": {
+      "type": "object",
+      "description": "A parameter supplied through a rule parameter interface.",
+      "properties": {
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [],
+      "unevaluatedProperties": false
+    },
     "rugix_bakery.rules.ParameterBinding": {
       "description": "A literal parameter value or a reference to an enclosing parameter.",
       "anyOf": [
@@ -410,6 +437,41 @@
         }
       ]
     },
+    "rugix_bakery.rules.RuleBinding": {
+      "type": "object",
+      "description": "An implementation bound to a rule parameter.\n\nBindings resolve in the scope that contains them. The graph supplies the\ninterface inputs and parameters, which a binding must not bind.",
+      "properties": {
+        "uses": {
+          "$ref": "#/$defs/rugix_bakery.rules.RuleReference"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ParameterBinding"
+          }
+        },
+        "secrets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+          }
+        },
+        "rules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.RuleBinding"
+          }
+        }
+      },
+      "required": [],
+      "unevaluatedProperties": false
+    },
     "rugix_bakery.rules.RuleDefinition": {
       "type": "object",
       "description": "A reusable operation or composition.",
@@ -436,6 +498,12 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        },
+        "rule-parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.RuleParameterDef"
           }
         },
         "execution": {
@@ -554,7 +622,7 @@
       "description": "An invocation of a repository-defined rule.",
       "properties": {
         "uses": {
-          "type": "string"
+          "$ref": "#/$defs/rugix_bakery.rules.RuleReference"
         },
         "inputs": {
           "type": "object",
@@ -572,6 +640,12 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+          }
+        },
+        "rules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.RuleBinding"
           }
         }
       },
@@ -616,6 +690,60 @@
         "output"
       ],
       "unevaluatedProperties": false
+    },
+    "rugix_bakery.rules.RuleParameterDef": {
+      "type": "object",
+      "description": "An operation that a graph calls through a fixed interface.\n\nThe graph supplies the interface inputs and parameters at each call site and\nuses the interface outputs. Implementations may require additional inputs,\nparameters, and secrets, which the binding of the implementation supplies.",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ArtifactInput"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.InterfaceParameter"
+          }
+        },
+        "outputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ArtifactOutput"
+          }
+        },
+        "default": {
+          "$ref": "#/$defs/rugix_bakery.rules.RuleInvocation"
+        }
+      },
+      "required": [
+        "outputs",
+        "default"
+      ],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.rules.RuleReference": {
+      "description": "A rule name or the implementation of an enclosing rule parameter.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule-parameter": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "rule-parameter"
+          ]
+        }
+      ]
     },
     "rugix_bakery.systems.Architecture": {
       "enum": [

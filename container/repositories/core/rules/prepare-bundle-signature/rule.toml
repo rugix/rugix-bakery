@@ -1,0 +1,16 @@
+description = "Extract the metadata that a Rugix bundle signature covers."
+category = "Update Bundles"
+
+[inputs.bundle]
+kind = "file"
+description = "Rugix update bundle to sign."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "prepare-bundle-signature"]
+uses-source-date-epoch = false
+
+[execution.outputs.metadata]
+description = "Signed metadata containing the bundle header hash."
+kind = "file"
+path = "metadata"
