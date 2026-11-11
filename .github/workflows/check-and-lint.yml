@@ -33,4 +33,7 @@ jobs:
         run: cargo +nightly test --all-features
 
       - name: Format
-        run: cargo +nightly fmt --check
+        # Preserve the release's formatting without pinning the build compiler.
+        run: |
+          rustup toolchain install nightly-2026-08-14 --profile minimal --component rustfmt
+          cargo +nightly-2026-08-14 fmt --check
