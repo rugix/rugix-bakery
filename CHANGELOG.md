@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.9.5
+
+- Fix Debian-based image builds with Rugix Ctrl 1.4 by installing package dependencies.
+
 ## Version 0.9.4
 
 - Update the bundled Rugix Core repository.

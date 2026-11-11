@@ -2,9 +2,9 @@
 
 set -eu
 
-# Install .deb packages if they were downloaded by the run step.
+# Resolve dependencies when installing downloaded .deb packages.
 if ls /tmp/rugix-ctrl*.deb 1>/dev/null 2>&1; then
-    dpkg -i /tmp/rugix-ctrl*.deb
+    apt-get install -y /tmp/rugix-ctrl*.deb
     rm -f /tmp/rugix-ctrl*.deb
 fi
 
