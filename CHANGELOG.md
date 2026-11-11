@@ -3,6 +3,8 @@
 ## Version 0.9.5
 
 - Fix Debian-based image builds with Rugix Ctrl 1.4 by installing package dependencies.
+- Refresh dependencies to resolve security advisories in `crypto-bigint`, `ctutils`,
+  `h2`, `rustls`, `rustls-webpki`, `tokio`, and `webpki-roots`.
 
 ## Version 0.9.4
 
