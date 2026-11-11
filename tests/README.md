@@ -54,11 +54,9 @@ The tests cover:
 
 ## Running the Tests
 
-The mise test task obtains QEMU, OVMF, and mtools, plus swtpm and OpenSSL
-from the pinned Nix environment. Install Nix with flakes enabled, mise,
-and the repository's Python tools with `mise install`. The host must support
-Podman or Docker for Rugix Bakery's container builds. VMs use KVM when
-`/dev/kvm` is accessible; otherwise, QEMU uses software emulation.
+Set up the [development environment](../README.md#development-environment)
+first. The host must support Podman or Docker for container builds. VMs use
+KVM when `/dev/kvm` is accessible; otherwise, QEMU uses software emulation.
 
 The tests use the Bakery image named by `RUGIX_BAKERY_IMAGE`, which defaults
 to the `dev` image that `mise run build` creates. From the repository root, run
@@ -67,6 +65,12 @@ all tests on four parallel workers:
 ```sh
 mise run build
 mise run test:system -n 4
+```
+
+To bake an EFI test image manually with the development image:
+
+```sh
+cd tests && RUGIX_DEV=true ./run-bakery bake image efi
 ```
 
 Tests marked as `extended` only run when `RUGIX_TESTS_EXTENDED=1` is set. They
