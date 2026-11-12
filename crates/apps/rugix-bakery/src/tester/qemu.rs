@@ -11,7 +11,7 @@ use reportify::{bail, whatever, ErrorExt, Report, ResultExt, Whatever};
 
 use russh::client::Handle;
 use russh::keys::key::PrivateKeyWithHashAlg;
-use russh::keys::{load_secret_key, ssh_key, PrivateKey};
+use russh::keys::{load_secret_key, ssh_key, PrivateKey, PublicKeyOrCertificate};
 use russh::ChannelMsg;
 use russh_sftp::client::SftpSession;
 use thiserror::Error;
@@ -430,7 +430,7 @@ impl Whatever for SshError {
 impl russh::client::Handler for SshHandler {
     type Error = SshError;
 
-    async fn check_server_key(&mut self, _: &ssh_key::PublicKey) -> Result<bool, Self::Error> {
+    async fn check_server_key(&mut self, _: &PublicKeyOrCertificate) -> Result<bool, Self::Error> {
         // We do not care about the identity of the server.
         Ok(true)
     }

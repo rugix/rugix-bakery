@@ -32,6 +32,8 @@
   their dependencies are installed. Rugix Ctrl 1.4.0 depends on
   `ca-certificates`.
 - Update `crypto-bigint`, `ctutils`, and `tokio` to resolve security advisories.
+- Update `russh` to 0.65 to resolve RUSTSEC-2026-0492 and RUSTSEC-2026-0495,
+  and replace the yanked `chacha20` 0.10.1 and `wnaf` 0.14.0.
 - Accept `--param-file` in the `test` command, for example, to authorize an SSH
   key for test workflows without a separate layer.
 - Report the exit code of a failing `run` step of a test workflow.
