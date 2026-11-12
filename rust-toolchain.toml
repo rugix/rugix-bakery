@@ -1,2 +1,5 @@
 [toolchain]
-targets = [ "aarch64-unknown-linux-musl", "arm-unknown-linux-musleabihf" ]
+channel = "nightly-2026-08-14"
+profile = "default"
+components = ["rustfmt", "clippy"]
+targets = ["aarch64-unknown-linux-musl", "x86_64-unknown-linux-musl"]

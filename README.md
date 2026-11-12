@@ -63,6 +63,32 @@ Pi OS without maintaining a full source-based distribution build. If your
 product already uses Yocto, integrate Rugix Ctrl directly with the official
 [open-source Yocto layers](https://github.com/rugix/meta-rugix).
 
+## Development Environment
+
+Install Nix with flakes enabled, [mise](https://mise.jdx.dev/), and rustup.
+Development builds support x86-64 and AArch64 Linux:
+
+```sh
+git submodule update --init --recursive
+mise install
+mise run build
+```
+
+`mise run build` creates the local `ghcr.io/rugix/rugix-bakery:dev` image.
+Tasks enter Nix automatically when needed.
+
+Use `mise run check` for Rust checks, `mise run codegen` to regenerate bindings
+and schemas, and `mise run doc` to build Rust documentation. To build binaries
+for one target, for example:
+
+```sh
+mise run build-binaries aarch64-unknown-linux-musl
+```
+
+Binaries and SBOMs are written to `build/binaries/<target>/` and archived as
+`build/binaries/<target>.tar`. See the [system test guide](tests/README.md)
+for image setup and VM tests.
+
 ## Support
 
 This repository is covered by

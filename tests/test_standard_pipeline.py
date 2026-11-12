@@ -201,9 +201,12 @@ def test_system_compression_override_matches_configuration(
 
 
 def test_default_source_date_survives_noop_builds(
-    env_project: BakeryBuilder, capfd: pytest.CaptureFixture[str]
+    env_project: BakeryBuilder,
+    capfd: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """The default source date is zero and unchanged builds reuse cached image artifacts."""
+    monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
     project = env_project.project_dir
     prepare(project)
     env_project.run(["bake", "image", "device"])

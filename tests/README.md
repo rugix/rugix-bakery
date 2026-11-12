@@ -54,14 +54,9 @@ The tests cover:
 
 ## Running the Tests
 
-Prerequisites:
-
-- A container runtime (Podman or Docker).
-- `qemu-system-x86_64` with OVMF firmware, including a Secure Boot build. VMs
-  use KVM when `/dev/kvm` is accessible. Set `RUGIX_OVMF_CODE_SECBOOT_AMD64`
-  and `RUGIX_OVMF_VARS_AMD64` if the Secure Boot firmware is not found.
-- mtools for inspecting the FAT partitions of Raspberry Pi images.
-- OpenSSL for creating and checking test signing keys.
+Set up the [development environment](../README.md#development-environment)
+first. The host must support Podman or Docker for container builds. VMs use
+KVM when `/dev/kvm` is accessible; otherwise, QEMU uses software emulation.
 
 The tests use the Bakery image named by `RUGIX_BAKERY_IMAGE`, which defaults
 to the `dev` image that `mise run build` creates. From the repository root, run
@@ -70,6 +65,12 @@ all tests on four parallel workers:
 ```sh
 mise run build
 mise run test:system -n 4
+```
+
+To bake an EFI test image manually with the development image:
+
+```sh
+cd tests && RUGIX_DEV=true ./run-bakery bake image efi
 ```
 
 Tests marked as `extended` only run when `RUGIX_TESTS_EXTENDED=1` is set. They

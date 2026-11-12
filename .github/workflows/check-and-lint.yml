@@ -25,27 +25,25 @@ jobs:
         if: github.repository_owner != 'rugix'
         run: git submodule sync --recursive && git submodule update --init --recursive
 
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31
+      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        with:
+          install: false
+      - name: Install Rust Toolchain
+        run: rustup show active-toolchain
       - name: Cargo Deny
-        uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
-        with:
-          rust-version: stable
-
-      - name: Install Nightly Toolchain
-        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable (2026-10-16)
-        with:
-          toolchain: nightly-2026-08-14
-          components: clippy, rustfmt
+        run: mise run --skip-tools check:deny
 
       - name: Clippy
         # Clippy is currently generating an ICE.
         continue-on-error: true
-        run: cargo +nightly-2026-08-14 clippy --all-targets --all-features
+        run: mise run --skip-tools check:clippy
 
       - name: Test
-        run: cargo +nightly-2026-08-14 test --all-features
+        run: mise run --skip-tools test:unit
 
       - name: Format
-        run: cargo +nightly-2026-08-14 fmt --check
+        run: mise run --skip-tools check:fmt
 
   check-tests:
     name: Check System Tests
@@ -62,3 +60,5 @@ jobs:
         run: mise install python uv
       - name: Check System Tests
         run: mise run --skip-tools check:tests
+      - name: Test Build Tooling
+        run: mise run --skip-tools test:tooling
