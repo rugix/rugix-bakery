@@ -7014,7 +7014,7 @@ pub mod rules {
         pub description: ::std::option::Option<::sidex::types::Str>,
         #[doc = "Optional group used when presenting a rule catalog.\n"]
         pub category: ::std::option::Option<::sidex::types::Str>,
-        #[doc = "Required artifact inputs.\n"]
+        #[doc = "Artifact inputs. Inputs without a default are required.\n"]
         pub inputs: ::std::option::Option<::sidex::types::Map<::sidex::types::Str, ArtifactInput>>,
         #[doc = "Configurable parameters.\n"]
         pub parameters: ::std::option::Option<
@@ -7027,7 +7027,7 @@ pub mod rules {
     }
     #[automatically_derived]
     impl ::sidex::Shaped for RuleDefinition {
-        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::rules::RuleDefinition" , :: sidex :: shape :: ShapeKind :: Record (:: sidex :: shape :: RecordShape :: new (& [:: sidex :: shape :: FieldShape :: new ("description" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Description for users of this rule.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("category" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Optional group used when presenting a rule catalog.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("inputs" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , ArtifactInput , > > ,) . with_docs ("Required artifact inputs.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("parameters" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , super :: recipes :: ParameterDef , > > ,) . with_docs ("Configurable parameters.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("secrets" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Seq < :: sidex :: types :: Str , > > ,) . with_docs ("Required sensitive input bindings. Secret changes invalidate cached outputs.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("execution" , :: sidex :: shape :: shape_of :: < RuleExecution > ,) . with_docs ("Implementation of the rule.\n")]))) . with_docs ("A reusable operation or composition.\n") . with_attrs (& [:: sidex :: shape :: Attr :: List { path : "json" , args : & [:: sidex :: shape :: Attr :: Assign { path : "rename_all" , value : :: sidex :: shape :: AttrValue :: String ("kebab-case") }] }]) ;
+        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::rules::RuleDefinition" , :: sidex :: shape :: ShapeKind :: Record (:: sidex :: shape :: RecordShape :: new (& [:: sidex :: shape :: FieldShape :: new ("description" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Description for users of this rule.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("category" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Optional group used when presenting a rule catalog.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("inputs" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , ArtifactInput , > > ,) . with_docs ("Artifact inputs. Inputs without a default are required.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("parameters" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , super :: recipes :: ParameterDef , > > ,) . with_docs ("Configurable parameters.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("secrets" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Seq < :: sidex :: types :: Str , > > ,) . with_docs ("Required sensitive input bindings. Secret changes invalidate cached outputs.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("execution" , :: sidex :: shape :: shape_of :: < RuleExecution > ,) . with_docs ("Implementation of the rule.\n")]))) . with_docs ("A reusable operation or composition.\n") . with_attrs (& [:: sidex :: shape :: Attr :: List { path : "json" , args : & [:: sidex :: shape :: Attr :: Assign { path : "rename_all" , value : :: sidex :: shape :: AttrValue :: String ("kebab-case") }] }]) ;
     }
     #[automatically_derived]
     impl ::sidex::Encode for RuleDefinition {
@@ -7271,21 +7271,12 @@ pub mod rules {
         pub kind: ArtifactKind,
         #[doc = ""]
         pub description: ::std::option::Option<::sidex::types::Str>,
+        #[doc = "Binding used when neither the invocation nor its caller supplies the input.\nIt resolves relative to the rule's repository and cannot reference inputs or nodes.\n"]
+        pub default: ::std::option::Option<ArtifactSource>,
     }
     #[automatically_derived]
     impl ::sidex::Shaped for ArtifactInput {
-        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
-            "::rugix_bakery::rules::ArtifactInput",
-            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
-                ::sidex::shape::FieldShape::new("kind", ::sidex::shape::shape_of::<ArtifactKind>),
-                ::sidex::shape::FieldShape::new(
-                    "description",
-                    ::sidex::shape::shape_of::<::sidex::types::Str>,
-                )
-                .optional(),
-            ])),
-        )
-        .with_docs("An artifact input with optional documentation.\n");
+        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::rules::ArtifactInput" , :: sidex :: shape :: ShapeKind :: Record (:: sidex :: shape :: RecordShape :: new (& [:: sidex :: shape :: FieldShape :: new ("kind" , :: sidex :: shape :: shape_of :: < ArtifactKind > ,) , :: sidex :: shape :: FieldShape :: new ("description" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . optional () , :: sidex :: shape :: FieldShape :: new ("default" , :: sidex :: shape :: shape_of :: < ArtifactSource > ,) . with_docs ("Binding used when neither the invocation nor its caller supplies the input.\nIt resolves relative to the rule's repository and cannot reference inputs or nodes.\n") . optional ()]))) . with_docs ("An artifact input with optional documentation.\n") ;
     }
     #[automatically_derived]
     impl ::sidex::Encode for ArtifactInput {
@@ -7306,6 +7297,10 @@ pub mod rules {
                     .description
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
+                2usize => self
+                    .default
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
                 _ => ::std::option::Option::None,
             }
         }
@@ -7318,6 +7313,7 @@ pub mod rules {
         ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
             let mut __field_0 = ::std::option::Option::<ArtifactKind>::None;
             let mut __field_1 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_2 = ::std::option::Option::<ArtifactSource>::None;
             decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
                 match index {
                     0usize => {
@@ -7330,6 +7326,11 @@ pub mod rules {
                             <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
                         )
                     }
+                    2usize => {
+                        __field_2 = ::std::option::Option::Some(
+                            <ArtifactSource as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
                     _ => {}
                 }
                 ::std::result::Result::Ok(())
@@ -7337,6 +7338,7 @@ pub mod rules {
             ::std::result::Result::Ok(Self {
                 kind: __field_0.ok_or_else(|| ::sidex::DecodeError::new("missing field `kind`"))?,
                 description: __field_1,
+                default: __field_2,
             })
         }
     }
@@ -7346,6 +7348,7 @@ pub mod rules {
             Self {
                 kind: kind,
                 description: ::std::default::Default::default(),
+                default: ::std::default::Default::default(),
             }
         }
         #[doc = "Sets the value of `kind`."]
@@ -7372,6 +7375,16 @@ pub mod rules {
             description: ::std::option::Option<::sidex::types::Str>,
         ) -> Self {
             self.description = description;
+            self
+        }
+        #[doc = "Sets the value of `default`."]
+        pub fn set_default(&mut self, default: ::std::option::Option<ArtifactSource>) -> &mut Self {
+            self.default = default;
+            self
+        }
+        #[doc = "Sets the value of `default`."]
+        pub fn with_default(mut self, default: ::std::option::Option<ArtifactSource>) -> Self {
+            self.default = default;
             self
         }
     }

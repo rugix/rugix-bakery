@@ -101,6 +101,9 @@
         },
         "description": {
           "type": "string"
+        },
+        "default": {
+          "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
         }
       },
       "required": [

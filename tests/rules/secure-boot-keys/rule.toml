@@ -1,0 +1,13 @@
+description = "Create Secure Boot key updates in which the boot certificate takes the roles of PK, KEK, and db."
+secrets = ["key"]
+
+[inputs.certificate]
+kind = "file"
+
+[execution]
+type = "run"
+command = ["/bin/sh", "/run/rugix/bakery/work/rule/run.sh"]
+
+[execution.outputs.keys]
+kind = "directory"
+path = "keys"

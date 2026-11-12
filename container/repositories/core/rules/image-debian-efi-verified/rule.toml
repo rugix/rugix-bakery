@@ -14,6 +14,11 @@ description = "PEM-encoded RSA X.509 certificate for signing EFI boot artifacts.
 kind = "file"
 description = "Single PEM-encoded RSA X.509 end-entity signer certificate issued directly by the trusted root. No intermediates."
 
+[inputs.secure-boot-keys]
+kind = "directory"
+description = "Authenticated variables PK.auth, KEK.auth, and db.auth that systemd-boot enrolls in Setup Mode. Empty by default, disabling enrollment."
+default = { tree = {} }
+
 [parameters.architecture]
 description = "Target architecture: amd64 or arm64. Must match the system architecture."
 

@@ -86,7 +86,10 @@ The enrollment procedure depends on your firmware. Some setup menus can enroll
 a certificate file directly. Others accept changes only in Setup Mode, a state
 in which the firmware lets you change its key databases without authorization.
 Outside Setup Mode, firmware can require a signed update authorized by an
-existing key.
+existing key. For firmware in Setup Mode, the image can also enroll the keys
+itself on first boot. Supply signed key updates to the release rule as
+described in
+[Enroll Secure Boot Keys](https://github.com/rugix/rugix-bakery/tree/main/container/repositories/core/rules/image-efi-verified#enroll-secure-boot-keys).
 
 Every certificate in `db` can authorize boot software. Keep existing entries
 that your device needs, for example for option ROMs, the firmware on expansion

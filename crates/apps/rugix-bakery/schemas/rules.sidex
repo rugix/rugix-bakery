@@ -10,7 +10,7 @@ record RuleDefinition {
     description?: string,
     /// Optional group used when presenting a rule catalog.
     category?: string,
-    /// Required artifact inputs.
+    /// Artifact inputs. Inputs without a default are required.
     inputs?: [string: ArtifactInput],
     /// Configurable parameters.
     parameters?: [string: ParameterDef],
@@ -24,6 +24,9 @@ record RuleDefinition {
 record ArtifactInput {
     kind: ArtifactKind,
     description?: string,
+    /// Binding used when neither the invocation nor its caller supplies the input.
+    /// It resolves relative to the rule's repository and cannot reference inputs or nodes.
+    default?: ArtifactSource,
 }
 
 /// An invocation of a repository-defined rule.

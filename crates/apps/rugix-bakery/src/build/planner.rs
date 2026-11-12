@@ -210,12 +210,17 @@ impl Planner {
                 .and_then(|inputs| inputs.get(&name))
             {
                 Some(source) => self.artifact(caller, source, false)?,
-                None => self.input(caller, &name).message(|| {
-                    format!(
-                        "while binding input {name:?} for rule {:?}",
-                        invocation.uses
-                    )
-                })?,
+                None => match &input.default {
+                    Some(default) if !caller.provides_input(&name) => {
+                        self.artifact(&mut Scope::new(repository), default, false)?
+                    }
+                    _ => self.input(caller, &name).message(|| {
+                        format!(
+                            "while binding input {name:?} for rule {:?}",
+                            invocation.uses
+                        )
+                    })?,
+                },
             };
             if artifact.kind != input.kind {
                 bail!("input {name:?} has an incompatible artifact kind");
@@ -560,6 +565,11 @@ impl Scope {
         Ok(scope)
     }
 
+    /// Whether an omitted binding of `name` forwards an input of this scope.
+    fn provides_input(&self, name: &Str) -> bool {
+        self.inputs.contains_key(name) || self.input_defaults.contains_key(name)
+    }
+
     pub(crate) fn new(repository: RepositoryIdx) -> Self {
         Self {
             repository,
@@ -588,7 +598,7 @@ mod tests {
     use crate::project::repositories::{ProjectRepositories, Repository, RepositoryIdx, Source};
     use crate::utils::idx_vec::{Idx, IdxVec};
 
-    use super::{Artifact, Planner};
+    use super::{Artifact, ArtifactLocation, Planner};
 
     fn repositories(root: &Path) -> Arc<ProjectRepositories> {
         let mut repos = Vec::new();
@@ -751,6 +761,62 @@ second = { rule = { node = "copy", output = "result" } }
             Some(root.join("tooling/envs/runner").canonicalize().unwrap())
         );
         assert_eq!(task.directory, root.join("tooling/rules/copy"));
+    }
+
+    /// Input defaults resolve in the rule's repository and yield to bound or forwarded
+    /// inputs.
+    #[test]
+    fn input_defaults() {
+        let temporary = tempfile::tempdir().unwrap();
+        let root = temporary.path();
+        let repositories = repositories(root);
+        write(
+            root,
+            "vendor/rules/copy/rule.toml",
+            r#"
+[inputs]
+source = { kind = "file", default = { path = "fallback" } }
+[execution]
+type = "run"
+command = ["true"]
+[execution.outputs.result]
+kind = "file"
+path = "result"
+"#,
+        );
+        write(root, "vendor/fallback", "fallback");
+        write(root, "project/fallback", "project");
+        write(root, "project/forwarded", "forwarded");
+        let source = |invocation: &str, inputs: BTreeMap<_, _>| {
+            let invocation: RuleInvocation = crate::config::parse_config(invocation).unwrap();
+            let plan = Planner::new(repositories.clone())
+                .unwrap()
+                .plan(&invocation, inputs, BTreeMap::new())
+                .unwrap();
+            let Task::Run(task) = &plan.tasks[0] else {
+                panic!("expected run task")
+            };
+            let ArtifactLocation::Path(path) = &task.inputs["source"].source else {
+                panic!("expected path artifact")
+            };
+            fs::read_to_string(path).unwrap()
+        };
+        let forwarded = BTreeMap::from([(
+            "source".into(),
+            Artifact::from_path(&root.join("project/forwarded")).unwrap(),
+        )]);
+        assert_eq!(
+            source("uses = \"vendor/copy\"", BTreeMap::new()),
+            "fallback"
+        );
+        assert_eq!(source("uses = \"vendor/copy\"", forwarded), "forwarded");
+        assert_eq!(
+            source(
+                "uses = \"vendor/copy\"\ninputs.source = { path = \"fallback\" }",
+                BTreeMap::new()
+            ),
+            "project"
+        );
     }
 
     /// A cycle between node inputs fails while planning, before environment construction.

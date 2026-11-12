@@ -2,6 +2,8 @@
 //!
 //! Filesystem creation, hashing, signing and disk serialization remain separate rules.
 
+use std::collections::BTreeSet;
+use std::ffi::OsString;
 use std::fs;
 use std::path::Path;
 
@@ -16,6 +18,9 @@ use super::{command, copy_tree, output, parameters, run};
 
 const INPUTS: &str = "/run/rugix/bakery/work/inputs";
 const OUTPUTS: &str = "/run/rugix/bakery/work/outputs";
+
+/// Authenticated variables of one systemd-boot key set.
+const SECURE_BOOT_KEY_FILES: [&str; 3] = ["PK.auth", "KEK.auth", "db.auth"];
 
 /// Select exactly one installed kernel, avoiding a silently changing boot ABI.
 pub fn kernel() -> BakeryResult<()> {
@@ -152,11 +157,14 @@ pub fn efi_esp() -> BakeryResult<()> {
     )
     .whatever("unable to install signed UKI")?;
     fs::write(esp.join(".rugix/bootstrap"), "").whatever("unable to create bootstrap marker")?;
-    fs::write(
-        esp.join("loader/loader.conf"),
-        format!("default rugix-a.efi\ntimeout {}\neditor no\n", p.timeout),
-    )
-    .whatever("unable to write systemd-boot configuration")
+    let mut loader = format!("default rugix-a.efi\ntimeout {}\neditor no\n", p.timeout);
+    if install_secure_boot_keys(&esp)? {
+        // `force` is the only mode in which the bundled systemd-boot 252 enrolls a key set
+        // without user interaction. It still enrolls only in Setup Mode and reboots afterwards.
+        loader.push_str("secure-boot-enroll force\n");
+    }
+    fs::write(esp.join("loader/loader.conf"), loader)
+        .whatever("unable to write systemd-boot configuration")
 }
 
 /// Supply all boot inputs inside the firmware-authenticated RAM disk.
@@ -352,6 +360,35 @@ fn rpi_signing_time(value: &str) -> BakeryResult<u64> {
     } else {
         value.parse::<u64>().whatever("invalid signing-time")
     }
+}
+
+/// Install supplied Secure Boot variables as the key set systemd-boot enrolls
+/// automatically.
+///
+/// Returns whether the `secure-boot-keys` input contains variables.
+fn install_secure_boot_keys(esp: &Path) -> BakeryResult<bool> {
+    let source = Path::new(INPUTS).join("secure-boot-keys");
+    let mut names = BTreeSet::new();
+    for entry in fs::read_dir(&source).whatever("unable to read Secure Boot keys")? {
+        names.insert(
+            entry
+                .whatever("unable to read Secure Boot keys")?
+                .file_name(),
+        );
+    }
+    if names.is_empty() {
+        return Ok(false);
+    }
+    if names != SECURE_BOOT_KEY_FILES.map(OsString::from).into() {
+        bail!("Secure Boot keys must consist of exactly PK.auth, KEK.auth, and db.auth");
+    }
+    let target = esp.join("loader/keys/auto");
+    fs::create_dir_all(&target).whatever("unable to create Secure Boot key directory")?;
+    for name in SECURE_BOOT_KEY_FILES {
+        fs::copy(source.join(name), target.join(name))
+            .whatever("unable to install Secure Boot key")?;
+    }
+    Ok(true)
 }
 
 #[cfg(test)]

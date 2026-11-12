@@ -51,7 +51,9 @@ must configure those slots as corresponding A/B boot groups.
 | `hash-offset` | Byte offset of the appended hash area, as decimal text |
 | `data-size` | SquashFS length in bytes before padding and hashes, as decimal text |
 
-Boot certificate enrollment and firmware trust configuration happen separately.
+The firmware must trust `boot-certificate` and enforce Secure Boot. Configure
+the firmware separately, or let the factory image enroll your keys as described
+in [Enroll Secure Boot Keys](#enroll-secure-boot-keys).
 
 Supply one PEM-encoded RSA certificate as `bundle-certificate`. The bundle
 embeds only this signer certificate, without intermediates. Issue it directly
@@ -72,6 +74,67 @@ parameters.cmdline-extra = "console=ttyS0,115200n8 loglevel=4"
 parameters.panic-timeout = 30
 parameters.boot-timeout = 5
 ```
+
+## Enroll Secure Boot Keys
+
+UEFI firmware without a platform key (PK) runs in Setup Mode. It then starts
+unsigned boot software and accepts changes to its key databases without
+authorization. A factory image can use this state to enroll your keys on its
+first boot. Supply the keys as the `secure-boot-keys` directory:
+
+```toml
+inputs.secure-boot-keys = { path = "keys/secure-boot" }
+```
+
+The directory must contain exactly `PK.auth`, `KEK.auth`, and `db.auth`, signed
+updates of the UEFI variables holding the platform key, the key exchange keys
+(KEK), and the allowed signature database (db). The db must include
+`boot-certificate`, otherwise the firmware rejects the release's boot software
+once it enforces Secure Boot. The files hold only certificates and signatures,
+so the PK and KEK private keys stay outside the build.
+
+The composition places the files in the ESP at `loader/keys/auto/` and enables
+automatic enrollment in systemd-boot's loader configuration. When the firmware
+is in Setup Mode, systemd-boot writes db, KEK, and PK, then restarts the device.
+Writing PK ends Setup Mode, so the firmware verifies signatures from the next
+boot on. The operating system therefore starts only after enrollment. TPM
+policies bound to PCR 7, the register in which the firmware records its Secure
+Boot state, see the final keys from the first operating system boot on.
+Outside Setup Mode, systemd-boot leaves the keys untouched. Updates do not
+remove them from the ESP, so a device enrolls them again whenever its firmware
+returns to Setup Mode, for example after a reset of its keys.
+
+In a virtual machine, systemd-boot enrolls the keys immediately. On other
+machines, it first counts down 15 seconds; pressing a key cancels the
+enrollment. Once Secure Boot is enforced, the firmware starts only software
+that your db authorizes. This includes option ROMs, the firmware of expansion
+cards such as graphics or network cards. Include the certificates of the option
+ROMs a device needs, or the device can fail to start them.
+
+For example, create the files with OpenSSL and sbsigntool from the
+certificates and private keys `keys/PK.crt`, `keys/PK.key`, `keys/KEK.crt`,
+`keys/KEK.key`, and the boot certificate `keys/boot.crt`. PK signs the updates
+of PK and KEK, and KEK signs the update of db:
+
+```sh
+mkdir keys/secure-boot
+owner=$(uuidgen)
+attributes=NON_VOLATILE,RUNTIME_ACCESS,BOOTSERVICE_ACCESS,TIME_BASED_AUTHENTICATED_WRITE_ACCESS
+for name in PK KEK boot; do
+    openssl x509 -in "keys/$name.crt" -outform DER -out "keys/$name.cer"
+    sbsiglist --owner "$owner" --type x509 --output "keys/$name.esl" "keys/$name.cer"
+done
+sbvarsign --attr "$attributes" --key keys/PK.key --cert keys/PK.crt \
+    --output keys/secure-boot/PK.auth PK keys/PK.esl
+sbvarsign --attr "$attributes" --key keys/PK.key --cert keys/PK.crt \
+    --output keys/secure-boot/KEK.auth KEK keys/KEK.esl
+sbvarsign --attr "$attributes" --key keys/KEK.key --cert keys/KEK.crt \
+    --output keys/secure-boot/db.auth db keys/boot.esl
+```
+
+The owner GUID records who added each entry. To keep further certificates in
+db, such as the vendor certificate of an option ROM, concatenate their lists
+with `keys/boot.esl` before signing.
 
 ## Example
 

@@ -46,7 +46,8 @@ The tests cover:
   outputs and extracted payloads.
 - Verified boot: an EFI system with a dm-verity root boots with Secure Boot,
   updates, rolls back, and commits. Boots with a modified UKI, a corrupted root,
-  or a second disk carrying the same root partition fail. A Raspberry Pi release
+  or a second disk carrying the same root partition fail. Firmware in Setup Mode
+  enrolls the image's Secure Boot keys and then boots it verified. A Raspberry Pi release
   signs its boot image and embeds the root hash in the signed command line.
   Rule tests cover reproducible hash trees, signatures, UKIs, and GPT images.
 - Installing released Rugix Ctrl Debian packages (extended).
