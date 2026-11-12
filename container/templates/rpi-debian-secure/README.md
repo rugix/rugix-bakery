@@ -21,9 +21,9 @@ it reads it. This extends the bootloader's trust to the root filesystem.
 > [Set Up Signed Boot on the Device](#set-up-signed-boot-on-the-device)
 > explains these steps.
 >
-> The data partition, available at `/data`, is neither encrypted nor
-> authenticated. Configure encryption and authentication separately to protect
-> stored data against disclosure and tampering.
+> The data partition is neither encrypted nor authenticated. Configure
+> encryption and authentication separately to protect stored data against
+> disclosure and tampering.
 
 ## Build Your First Image
 
@@ -212,10 +212,10 @@ bytes to `layers/customized.toml`. For example, for 8 GiB:
 system_size = 8589934592
 ```
 
-Both copies share the storage with the boot partitions and `/data`, so larger
-copies need larger storage. Rugix Ctrl creates the partitions on first boot,
-and future updates must fit them. Changing the partition layout of a deployed
-device requires a separate migration.
+Both copies share the storage with the boot partitions and the data partition,
+so larger copies need larger storage. Rugix Ctrl creates the partitions on
+first boot, and future updates must fit them. Changing the partition layout of
+a deployed device requires a separate migration.
 
 ## Use Your Own Signing Keys
 

@@ -21,9 +21,9 @@ extends the firmware's trust to the root filesystem.
 > [Set Up Secure Boot in the Firmware](#set-up-secure-boot-in-the-firmware)
 > explains these steps.
 >
-> The data partition, available at `/data`, is neither encrypted nor
-> authenticated. Configure encryption and authentication separately to protect
-> stored data against disclosure and tampering.
+> The data partition is neither encrypted nor authenticated. Configure
+> encryption and authentication separately to protect stored data against
+> disclosure and tampering.
 
 ## Build Your First Image
 
@@ -180,10 +180,10 @@ the existing `[parameters."core/debian-efi-verified-setup"]` table in
 system_size = 8589934592
 ```
 
-Both copies share the drive with the boot partitions and `/data`, so larger
-copies need a larger drive. Rugix Ctrl creates the partitions on first boot,
-and future updates must fit them. Changing the partition layout of a deployed
-device requires a separate migration.
+Both copies share the drive with the boot partitions and the data partition,
+so larger copies need a larger drive. Rugix Ctrl creates the partitions on
+first boot, and future updates must fit them. Changing the partition layout of
+a deployed device requires a separate migration.
 
 ### Build for ARM64
 

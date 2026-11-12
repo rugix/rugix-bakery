@@ -17,6 +17,5 @@ rm -f /etc/ssh/ssh_host_*
 install -D -m 644 "$RECIPE_INPUTS_DIR/bundle-root" /etc/rugix/bundle-root.crt
 install -D -m 644 "$RECIPE_DIR/files/ctrl.toml" /etc/rugix/ctrl.toml
 install -D -m 644 "$RECIPE_DIR/files/state.toml" /etc/rugix/state.toml
-ln -s /run/rugix/mounts/data /data
 
 cat "$RECIPE_DIR/files/initramfs-modules" >> /etc/initramfs-tools/modules
