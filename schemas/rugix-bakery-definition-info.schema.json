@@ -266,9 +266,6 @@
         },
         "description": {
           "type": "string"
-        },
-        "default": {
-          "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
         }
       },
       "required": [
@@ -426,7 +423,7 @@
         "inputs": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/$defs/rugix_bakery.rules.ArtifactInput"
+            "$ref": "#/$defs/rugix_bakery.rules.RuleInput"
           }
         },
         "parameters": {
@@ -532,6 +529,25 @@
           ]
         }
       ]
+    },
+    "rugix_bakery.rules.RuleInput": {
+      "type": "object",
+      "description": "An artifact input of a rule.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/rugix_bakery.rules.ArtifactKind"
+        },
+        "description": {
+          "type": "string"
+        },
+        "default": {
+          "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "unevaluatedProperties": false
     },
     "rugix_bakery.rules.RuleInvocation": {
       "type": "object",
