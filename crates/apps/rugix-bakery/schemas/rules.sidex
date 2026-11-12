@@ -10,14 +10,23 @@ record RuleDefinition {
     description?: string,
     /// Optional group used when presenting a rule catalog.
     category?: string,
-    /// Required artifact inputs.
-    inputs?: [string: ArtifactInput],
+    /// Artifact inputs. Inputs without a default are required.
+    inputs?: [string: RuleInput],
     /// Configurable parameters.
     parameters?: [string: ParameterDef],
     /// Required sensitive input bindings. Secret changes invalidate cached outputs.
     secrets?: [string],
     /// Implementation of the rule.
     execution: RuleExecution,
+}
+
+/// An artifact input of a rule.
+record RuleInput {
+    kind: ArtifactKind,
+    description?: string,
+    /// Binding used when neither the invocation nor its caller supplies the input.
+    /// It resolves relative to the rule's repository and cannot reference inputs or nodes.
+    default?: ArtifactSource,
 }
 
 /// An artifact input with optional documentation.

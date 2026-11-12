@@ -14,8 +14,9 @@ native bootstrap. The wrapper consumes the prepared root without modifying it.
 The required `architecture` must match the system's `architecture` setting. Set
 `kernel-version` when several installed kernels exist; its empty default
 requires a unique installed kernel. Automatic capacity defaults, optional size
-overrides, remaining release inputs, signing policy, and outputs match the
-generic EFI composition.
+overrides, remaining release inputs, signing policy, outputs, and
+[Secure Boot key enrollment](../image-efi-verified/README.md#enroll-secure-boot-keys)
+match the generic EFI composition.
 
 ## Customize Boot Settings
 

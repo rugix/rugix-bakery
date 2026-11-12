@@ -10,6 +10,13 @@ parameter as the menu timeout in seconds (zero by default), and disables the
 command-line editor. Rugix Ctrl later installs B as `EFI/Linux/rugix-b.efi`.
 The filesystem holding this tree needs capacity for both UKIs.
 
+If the optional `secure-boot-keys` directory is not empty, it must contain
+exactly `PK.auth`, `KEK.auth`, and `db.auth`. The rule installs them at
+`loader/keys/auto/` and sets `secure-boot-enroll force`, so systemd-boot
+enrolls them when the firmware is in Setup Mode.
+[`core/image-efi-verified`](../image-efi-verified/README.md#enroll-secure-boot-keys)
+explains the enrollment.
+
 The tree includes `.rugix/bootstrap`, which starts Rugix Ctrl's native
 first-boot expansion using the root filesystem's bootstrap plan. The ESP is
 Rugix Ctrl's configuration partition, mounted at `/run/rugix/mounts/config`.

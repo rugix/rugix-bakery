@@ -23,6 +23,7 @@ from rugix_testkit import (
 from rugix_testkit.locks import exclusive_lock
 
 SYSTEM = "efi-verified"
+ENROLL_SYSTEM = "efi-verified-enroll"
 EFI_GLOBAL = "8be4df61-93ca-11d2-aa0d-00e098032b8c"
 
 
@@ -203,6 +204,29 @@ def test_efi_verified_boot_rejects(
             disk.write(bytes([original ^ 1]))
         config = _config(modified, secure_boot_firmware)
     start_qemu(config).wait_for_serial(message, timeout=180)
+
+
+def test_efi_verified_enrolls_keys_in_setup_mode(
+    bakery: BakeryBuilder,
+    start_vm: Callable[[VMConfig], VMHandle],
+    verified_keys: Path,
+    tmp_path: Path,
+) -> None:
+    """Firmware in Setup Mode enrolls the image's keys and then enforces Secure Boot."""
+    image = bakery.bake_image(ENROLL_SYSTEM)
+    root_hash = (
+        (bakery.project_dir / "build" / ENROLL_SYSTEM / "root-hash").read_text().strip()
+    )
+    code, template = _ovmf_secure_boot()
+    variables = tmp_path / "vars.fd"
+    shutil.copyfile(template, variables)
+    vm = start_vm(_config(image, (code, variables)))
+    _assert_verified(vm, root_hash, partition=2)
+    setup_mode = vm.run(
+        ["od", "-An", "-t", "u1", f"/sys/firmware/efi/efivars/SetupMode-{EFI_GLOBAL}"],
+        hide=True,
+    )
+    assert setup_mode.stdout.split()[-1] == "0"
 
 
 def test_rpi_verified_release(env_project: BakeryBuilder) -> None:

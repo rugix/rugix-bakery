@@ -24,6 +24,11 @@
   SquashFS root images with dm-verity, signed UKIs and systemd-boot, signed
   Raspberry Pi boot images, signed update bundles, and GPT factory images, with
   A/B release compositions and matching Debian setup recipes.
+- Add a `secure-boot-keys` input to the EFI verified-boot rules. systemd-boot
+  enrolls the supplied `PK.auth`, `KEK.auth`, and `db.auth` when the firmware
+  is in Setup Mode.
+- Add `default` to rule input definitions. Inputs with a default become
+  optional.
 - Add `free-percent`, `minimum-size`, and `size-alignment` to `core/image-fat`
   for automatic capacity with headroom, and `compression = "none"` to
   `core/image-squashfs`.

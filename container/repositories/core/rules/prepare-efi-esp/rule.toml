@@ -9,6 +9,11 @@ description = "Signed UKI for the initial A slot."
 kind = "file"
 description = "Signed systemd-boot executable."
 
+[inputs.secure-boot-keys]
+kind = "directory"
+description = "Authenticated variables PK.auth, KEK.auth, and db.auth that systemd-boot enrolls in Setup Mode. Empty by default, disabling enrollment."
+default = { tree = {} }
+
 [parameters.architecture]
 description = "Target architecture: amd64 or arm64."
 

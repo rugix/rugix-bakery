@@ -70,3 +70,26 @@ root-hash = { rule = { node = "release", output = "root-hash" } }
 [systems.efi-verified.rules.sbom]
 uses = "core/sbom"
 inputs.tree = { input = "rootfs" }
+
+[systems.efi-verified-enroll]
+layer = "efi-verified"
+architecture = "amd64"
+
+[systems.efi-verified-enroll.rules.secure-boot-keys]
+uses = "secure-boot-keys"
+inputs.certificate = { path = ".rugix-testkit/verified-keys/boot.crt" }
+secrets.key = { path = ".rugix-testkit/verified-keys/boot.key" }
+
+[systems.efi-verified-enroll.rules.release]
+uses = "core/image-debian-efi-verified"
+parameters.architecture = "amd64"
+parameters.cmdline-extra = "console=ttyS0,115200n8"
+inputs.boot-certificate = { path = ".rugix-testkit/verified-keys/boot.crt" }
+inputs.bundle-certificate = { path = ".rugix-testkit/verified-keys/bundle.crt" }
+inputs.secure-boot-keys = { rule = { node = "secure-boot-keys", output = "keys" } }
+secrets.boot-key = { path = ".rugix-testkit/verified-keys/boot.key" }
+secrets.bundle-key = { path = ".rugix-testkit/verified-keys/bundle.key" }
+
+[systems.efi-verified-enroll.outputs]
+root-hash = { rule = { node = "release", output = "root-hash" } }
+"system.img" = { rule = { node = "release", output = "image" } }
