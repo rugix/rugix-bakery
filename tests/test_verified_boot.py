@@ -207,6 +207,8 @@ def test_signing_reproducibility(env_project: BakeryBuilder, kind: str) -> None:
             "-nodes",
             "-subj",
             "/CN=Rugix test/",
+            "-addext",
+            "basicConstraints=critical,CA:FALSE",
             "-days",
             "1",
             "-keyout",
@@ -228,6 +230,7 @@ def test_signing_reproducibility(env_project: BakeryBuilder, kind: str) -> None:
         invocation = (
             'uses = "core/sign-rpi"\ninputs.image = { path = "data" }\n'
             'inputs.public-key = { path = "public.pem" }\n'
+            'secrets.key = { path = "key.pem" }\n'
         )
         output = "signature"
     else:
@@ -246,9 +249,9 @@ def test_signing_reproducibility(env_project: BakeryBuilder, kind: str) -> None:
             'uses = "core/sign-bundle-rugix"\n'
             'inputs.bundle = { path = "build/unsigned/bundle" }\n'
             'inputs.certificate = { path = "certificate.pem" }\n'
+            'rules.signer.secrets.key = { path = "key.pem" }\n'
         )
         output = "bundle"
-    invocation += 'secrets.key = { path = "key.pem" }\n'
     for name, time in [
         ("first", "1704067200"),
         ("second", "1704067200"),

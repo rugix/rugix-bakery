@@ -1,0 +1,29 @@
+description = "Verify a CMS signature over a Rugix bundle's metadata and attach it."
+category = "Update Bundles"
+
+[inputs.bundle]
+kind = "file"
+description = "Rugix update bundle that the signature authenticates."
+
+[inputs.signature]
+kind = "file"
+description = "DER-encoded CMS SignedData over the bundle metadata, with encapsulated content."
+
+[inputs.certificate]
+kind = "file"
+description = "PEM-encoded X.509 signer certificate that must verify the signature."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "attach-bundle-signature"]
+uses-source-date-epoch = false
+
+[execution.outputs.bundle]
+description = "Authenticated Rugix update bundle."
+kind = "file"
+path = "update.rugixb"
+
+[execution.outputs.hash]
+description = "Bundle hash for update verification."
+kind = "file"
+path = "update.rugixb-hash"

@@ -4,10 +4,12 @@ use std::fs;
 use std::path::Path;
 use std::process::Stdio;
 
+use std::os::unix::fs::PermissionsExt;
+
 use reportify::{bail, ResultExt};
 use serde::Deserialize;
 
-use super::{command, copy_tree, epoch_command, parameters, run};
+use super::{check_rsa_key, command, copy_tree, epoch_command, parameters, run, signing_time};
 use crate::BakeryResult;
 
 pub fn select_efi(name: &str) -> BakeryResult<()> {
@@ -78,38 +80,9 @@ pub fn uki() -> BakeryResult<()> {
     ]))
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "kebab-case")]
-struct Signing {
-    signing_time: String,
-}
-
-fn signing() -> BakeryResult<u64> {
-    let p: Signing = parameters()?;
-    let time = if p.signing_time.is_empty() {
-        super::source_date_epoch()?
-    } else {
-        p.signing_time
-            .parse::<u64>()
-            .whatever("invalid signing-time")?
-    };
-    if time > 2524607999 {
-        bail!("signing-time must be between 0 and 2524607999");
-    }
-    run(command("openssl")
-        .args([
-            "rsa",
-            "-in",
-            "/run/rugix/bakery/work/secrets/key",
-            "-check",
-            "-noout",
-        ])
-        .stdout(Stdio::null()))?;
-    Ok(time)
-}
-
 pub fn sign_efi() -> BakeryResult<()> {
-    let p = signing()?;
+    let p = signing_time()?;
+    check_rsa_key()?;
     run(command("osslsigncode")
         .args([
             "sign",
@@ -135,29 +108,29 @@ pub fn sign_efi() -> BakeryResult<()> {
     ]))
 }
 
-pub fn sign_bundle() -> BakeryResult<()> {
-    let time = signing()?;
-    let bundle = Path::new("/run/rugix/bakery/work/inputs/bundle");
-    let metadata =
-        rugix_bundle::signed_metadata(bundle).whatever("unable to read signed bundle metadata")?;
-    let certificate = fs::read("/run/rugix/bakery/work/inputs/certificate")
-        .whatever("unable to read bundle signer certificate")?;
-    let key = zeroize::Zeroizing::new(
-        fs::read("/run/rugix/bakery/work/secrets/key")
-            .whatever("unable to read bundle signer key")?,
-    );
-    let signer = rugix_pki::CmsSignerBuilder::new(&certificate, &key)
-        .whatever("unable to create bundle signer")?
-        .with_rsa_mode(rugix_pki::RsaSignatureMode::Pkcs1v15)
-        .with_signing_time(std::time::UNIX_EPOCH + std::time::Duration::from_secs(time))
-        .build()
-        .whatever("unable to build bundle signer")?;
-    let signature = signer.sign(&metadata).whatever("unable to sign bundle")?;
-    rugix_bundle::add_bundle_signature(
-        bundle,
-        signature,
-        Path::new("/run/rugix/bakery/work/outputs/update.rugixb"),
-    )
-    .whatever("unable to append bundle signature")?;
-    super::write_bundle_hash()
+/// Verify an EFI signature independently of the signer that produced it.
+///
+/// The signature is moved from the signer's output onto the unsigned image that the
+/// graph built, so the exported image is that image with the returned signature.
+/// Verification fails if the signature covers a different Authenticode digest.
+pub fn verify_efi() -> BakeryResult<()> {
+    let signature = Path::new("/run/rugix/bakery/work/outputs/.signature");
+    let image = Path::new("/run/rugix/bakery/work/outputs/signed.efi");
+    run(command("sbattach")
+        .arg("--detach")
+        .arg(signature)
+        .arg("/run/rugix/bakery/work/inputs/signed"))?;
+    fs::copy("/run/rugix/bakery/work/inputs/image", image)
+        .whatever("unable to copy unsigned EFI image")?;
+    fs::set_permissions(image, fs::Permissions::from_mode(0o644))
+        .whatever("unable to make EFI image writable")?;
+    run(command("sbattach")
+        .arg("--attach")
+        .arg(signature)
+        .arg(image)
+        .stdout(Stdio::null()))?;
+    fs::remove_file(signature).whatever("unable to remove detached signature")?;
+    run(command("sbverify")
+        .args(["--cert", "/run/rugix/bakery/work/inputs/certificate"])
+        .arg(image))
 }

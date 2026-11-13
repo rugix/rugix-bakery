@@ -1,0 +1,24 @@
+description = "Create a CMS signature with an RSA key."
+category = "Signing"
+secrets = ["key"]
+
+[inputs.content]
+kind = "file"
+description = "Content to sign. The signature encapsulates it."
+
+[inputs.certificate]
+kind = "file"
+description = "PEM-encoded RSA X.509 signer certificate."
+
+[parameters.signing-time]
+description = "Signing time as Unix seconds in a string (0..2524607999). Empty uses the build source epoch."
+default = ""
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "sign-cms"]
+
+[execution.outputs.signature]
+description = "DER-encoded CMS SignedData with the encapsulated content and signer certificate."
+kind = "file"
+path = "signature.der"
