@@ -5473,7 +5473,7 @@ pub mod projects {
         pub repositories: ::std::option::Option<
             ::sidex::types::Map<::sidex::types::Str, super::repositories::SourceConfig>,
         >,
-        #[doc = "Patch Git-sourced dependencies: maps the Git URL of any repository\n(root or transitive) to a replacement source. The original `dir` is\npreserved unless the replacement specifies its own.\n"]
+        #[doc = "Patch repository dependencies: maps a repository alias to a full\nreplacement source, used verbatim for every declaration of that alias\n(root or transitive).\n"]
         pub patch: ::std::option::Option<
             ::sidex::types::Map<::sidex::types::Str, super::repositories::SourceConfig>,
         >,
@@ -5484,36 +5484,7 @@ pub mod projects {
     }
     #[automatically_derived]
     impl ::sidex::Shaped for ProjectConfig {
-        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
-            "::rugix_bakery::projects::ProjectConfig",
-            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
-                ::sidex::shape::FieldShape::new(
-                    "repositories",
-                    ::sidex::shape::shape_of::<
-                        ::sidex::types::Map<::sidex::types::Str, super::repositories::SourceConfig>,
-                    >,
-                )
-                .with_docs("Repositories imported into the project.\n")
-                .optional(),
-                ::sidex::shape::FieldShape::new(
-                    "patch",
-                    ::sidex::shape::shape_of::<
-                        ::sidex::types::Map<::sidex::types::Str, super::repositories::SourceConfig>,
-                    >,
-                )
-                .with_docs("Patch Git-sourced dependencies: maps the Git URL of any repository\n(root or transitive) to a replacement source. The original `dir` is\npreserved unless the replacement specifies its own.\n")
-                .optional(),
-                ::sidex::shape::FieldShape::new(
-                    "systems",
-                    ::sidex::shape::shape_of::<
-                        ::sidex::types::Map<::sidex::types::Str, super::systems::SystemConfig>,
-                    >,
-                )
-                .with_docs("System declarations.\n")
-                .optional(),
-            ])),
-        )
-        .with_docs("Project configuration.\n");
+        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::projects::ProjectConfig" , :: sidex :: shape :: ShapeKind :: Record (:: sidex :: shape :: RecordShape :: new (& [:: sidex :: shape :: FieldShape :: new ("repositories" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , super :: repositories :: SourceConfig , > > ,) . with_docs ("Repositories imported into the project.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("patch" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , super :: repositories :: SourceConfig , > > ,) . with_docs ("Patch repository dependencies: maps a repository alias to a full\nreplacement source, used verbatim for every declaration of that alias\n(root or transitive).\n") . optional () , :: sidex :: shape :: FieldShape :: new ("systems" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , super :: systems :: SystemConfig , > > ,) . with_docs ("System declarations.\n") . optional ()]))) . with_docs ("Project configuration.\n") ;
     }
     #[automatically_derived]
     impl ::sidex::Encode for ProjectConfig {

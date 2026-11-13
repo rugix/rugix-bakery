@@ -8,9 +8,9 @@ import systems::SystemConfig
 record ProjectConfig {
     /// Repositories imported into the project.
     repositories?: [string: SourceConfig],
-    /// Patch Git-sourced dependencies: maps the Git URL of any repository
-    /// (root or transitive) to a replacement source. The original `dir` is
-    /// preserved unless the replacement specifies its own.
+    /// Patch repository dependencies: maps a repository alias to a full
+    /// replacement source, used verbatim for every declaration of that alias
+    /// (root or transitive).
     patch?: [string: SourceConfig],
     /// System declarations.
     systems?: [string: SystemConfig],
