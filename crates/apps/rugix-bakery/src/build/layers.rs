@@ -403,13 +403,22 @@ impl LayerTask {
         if let Some(url) = &self.url {
             crate::oven::extract(&self.options.project, url, &target)?;
         } else {
-            if let Err(error) = crate::utils::emulation::prepare(self.architecture) {
-                tracing::debug!(?error, "automatic target emulation is unavailable");
+            let emulation = crate::utils::emulation::prepare(self.architecture);
+            if let Err(error) = &emulation {
+                tracing::warn!(
+                    host_arch = std::env::consts::ARCH,
+                    target_arch = self.architecture.as_str(),
+                    ?error,
+                    "automatic target emulation setup failed; continuing with existing interpreter registrations. \
+                     If target commands fail with 'Exec format error', configure host binfmt_misc with a \
+                     chroot-compatible QEMU interpreter, use a Linux 6.7+ builder with user namespace support, \
+                     or build on the target architecture"
+                );
             }
             let registrations = registrations
                 .strip_prefix(self.options.project.dir())
                 .whatever("layer dependency registrations must be inside the project")?;
-            customize::customize(
+            let result = customize::customize(
                 &self.options.project,
                 self.architecture,
                 &self.name,
@@ -419,7 +428,20 @@ impl LayerTask {
                 &target,
                 registrations,
                 source_date_epoch,
-            )?;
+            );
+            if emulation.is_err() {
+                result.message(|| {
+                    format!(
+                        "automatic emulation setup for {} on {} also failed; \
+                         if a target command reported 'Exec format error', check QEMU binfmt_misc registration \
+                         or build on the target architecture",
+                        self.architecture.as_str(),
+                        std::env::consts::ARCH,
+                    )
+                })?;
+            } else {
+                result?;
+            }
         }
         Ok(())
     }

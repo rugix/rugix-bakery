@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Warn when automatic target emulation setup fails and include emulation guidance
+  in subsequent layer build errors, while preserving the original failure.
+
 - Introduce repository-defined build rules with artifact inputs and outputs,
   parameters, sensitive inputs, tooling environments, and reusable compositions.
 - Add system `rules` and `outputs` to compose build rules and publish named
