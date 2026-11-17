@@ -211,14 +211,7 @@ pub fn rpi_config() -> BakeryResult<()> {
 
 /// Sign with the upstream Raspberry Pi tool, enforcing its RSA-2048 bootloader contract.
 pub fn sign_rpi() -> BakeryResult<()> {
-    // Firmware loads this image into RAM; keep disk headroom outside it.
-    if fs::metadata(Path::new(INPUTS).join("image"))
-        .whatever("unable to inspect Raspberry Pi boot image")?
-        .len()
-        > 180_000_000
-    {
-        bail!("Raspberry Pi boot.img exceeds the 180 MB RAM disk budget");
-    }
+    check_rpi_boot_image_size()?;
     #[derive(Deserialize)]
     #[serde(rename_all = "kebab-case")]
     struct Parameters {
@@ -237,6 +230,22 @@ pub fn sign_rpi() -> BakeryResult<()> {
             "-o",
             "/run/rugix/bakery/work/outputs/boot.sig",
         ]))?;
+    verify_rpi_output()
+}
+
+/// Verify a Raspberry Pi boot signature independently of the signer that produced it.
+pub fn verify_rpi() -> BakeryResult<()> {
+    check_rpi_boot_image_size()?;
+    fs::copy(
+        Path::new(INPUTS).join("signature"),
+        Path::new(OUTPUTS).join("boot.sig"),
+    )
+    .whatever("unable to export signature")?;
+    verify_rpi_output()
+}
+
+/// Verify the exported `boot.sig` against the `image` and `public-key` inputs.
+fn verify_rpi_output() -> BakeryResult<()> {
     run(command("/usr/local/lib/rugix/rpi-eeprom-digest").args([
         "-i",
         "/run/rugix/bakery/work/inputs/image",
@@ -245,6 +254,18 @@ pub fn sign_rpi() -> BakeryResult<()> {
         "-v",
         "/run/rugix/bakery/work/outputs/boot.sig",
     ]))
+}
+
+/// Firmware loads the boot image into RAM; keep disk headroom outside it.
+fn check_rpi_boot_image_size() -> BakeryResult<()> {
+    if fs::metadata(Path::new(INPUTS).join("image"))
+        .whatever("unable to inspect Raspberry Pi boot image")?
+        .len()
+        > 180_000_000
+    {
+        bail!("Raspberry Pi boot.img exceeds the 180 MB RAM disk budget");
+    }
+    Ok(())
 }
 
 /// Build the initial factory layout; Rugix bootstrap creates the spare system and data.

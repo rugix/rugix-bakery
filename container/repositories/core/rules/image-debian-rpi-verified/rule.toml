@@ -1,6 +1,5 @@
 description = "Build a signed Raspberry Pi 4/CM4 or Pi 5 A/B release with a verified root from a prepared Debian root filesystem."
 category = "Verified Boot"
-secrets = ["boot-key", "bundle-key"]
 
 [inputs.rootfs]
 kind = "directory"
@@ -20,7 +19,7 @@ description = "PEM-encoded RSA-2048 public key matching the Raspberry Pi boot si
 
 [inputs.bundle-certificate]
 kind = "file"
-description = "Single PEM-encoded RSA X.509 end-entity signer certificate issued directly by the trusted root. No intermediates."
+description = "Single PEM-encoded X.509 end-entity signer certificate issued directly by the trusted root. No intermediates. The default signer requires RSA."
 
 [parameters.kernel-version]
 description = "Exact installed kernel version. Empty selects the unique matching version."
@@ -71,6 +70,22 @@ default = "none"
 description = "Factory disk capacity in bytes. Zero sizes the disk from its partitions."
 default = 0
 
+[rule-parameters.rpi-signer]
+description = "Sign the Raspberry Pi boot image. Bakery verifies the signature against boot-public-key."
+default = { uses = "core/sign-rpi" }
+inputs.image = { kind = "file", description = "FAT boot.img to authenticate." }
+inputs.public-key = { kind = "file", description = "The boot-public-key input." }
+parameters.signing-time = { description = "Signing time as Unix seconds in a string. Empty means the build source epoch." }
+outputs.signature = { kind = "file", description = "Raspberry Pi RSA-2048 boot.sig." }
+
+[rule-parameters.bundle-signer]
+description = "Create a CMS signature over the bundle's signed metadata. Bakery verifies it against bundle-certificate."
+default = { uses = "core/sign-cms" }
+inputs.content = { kind = "file", description = "Signed bundle metadata." }
+inputs.certificate = { kind = "file", description = "The bundle-certificate input." }
+parameters.signing-time = { description = "Signing time as Unix seconds in a string. Empty means the build source epoch." }
+outputs.signature = { kind = "file", description = "DER-encoded CMS SignedData with the encapsulated content and signer certificate." }
+
 [execution]
 type = "graph"
 
@@ -87,8 +102,8 @@ inputs.kernel-version = { rule = { node = "kernel", output = "version" } }
 uses = "core/image-rpi-verified"
 inputs.kernel = { rule = { node = "kernel", output = "kernel" } }
 inputs.initrd = { rule = { node = "initrd", output = "initrd" } }
-secrets.boot-key = { input = "boot-key" }
-secrets.bundle-key = { input = "bundle-key" }
+rules.rpi-signer = { uses = { rule-parameter = "rpi-signer" } }
+rules.bundle-signer = { uses = { rule-parameter = "bundle-signer" } }
 parameters.cmdline-extra = { parameter = "cmdline-extra" }
 parameters.panic-timeout = { parameter = "panic-timeout" }
 parameters.boot-config = { parameter = "boot-config" }

@@ -1,0 +1,24 @@
+description = "Verify a Raspberry Pi boot signature against a public key."
+category = "Signing"
+
+[inputs.image]
+kind = "file"
+description = "FAT boot.img that the signature authenticates."
+
+[inputs.signature]
+kind = "file"
+description = "Raspberry Pi boot.sig returned by the signer."
+
+[inputs.public-key]
+kind = "file"
+description = "PEM-encoded RSA-2048 public key that must verify the signature."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "verify-rpi"]
+uses-source-date-epoch = false
+
+[execution.outputs.signature]
+kind = "file"
+path = "boot.sig"
+description = "Verified Raspberry Pi RSA-2048 signature."

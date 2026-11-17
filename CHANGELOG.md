@@ -32,6 +32,18 @@
 - Add `free-percent`, `minimum-size`, and `size-alignment` to `core/image-fat`
   for automatic capacity with headroom, and `compression = "none"` to
   `core/image-squashfs`.
+- Add rule parameters: compositions declare replaceable operations with an
+  interface and a default implementation, and callers bind their own rules
+  through `rules` on an invocation. Bakery checks implementations against their
+  interfaces while planning.
+- Make the signers of the verified-boot compositions replaceable rule parameters
+  (`efi-signer`, `rpi-signer`, and `bundle-signer`) for signing with an HSM or a
+  KMS. Bind the keys of the default signers through `rules`, for example
+  `rules.efi-signer.secrets.key`. Bakery verifies every signature independently
+  of the signer with `core/verify-efi`, `core/verify-rpi`, and
+  `core/attach-bundle-signature`, which applies Rugix Ctrl's CMS verification.
+  `core/sign-bundle-rugix` is a composition with a replaceable `signer`, which
+  defaults to `core/sign-cms`.
 
 - Install Rugix Ctrl Debian packages with APT in `core/rugix-ctrl`, so that
   their dependencies are installed. Rugix Ctrl 1.4.0 depends on

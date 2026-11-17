@@ -9,8 +9,8 @@ parameters.cmdline-extra = "console=tty0 console=ttyS0,115200n8"
 parameters.secondary-config = true
 inputs.boot-certificate = { path = "keys/boot.crt" }
 inputs.bundle-certificate = { path = "keys/bundle.crt" }
-secrets.boot-key = { path = "keys/boot.key" }
-secrets.bundle-key = { path = "keys/bundle.key" }
+rules.efi-signer.secrets.key = { path = "keys/boot.key" }
+rules.bundle-signer.secrets.key = { path = "keys/bundle.key" }
 
 [systems.efi.outputs]
 "system.img" = { rule = { node = "release", output = "image" } }

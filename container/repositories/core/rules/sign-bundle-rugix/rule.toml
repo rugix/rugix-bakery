@@ -1,6 +1,5 @@
 description = "Authenticate a Rugix bundle with a configurable signing certificate."
 category = "Update Bundles"
-secrets = ["key"]
 
 [inputs.bundle]
 kind = "file"
@@ -8,22 +7,39 @@ description = "Existing Rugix update bundle to authenticate."
 
 [inputs.certificate]
 kind = "file"
-description = "Single PEM-encoded RSA X.509 end-entity signer certificate issued directly by the trusted root. No intermediates."
+description = "Single PEM-encoded X.509 end-entity signer certificate issued directly by the trusted root. No intermediates. The default signer requires RSA."
 
 [parameters.signing-time]
-description = "Signing time as Unix seconds in a string (0..2524607999). Empty uses the build source epoch."
+description = "Signing time as Unix seconds in a string. Empty uses the build source epoch. The default signer accepts 0..2524607999."
 default = ""
 
+[rule-parameters.signer]
+description = "Create a CMS signature over the bundle's signed metadata. Bakery verifies it against certificate."
+default = { uses = "core/sign-cms" }
+inputs.content = { kind = "file", description = "Signed bundle metadata." }
+inputs.certificate = { kind = "file", description = "Signer certificate that must verify the signature." }
+parameters.signing-time = { description = "Signing time as Unix seconds in a string. Empty means the build source epoch." }
+outputs.signature = { kind = "file", description = "DER-encoded CMS SignedData with the encapsulated content and signer certificate." }
+
 [execution]
-type = "run"
-command = ["rugix-bakery", "internal", "exec-rule", "sign-bundle-rugix"]
+type = "graph"
 
-[execution.outputs.bundle]
-description = "Authenticated Rugix update bundle."
-kind = "file"
-path = "update.rugixb"
+[execution.rules.metadata]
+uses = "core/prepare-bundle-signature"
+inputs.bundle = { input = "bundle" }
 
-[execution.outputs.hash]
-description = "Bundle hash for update verification."
-kind = "file"
-path = "update.rugixb-hash"
+[execution.rules.signature]
+uses = { rule-parameter = "signer" }
+inputs.content = { rule = { node = "metadata", output = "metadata" } }
+inputs.certificate = { input = "certificate" }
+parameters.signing-time = { parameter = "signing-time" }
+
+[execution.rules.signed]
+uses = "core/attach-bundle-signature"
+inputs.bundle = { input = "bundle" }
+inputs.signature = { rule = { node = "signature", output = "signature" } }
+inputs.certificate = { input = "certificate" }
+
+[execution.outputs]
+bundle = { rule = { node = "signed", output = "bundle" } }
+hash = { rule = { node = "signed", output = "hash" } }

@@ -220,11 +220,12 @@ a deployed device requires a separate migration.
 ## Use Your Own Signing Keys
 
 The generated keys have no passphrases and are intended for development.
-To use your own keys, replace the signing inputs and secrets in
-`rugix-bakery.toml`, and set the trusted update root certificate in
-`layers/customized.toml`. The boot key must be a 2048-bit RSA key with a
-PEM-encoded public key, and the update signer certificate must be a PEM-encoded
-RSA certificate. The update signer certificate must be issued directly by the
+To use your own keys, replace the certificate and public key inputs and the
+signer key bindings in `rugix-bakery.toml`, and set the trusted update root
+certificate in `layers/customized.toml`. The boot key must be a 2048-bit RSA
+key with a PEM-encoded public key. The default update signer requires a
+PEM-encoded RSA certificate. The update signer certificate must be issued
+directly by the
 root certificate the device trusts. It needs `CA:FALSE` and digital-signature
 usage: it signs updates, but cannot issue certificates.
 
@@ -233,5 +234,9 @@ making OTP changes, because they can bind a device to that key permanently.
 To change the update root, ship an update, signed with the current keys, that
 installs the new root certificate.
 
+To keep the private keys in a hardware security module (HSM) or a key
+management service (KMS), replace the default signers with your own rules, as
+described in [Signing with an HSM or KMS](https://rugix.org/docs/bakery/next/advanced/hsm-signing).
+
 The [Raspberry Pi build rule reference](https://github.com/rugix/rugix-bakery/tree/main/container/repositories/core/rules/image-rpi-verified)
-covers signing inputs, certificate requirements, and image sizes.
+covers signing inputs, signers, certificate requirements, and image sizes.

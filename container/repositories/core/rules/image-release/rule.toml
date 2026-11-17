@@ -1,6 +1,5 @@
 description = "Assemble a factory GPT disk and an authenticated update bundle from shared payloads."
 category = "Image Assembly"
-secrets = ["key"]
 
 [inputs.layout]
 kind = "file"
@@ -20,7 +19,7 @@ description = "Bundle payload files at the paths referenced by the manifest."
 
 [inputs.certificate]
 kind = "file"
-description = "Single PEM-encoded RSA X.509 end-entity signer certificate issued directly by the trusted root. No intermediates."
+description = "Single PEM-encoded X.509 end-entity signer certificate issued directly by the trusted root. No intermediates. The default signer requires RSA."
 
 [parameters.size]
 description = "Factory disk capacity in bytes. Zero sizes the disk from its partitions."
@@ -29,6 +28,14 @@ default = 0
 [parameters.signing-time]
 description = "Signing time as Unix seconds in a string. Empty uses the build source epoch."
 default = ""
+
+[rule-parameters.bundle-signer]
+description = "Create a CMS signature over the bundle's signed metadata. Bakery verifies it against certificate."
+default = { uses = "core/sign-cms" }
+inputs.content = { kind = "file", description = "Signed bundle metadata." }
+inputs.certificate = { kind = "file", description = "Signer certificate that must verify the signature." }
+parameters.signing-time = { description = "Signing time as Unix seconds in a string. Empty means the build source epoch." }
+outputs.signature = { kind = "file", description = "DER-encoded CMS SignedData with the encapsulated content and signer certificate." }
 
 [execution]
 type = "graph"
@@ -41,10 +48,10 @@ parameters.size = { parameter = "size" }
 uses = "core/bundle-rugix"
 
 [execution.rules.signed]
-parameters.signing-time = { parameter = "signing-time" }
 uses = "core/sign-bundle-rugix"
 inputs.bundle = { rule = { node = "bundle", output = "bundle" } }
-secrets.key = { input = "key" }
+parameters.signing-time = { parameter = "signing-time" }
+rules.signer = { uses = { rule-parameter = "bundle-signer" } }
 
 [execution.outputs]
 image = { rule = { node = "disk", output = "image" } }

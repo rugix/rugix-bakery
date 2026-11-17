@@ -16,6 +16,8 @@ record RuleDefinition {
     parameters?: [string: ParameterDef],
     /// Required sensitive input bindings. Secret changes invalidate cached outputs.
     secrets?: [string],
+    /// Replaceable operations of a graph. Callers may bind their own implementations.
+    rule_parameters?: [string: RuleParameterDef],
     /// Implementation of the rule.
     execution: RuleExecution,
 }
@@ -35,17 +37,81 @@ record ArtifactInput {
     description?: string,
 }
 
+/// An operation that a graph calls through a fixed interface.
+///
+/// The graph supplies the interface inputs and parameters at each call site and
+/// uses the interface outputs. Implementations may require additional inputs,
+/// parameters, and secrets, which the binding of the implementation supplies.
+record RuleParameterDef {
+    /// Description for callers supplying an implementation.
+    description?: string,
+    /// Artifacts the graph supplies to the implementation.
+    inputs?: [string: ArtifactInput],
+    /// Parameters the graph supplies to the implementation.
+    parameters?: [string: InterfaceParameter],
+    /// Artifacts the graph expects from the implementation.
+    outputs: [string: ArtifactOutput],
+    /// Implementation used unless the caller binds another rule.
+    default: RuleInvocation,
+}
+
+/// A parameter supplied through a rule parameter interface.
+record InterfaceParameter {
+    description?: string,
+}
+
+/// An artifact output with optional documentation.
+record ArtifactOutput {
+    kind: ArtifactKind,
+    description?: string,
+}
+
 /// An invocation of a repository-defined rule.
 #[json(rename_all = "kebab-case")]
 record RuleInvocation {
-    /// Local or repository-qualified rule name.
-    uses: string,
+    /// Rule to invoke.
+    uses: RuleReference,
     /// Artifact input bindings.
     inputs?: [string: ArtifactSource],
     /// Parameter bindings.
     parameters?: [string: ParameterBinding],
     /// Secret input bindings.
     secrets?: [string: ArtifactSource],
+    /// Implementations bound to rule parameters of the invoked rule.
+    rules?: [string: RuleBinding],
+}
+
+/// An implementation bound to a rule parameter.
+///
+/// Bindings resolve in the scope that contains them. The graph supplies the
+/// interface inputs and parameters, which a binding must not bind.
+#[json(rename_all = "kebab-case")]
+record RuleBinding {
+    /// Replacement rule. Omit to keep the default implementation and add bindings.
+    uses?: RuleReference,
+    /// Additional artifact input bindings.
+    inputs?: [string: ArtifactSource],
+    /// Additional parameter bindings.
+    parameters?: [string: ParameterBinding],
+    /// Additional secret input bindings.
+    secrets?: [string: ArtifactSource],
+    /// Implementations bound to rule parameters of the replacement rule.
+    rules?: [string: RuleBinding],
+}
+
+/// A rule name or the implementation of an enclosing rule parameter.
+#[json(tagged = implicitly)]
+variant RuleReference {
+    /// Local or repository-qualified rule name.
+    Rule: string,
+    /// Implementation selected for a rule parameter of the enclosing graph.
+    Parameter: RuleParameterReference,
+}
+
+/// Reference to a rule parameter of the enclosing graph.
+#[json(rename_all = "kebab-case")]
+record RuleParameterReference {
+    rule_parameter: string,
 }
 
 /// Filesystem object accepted by an input or produced by an output.

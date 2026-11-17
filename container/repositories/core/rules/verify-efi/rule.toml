@@ -1,0 +1,24 @@
+description = "Verify an EFI signature against a certificate and attach it to the unsigned image."
+category = "Signing"
+
+[inputs.image]
+kind = "file"
+description = "Unsigned PE executable that the signer received."
+
+[inputs.signed]
+kind = "file"
+description = "Signed PE executable returned by the signer."
+
+[inputs.certificate]
+kind = "file"
+description = "PEM-encoded X.509 certificate that must verify the signature."
+
+[execution]
+type = "run"
+command = ["rugix-bakery", "internal", "exec-rule", "verify-efi"]
+uses-source-date-epoch = false
+
+[execution.outputs.image]
+description = "Unsigned PE executable with the verified signature attached."
+kind = "file"
+path = "signed.efi"

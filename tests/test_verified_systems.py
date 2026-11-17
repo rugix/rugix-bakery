@@ -24,43 +24,64 @@ from rugix_testkit.locks import exclusive_lock
 
 SYSTEM = "efi-verified"
 ENROLL_SYSTEM = "efi-verified-enroll"
+HSM_SYSTEM = "efi-verified-hsm"
 EFI_GLOBAL = "8be4df61-93ca-11d2-aa0d-00e098032b8c"
 
 
 @pytest.fixture(scope="module")
 def verified_keys(rugix_project: Path) -> Path:
-    """Boot and bundle signing keys referenced by the project's verified system."""
+    """Signing keys, certificates, and the HSM PIN referenced by the verified systems."""
     keys = rugix_project / ".rugix-testkit" / "verified-keys"
     with exclusive_lock(keys.parent / "verified-keys.lock"):
-        if not (keys / "bundle.crt").exists():
+        if not (keys / "bundle-hsm.crt").exists():
             _create_keys(keys)
     return keys
 
 
 def _create_keys(keys: Path) -> None:
-    """Create the boot certificate and a bundle signer issued by a bundle root."""
+    """Create the boot certificate and two bundle signers issued by a bundle root.
+
+    The HSM bundle signer uses ECDSA because Rugix Ctrl 1.4, which the test layer
+    installs, rejects the RSA signatures that `openssl cms` produces with PKCS#11 keys.
+    """
     keys.mkdir(parents=True, exist_ok=True)
     _certificate(keys / "boot.key", keys / "boot.crt")
     _certificate(keys / "bundle-root.key", keys / "bundle-root.crt")
     _openssl("genrsa", "-out", str(keys / "bundle.key"), "2048")
+    _bundle_signer(keys, "bundle")
+    _openssl(
+        "ecparam",
+        "-name",
+        "prime256v1",
+        "-genkey",
+        "-noout",
+        "-out",
+        str(keys / "bundle-hsm.key"),
+    )
+    _bundle_signer(keys, "bundle-hsm")
+    (keys / "hsm.pin").write_text("1234\n")
+
+
+def _bundle_signer(keys: Path, name: str) -> None:
+    """Issue an end-entity signer certificate for an existing key from the bundle root."""
     _openssl(
         "req",
         "-new",
         "-key",
-        str(keys / "bundle.key"),
+        str(keys / f"{name}.key"),
         "-subj",
-        "/CN=Rugix test signer/",
+        f"/CN=Rugix test signer {name}/",
         "-out",
-        str(keys / "bundle.csr"),
+        str(keys / f"{name}.csr"),
     )
-    (keys / "bundle.ext").write_text(
+    (keys / f"{name}.ext").write_text(
         "basicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature\n"
     )
     _openssl(
         "x509",
         "-req",
         "-in",
-        str(keys / "bundle.csr"),
+        str(keys / f"{name}.csr"),
         "-CA",
         str(keys / "bundle-root.crt"),
         "-CAkey",
@@ -70,9 +91,9 @@ def _create_keys(keys: Path) -> None:
         "3650",
         "-sha256",
         "-extfile",
-        str(keys / "bundle.ext"),
+        str(keys / f"{name}.ext"),
         "-out",
-        str(keys / "bundle.crt"),
+        str(keys / f"{name}.crt"),
     )
 
 
@@ -132,23 +153,37 @@ def test_efi_verified_inventory_selection(
         }
 
 
+def test_efi_verified_hsm_signature_matches(
+    bakery: BakeryBuilder, verified_keys: Path
+) -> None:
+    """A PKCS#11 EFI signer with the same key signs systemd-boot like the default."""
+    bootloaders = []
+    for system in (SYSTEM, HSM_SYSTEM):
+        bakery.run(["bake", "system", system, "--artifact", "bootloader.efi"])
+        bootloader = bakery.project_dir / "build" / system / "bootloader.efi"
+        bootloaders.append(bootloader.read_bytes())
+    assert bootloaders[0] == bootloaders[1]
+
+
+@pytest.mark.parametrize("system", [SYSTEM, HSM_SYSTEM])
 def test_efi_verified_boot_and_update(
     bakery: BakeryBuilder,
     start_vm: Callable[[VMConfig], VMHandle],
     bundle_url: Callable[[Path], str],
     verified_keys: Path,
     secure_boot_firmware: tuple[Path, Path],
+    system: str,
 ) -> None:
     """The system boots with Secure Boot and updates, rolls back, and commits slot B."""
-    image = bakery.bake_image(SYSTEM)
-    output = bakery.project_dir / "build" / SYSTEM
+    image = bakery.bake_image(system)
+    output = bakery.project_dir / "build" / system
     root_hash = (output / "root-hash").read_text().strip()
     vm = start_vm(_config(image, secure_boot_firmware))
     rugix = RugixCtrl(vm)
     assert rugix.assert_boot(default="a", active="a").boot_flow == "systemd-boot"
     _assert_verified(vm, root_hash, partition=2)
 
-    url = bundle_url(bakery.bake_bundle(SYSTEM))
+    url = bundle_url(bakery.bake_bundle(system))
     _install(vm, rugix, url, verified_keys)
     rugix.assert_boot(default="a", active="b")
     _assert_verified(vm, root_hash, partition=3)
@@ -232,7 +267,9 @@ def test_efi_verified_enrolls_keys_in_setup_mode(
 def test_rpi_verified_release(env_project: BakeryBuilder) -> None:
     """The Raspberry Pi release signs its boot image and authenticates the root hash."""
     project = env_project.project_dir
-    _certificate(project / "bundle.key", project / "bundle.crt")
+    _certificate(project / "bundle-root.key", project / "bundle-root.crt")
+    _openssl("genrsa", "-out", str(project / "bundle.key"), "2048")
+    _bundle_signer(project, "bundle")
     _openssl("genrsa", "-out", str(project / "rpi.key"), "2048")
     _openssl(
         "rsa",
@@ -259,8 +296,8 @@ def test_rpi_verified_release(env_project: BakeryBuilder) -> None:
         "inputs.config = { tree = {} }\n"
         'inputs.boot-public-key = { path = "rpi.pub" }\n'
         'inputs.bundle-certificate = { path = "bundle.crt" }\n'
-        'secrets.boot-key = { path = "rpi.key" }\n'
-        'secrets.bundle-key = { path = "bundle.key" }\n'
+        'rules.rpi-signer.secrets.key = { path = "rpi.key" }\n'
+        'rules.bundle-signer.secrets.key = { path = "bundle.key" }\n'
     )
     env_project.run(["bake", "rule", "invocation.toml", "build/release"])
     output = project / "build/release"

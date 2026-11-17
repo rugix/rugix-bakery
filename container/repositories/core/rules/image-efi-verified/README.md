@@ -3,8 +3,8 @@
 Build an EFI A/B release with a verified root from an existing root filesystem,
 kernel, and initrd. The composition builds a SquashFS root
 filesystem, appends dm-verity authentication data, embeds the root hash and image geometry in a Unified Kernel Image (UKI),
-signs the UKI and systemd-boot, and assembles a factory GPT disk and signed
-Rugix update bundle.
+signs and verifies the UKI and systemd-boot, and assembles a factory GPT disk
+and signed Rugix update bundle.
 
 The required `architecture` is `amd64` or `arm64` and must match the kernel.
 The root filesystem supplies `etc/os-release`. The initrd must implement the
@@ -55,9 +55,43 @@ The firmware must trust `boot-certificate` and enforce Secure Boot. Configure
 the firmware separately, or let the factory image enroll your keys as described
 in [Enroll Secure Boot Keys](#enroll-secure-boot-keys).
 
-Supply one PEM-encoded RSA certificate as `bundle-certificate`. The bundle
-embeds only this signer certificate, without intermediates. Issue it directly
+Supply one PEM-encoded certificate as `bundle-certificate`; the default
+bundle signer requires RSA. The bundle embeds only this signer certificate, without intermediates. Issue it directly
 from the root that Rugix Ctrl trusts. The signer must not be a CA certificate.
+
+## Signers
+
+Two rule parameters sign the release:
+
+- `efi-signer` signs the UKI and systemd-boot. It defaults to
+  [`core/sign-efi`](../sign-efi/README.md), which uses a private key file.
+- `bundle-signer` signs the update bundle's metadata. It defaults to
+  [`core/sign-cms`](../sign-cms/README.md), which uses a private key file.
+
+Bind the private keys of the default signers through `rules`:
+
+```toml
+rules.efi-signer.secrets.key = { path = "keys/boot.key" }
+rules.bundle-signer.secrets.key = { path = "keys/bundle.key" }
+```
+
+To keep private keys in an HSM or a KMS, bind your own rules instead. A
+replacement receives the same inputs and parameters as the default, listed
+under Rule Parameters, and may require additional inputs, parameters, and
+secrets, which its binding supplies. It may run in its own environment.
+
+```toml
+[rules.efi-signer]
+uses = "kms-sign-efi"
+parameters.key-uri = "pkcs11:token=release;object=boot"
+secrets.credentials = { path = "keys/kms-credentials" }
+```
+
+Bakery verifies every signature independently of the signer:
+[`core/verify-efi`](../verify-efi/README.md) checks EFI signatures against
+`boot-certificate`, and
+[`core/attach-bundle-signature`](../attach-bundle-signature/README.md)
+checks the bundle signature against `bundle-certificate`.
 
 ## Customize Boot Settings
 
@@ -147,8 +181,8 @@ inputs.kernel = { path = "kernel" }
 inputs.initrd = { path = "initrd" }
 inputs.boot-certificate = { path = "keys/boot.crt" }
 inputs.bundle-certificate = { path = "keys/bundle.crt" }
-secrets.boot-key = { path = "keys/boot.key" }
-secrets.bundle-key = { path = "keys/bundle.key" }
+rules.efi-signer.secrets.key = { path = "keys/boot.key" }
+rules.bundle-signer.secrets.key = { path = "keys/bundle.key" }
 parameters.architecture = "amd64"
 ```
 

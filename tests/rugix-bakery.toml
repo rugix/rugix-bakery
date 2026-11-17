@@ -57,12 +57,13 @@ parameters.architecture = "amd64"
 parameters.cmdline-extra = "console=ttyS0,115200n8"
 inputs.boot-certificate = { path = ".rugix-testkit/verified-keys/boot.crt" }
 inputs.bundle-certificate = { path = ".rugix-testkit/verified-keys/bundle.crt" }
-secrets.boot-key = { path = ".rugix-testkit/verified-keys/boot.key" }
-secrets.bundle-key = { path = ".rugix-testkit/verified-keys/bundle.key" }
+rules.efi-signer.secrets.key = { path = ".rugix-testkit/verified-keys/boot.key" }
+rules.bundle-signer.secrets.key = { path = ".rugix-testkit/verified-keys/bundle.key" }
 
 [systems.efi-verified.outputs]
 "sbom.spdx.json" = { rule = { node = "sbom", output = "spdx" } }
 root-hash = { rule = { node = "release", output = "root-hash" } }
+"bootloader.efi" = { rule = { node = "release", output = "bootloader" } }
 "system.img" = { rule = { node = "release", output = "image" } }
 "system.rugixb" = { rule = { node = "release", output = "bundle" } }
 "system.rugixb-hash" = { rule = { node = "release", output = "bundle-hash" } }
@@ -87,9 +88,47 @@ parameters.cmdline-extra = "console=ttyS0,115200n8"
 inputs.boot-certificate = { path = ".rugix-testkit/verified-keys/boot.crt" }
 inputs.bundle-certificate = { path = ".rugix-testkit/verified-keys/bundle.crt" }
 inputs.secure-boot-keys = { rule = { node = "secure-boot-keys", output = "keys" } }
-secrets.boot-key = { path = ".rugix-testkit/verified-keys/boot.key" }
-secrets.bundle-key = { path = ".rugix-testkit/verified-keys/bundle.key" }
+rules.efi-signer.secrets.key = { path = ".rugix-testkit/verified-keys/boot.key" }
+rules.bundle-signer.secrets.key = { path = ".rugix-testkit/verified-keys/bundle.key" }
 
 [systems.efi-verified-enroll.outputs]
 root-hash = { rule = { node = "release", output = "root-hash" } }
 "system.img" = { rule = { node = "release", output = "image" } }
+
+# The verified system signed through PKCS#11 with keys in a SoftHSM token: the
+# same boot key and an ECDSA bundle signer issued by the same bundle root.
+[systems.efi-verified-hsm]
+layer = "efi-verified"
+architecture = "amd64"
+
+[systems.efi-verified-hsm.rules.token]
+uses = "hsm-token"
+secrets.boot-key = { path = ".rugix-testkit/verified-keys/boot.key" }
+secrets.bundle-key = { path = ".rugix-testkit/verified-keys/bundle-hsm.key" }
+secrets.pin = { path = ".rugix-testkit/verified-keys/hsm.pin" }
+
+[systems.efi-verified-hsm.rules.release]
+uses = "core/image-debian-efi-verified"
+parameters.architecture = "amd64"
+parameters.cmdline-extra = "console=ttyS0,115200n8"
+inputs.boot-certificate = { path = ".rugix-testkit/verified-keys/boot.crt" }
+inputs.bundle-certificate = { path = ".rugix-testkit/verified-keys/bundle-hsm.crt" }
+
+[systems.efi-verified-hsm.rules.release.rules.efi-signer]
+uses = "hsm-sign-efi"
+inputs.token = { rule = { node = "token", output = "token" } }
+parameters.key-label = "boot"
+secrets.pin = { path = ".rugix-testkit/verified-keys/hsm.pin" }
+
+[systems.efi-verified-hsm.rules.release.rules.bundle-signer]
+uses = "hsm-sign-cms"
+inputs.token = { rule = { node = "token", output = "token" } }
+parameters.key-label = "bundle"
+secrets.pin = { path = ".rugix-testkit/verified-keys/hsm.pin" }
+
+[systems.efi-verified-hsm.outputs]
+root-hash = { rule = { node = "release", output = "root-hash" } }
+"bootloader.efi" = { rule = { node = "release", output = "bootloader" } }
+"system.img" = { rule = { node = "release", output = "image" } }
+"system.rugixb" = { rule = { node = "release", output = "bundle" } }
+"system.rugixb-hash" = { rule = { node = "release", output = "bundle-hash" } }

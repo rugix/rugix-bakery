@@ -1,6 +1,5 @@
 description = "Build a signed Raspberry Pi 4/CM4 or Pi 5 A/B release with a verified root from an existing root filesystem."
 category = "Verified Boot"
-secrets = ["boot-key", "bundle-key"]
 
 [inputs.kernel]
 kind = "file"
@@ -28,7 +27,7 @@ description = "PEM-encoded RSA-2048 public key matching the Raspberry Pi boot si
 
 [inputs.bundle-certificate]
 kind = "file"
-description = "Single PEM-encoded RSA X.509 end-entity signer certificate issued directly by the trusted root. No intermediates."
+description = "Single PEM-encoded X.509 end-entity signer certificate issued directly by the trusted root. No intermediates. The default signer requires RSA."
 
 [parameters.cmdline-extra]
 description = "Additional authenticated kernel arguments."
@@ -71,6 +70,22 @@ default = "none"
 description = "Factory disk capacity in bytes. Zero sizes the disk from its partitions."
 default = 0
 
+[rule-parameters.rpi-signer]
+description = "Sign the Raspberry Pi boot image. Bakery verifies the signature against boot-public-key."
+default = { uses = "core/sign-rpi" }
+inputs.image = { kind = "file", description = "FAT boot.img to authenticate." }
+inputs.public-key = { kind = "file", description = "The boot-public-key input." }
+parameters.signing-time = { description = "Signing time as Unix seconds in a string. Empty means the build source epoch." }
+outputs.signature = { kind = "file", description = "Raspberry Pi RSA-2048 boot.sig." }
+
+[rule-parameters.bundle-signer]
+description = "Create a CMS signature over the bundle's signed metadata. Bakery verifies it against bundle-certificate."
+default = { uses = "core/sign-cms" }
+inputs.content = { kind = "file", description = "Signed bundle metadata." }
+inputs.certificate = { kind = "file", description = "The bundle-certificate input." }
+parameters.signing-time = { description = "Signing time as Unix seconds in a string. Empty means the build source epoch." }
+outputs.signature = { kind = "file", description = "DER-encoded CMS SignedData with the encapsulated content and signer certificate." }
+
 [execution]
 type = "graph"
 
@@ -106,12 +121,17 @@ inputs.tree = { rule = { node = "boot-tree", output = "tree" } }
 parameters.size = { parameter = "boot-image-size" }
 parameters.label = "bootimg"
 
-[execution.rules.boot-signature]
-uses = "core/sign-rpi"
+[execution.rules.signed-boot-image]
+uses = { rule-parameter = "rpi-signer" }
 inputs.image = { rule = { node = "boot-image", output = "image" } }
 inputs.public-key = { input = "boot-public-key" }
-secrets.key = { input = "boot-key" }
 parameters.signing-time = { parameter = "signing-time" }
+
+[execution.rules.boot-signature]
+uses = "core/verify-rpi"
+inputs.image = { rule = { node = "boot-image", output = "image" } }
+inputs.signature = { rule = { node = "signed-boot-image", output = "signature" } }
+inputs.public-key = { input = "boot-public-key" }
 
 [execution.rules.boot]
 uses = "core/image-fat"
@@ -146,9 +166,9 @@ uses = "core/image-release"
 inputs.layout = { rule = { node = "layout", output = "layout" } }
 inputs.manifest = { path = "rules/image-rpi-verified/bundle.toml" }
 inputs.certificate = { input = "bundle-certificate" }
-secrets.key = { input = "bundle-key" }
 parameters.size = { parameter = "disk-size" }
 parameters.signing-time = { parameter = "signing-time" }
+rules.bundle-signer = { uses = { rule-parameter = "bundle-signer" } }
 
 [execution.rules.release.inputs.partitions.tree]
 "1" = { rule = { node = "config", output = "image" } }

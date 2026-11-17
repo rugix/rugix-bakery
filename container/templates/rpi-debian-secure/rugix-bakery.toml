@@ -7,8 +7,8 @@ uses = "core/image-debian-rpi-verified"
 parameters.cmdline-extra = "console=serial0,115200 console=tty1"
 inputs.boot-public-key = { path = "keys/boot.pub" }
 inputs.bundle-certificate = { path = "keys/bundle.crt" }
-secrets.boot-key = { path = "keys/boot.key" }
-secrets.bundle-key = { path = "keys/bundle.key" }
+rules.rpi-signer.secrets.key = { path = "keys/boot.key" }
+rules.bundle-signer.secrets.key = { path = "keys/bundle.key" }
 
 [systems.pi.outputs]
 "system.img" = { rule = { node = "release", output = "image" } }

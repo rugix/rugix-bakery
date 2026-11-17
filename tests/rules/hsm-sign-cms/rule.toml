@@ -1,0 +1,30 @@
+description = "Create a CMS signature with a private key in a PKCS#11 token."
+secrets = ["pin"]
+
+[inputs.content]
+kind = "file"
+description = "Content to sign."
+
+[inputs.certificate]
+kind = "file"
+description = "PEM-encoded certificate of the signing key."
+
+[inputs.token]
+kind = "directory"
+description = "SoftHSM token directory."
+
+[parameters.signing-time]
+description = "Signing time as Unix seconds in a string. Empty uses the build source epoch."
+
+[parameters.key-label]
+description = "Label of the private key in the token."
+
+[execution]
+type = "run"
+env = "hsm"
+command = ["sh", "/run/rugix/bakery/work/rule/sign.sh"]
+
+[execution.outputs.signature]
+description = "DER-encoded CMS SignedData with the encapsulated content."
+kind = "file"
+path = "signature.der"

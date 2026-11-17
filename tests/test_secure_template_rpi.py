@@ -41,7 +41,12 @@ def test_development_keys(tmp_path: Path) -> None:
     config = tomllib.loads((project / "rugix-bakery.toml").read_text())
     for system in config["systems"].values():
         build = system["rules"]["release"]
-        for ref in [*build["inputs"].values(), *build["secrets"].values()]:
+        secrets = [
+            ref
+            for signer in build["rules"].values()
+            for ref in signer["secrets"].values()
+        ]
+        for ref in [*build["inputs"].values(), *secrets]:
             assert (project / ref["path"]).is_file()
     for key in [*keys.glob("*.key"), keys / "ssh"]:
         assert stat.S_IMODE(key.stat().st_mode) == 0o600

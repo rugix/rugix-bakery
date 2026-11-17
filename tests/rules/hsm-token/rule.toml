@@ -1,0 +1,13 @@
+description = "Create a SoftHSM token holding the boot and bundle signing keys."
+secrets = ["boot-key", "bundle-key", "pin"]
+
+[execution]
+type = "run"
+env = "hsm"
+command = ["sh", "/run/rugix/bakery/work/rule/create-token.sh"]
+uses-source-date-epoch = false
+
+[execution.outputs.token]
+description = "SoftHSM token directory with the private keys boot and bundle."
+kind = "directory"
+path = "token"

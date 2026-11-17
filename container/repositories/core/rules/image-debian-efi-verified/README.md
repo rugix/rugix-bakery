@@ -16,7 +16,9 @@ The required `architecture` must match the system's `architecture` setting. Set
 requires a unique installed kernel. Automatic capacity defaults, optional size
 overrides, remaining release inputs, signing policy, outputs, and
 [Secure Boot key enrollment](../image-efi-verified/README.md#enroll-secure-boot-keys)
-match the generic EFI composition.
+match the generic EFI composition. The wrapper forwards its `efi-signer` and
+`bundle-signer` rule parameters to it, so you can sign with an HSM or a KMS as
+described in [its signer documentation](../image-efi-verified/README.md#signers).
 
 ## Customize Boot Settings
 
@@ -48,8 +50,8 @@ uses = "core/image-debian-efi-verified"
 parameters.architecture = "amd64"
 inputs.boot-certificate = { path = "keys/boot.crt" }
 inputs.bundle-certificate = { path = "keys/bundle.crt" }
-secrets.boot-key = { path = "keys/boot.key" }
-secrets.bundle-key = { path = "keys/bundle.key" }
+rules.efi-signer.secrets.key = { path = "keys/boot.key" }
+rules.bundle-signer.secrets.key = { path = "keys/bundle.key" }
 
 [systems.efi.outputs]
 "system.img" = { rule = { node = "release", output = "image" } }

@@ -1,6 +1,5 @@
 description = "Build a signed systemd-boot A/B release with a verified root from an existing root filesystem."
 category = "Verified Boot"
-secrets = ["boot-key", "bundle-key"]
 
 [inputs.kernel]
 kind = "file"
@@ -20,7 +19,7 @@ description = "PEM-encoded RSA X.509 certificate for signing EFI boot artifacts.
 
 [inputs.bundle-certificate]
 kind = "file"
-description = "Single PEM-encoded RSA X.509 end-entity signer certificate issued directly by the trusted root. No intermediates."
+description = "Single PEM-encoded X.509 end-entity signer certificate issued directly by the trusted root. No intermediates. The default signer requires RSA."
 
 [inputs.secure-boot-keys]
 kind = "directory"
@@ -62,6 +61,22 @@ default = 0
 description = "Reserve an empty secondary configuration partition with the same capacity as the ESP."
 default = false
 
+[rule-parameters.efi-signer]
+description = "Sign an EFI executable. Bakery verifies each signature against boot-certificate."
+default = { uses = "core/sign-efi" }
+inputs.image = { kind = "file", description = "Unsigned PE executable: the UKI or systemd-boot." }
+inputs.certificate = { kind = "file", description = "The boot-certificate input." }
+parameters.signing-time = { description = "Signing time as Unix seconds in a string. Empty means the build source epoch." }
+outputs.image = { kind = "file", description = "PE executable with a UEFI Secure Boot signature." }
+
+[rule-parameters.bundle-signer]
+description = "Create a CMS signature over the bundle's signed metadata. Bakery verifies it against bundle-certificate."
+default = { uses = "core/sign-cms" }
+inputs.content = { kind = "file", description = "Signed bundle metadata." }
+inputs.certificate = { kind = "file", description = "The bundle-certificate input." }
+parameters.signing-time = { description = "Signing time as Unix seconds in a string. Empty means the build source epoch." }
+outputs.signature = { kind = "file", description = "DER-encoded CMS SignedData with the encapsulated content and signer certificate." }
+
 [execution]
 type = "graph"
 
@@ -92,27 +107,37 @@ inputs.cmdline = { rule = { node = "cmdline", output = "cmdline" } }
 inputs.os-release = { select = { source = { input = "rootfs" }, path = "etc/os-release", kind = "file" } }
 
 [execution.rules.signed-uki]
-uses = "core/sign-efi"
+uses = { rule-parameter = "efi-signer" }
 inputs.image = { rule = { node = "uki", output = "image" } }
 inputs.certificate = { input = "boot-certificate" }
-secrets.key = { input = "boot-key" }
 parameters.signing-time = { parameter = "signing-time" }
+
+[execution.rules.verified-uki]
+uses = "core/verify-efi"
+inputs.image = { rule = { node = "uki", output = "image" } }
+inputs.signed = { rule = { node = "signed-uki", output = "image" } }
+inputs.certificate = { input = "boot-certificate" }
 
 [execution.rules.bootloader]
 uses = "core/systemd-boot"
 parameters.architecture = { parameter = "architecture" }
 
 [execution.rules.signed-bootloader]
-uses = "core/sign-efi"
+uses = { rule-parameter = "efi-signer" }
 inputs.image = { rule = { node = "bootloader", output = "image" } }
 inputs.certificate = { input = "boot-certificate" }
-secrets.key = { input = "boot-key" }
 parameters.signing-time = { parameter = "signing-time" }
+
+[execution.rules.verified-bootloader]
+uses = "core/verify-efi"
+inputs.image = { rule = { node = "bootloader", output = "image" } }
+inputs.signed = { rule = { node = "signed-bootloader", output = "image" } }
+inputs.certificate = { input = "boot-certificate" }
 
 [execution.rules.esp-tree]
 uses = "core/prepare-efi-esp"
-inputs.uki = { rule = { node = "signed-uki", output = "image" } }
-inputs.bootloader = { rule = { node = "signed-bootloader", output = "image" } }
+inputs.uki = { rule = { node = "verified-uki", output = "image" } }
+inputs.bootloader = { rule = { node = "verified-bootloader", output = "image" } }
 inputs.secure-boot-keys = { input = "secure-boot-keys" }
 parameters.architecture = { parameter = "architecture" }
 parameters.timeout = { parameter = "boot-timeout" }
@@ -138,20 +163,20 @@ inputs.layout = { rule = { node = "layout", output = "layout" } }
 inputs.partitions = { rule = { node = "layout", output = "partitions" } }
 inputs.manifest = { path = "rules/image-efi-verified/bundle.toml" }
 inputs.certificate = { input = "bundle-certificate" }
-secrets.key = { input = "bundle-key" }
 parameters.size = { parameter = "disk-size" }
 parameters.signing-time = { parameter = "signing-time" }
+rules.bundle-signer = { uses = { rule-parameter = "bundle-signer" } }
 
 [execution.rules.release.inputs.payloads.tree]
 "system.img" = { rule = { node = "filesystem", output = "image" } }
-"boot.efi" = { rule = { node = "signed-uki", output = "image" } }
+"boot.efi" = { rule = { node = "verified-uki", output = "image" } }
 
 [execution.outputs]
 image = { rule = { node = "release", output = "image" } }
 bundle = { rule = { node = "release", output = "bundle" } }
 bundle-hash = { rule = { node = "release", output = "bundle-hash" } }
-uki = { rule = { node = "signed-uki", output = "image" } }
-bootloader = { rule = { node = "signed-bootloader", output = "image" } }
+uki = { rule = { node = "verified-uki", output = "image" } }
+bootloader = { rule = { node = "verified-bootloader", output = "image" } }
 root-hash = { rule = { node = "filesystem", output = "root-hash" } }
 hash-offset = { rule = { node = "filesystem", output = "hash-offset" } }
 data-size = { rule = { node = "filesystem", output = "data-size" } }

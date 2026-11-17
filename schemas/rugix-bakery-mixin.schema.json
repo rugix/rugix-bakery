@@ -219,12 +219,12 @@
         }
       ]
     },
-    "rugix_bakery.rules.RuleInvocation": {
+    "rugix_bakery.rules.RuleBinding": {
       "type": "object",
-      "description": "An invocation of a repository-defined rule.",
+      "description": "An implementation bound to a rule parameter.\n\nBindings resolve in the scope that contains them. The graph supplies the\ninterface inputs and parameters, which a binding must not bind.",
       "properties": {
         "uses": {
-          "type": "string"
+          "$ref": "#/$defs/rugix_bakery.rules.RuleReference"
         },
         "inputs": {
           "type": "object",
@@ -242,6 +242,47 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+          }
+        },
+        "rules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.RuleBinding"
+          }
+        }
+      },
+      "required": [],
+      "unevaluatedProperties": false
+    },
+    "rugix_bakery.rules.RuleInvocation": {
+      "type": "object",
+      "description": "An invocation of a repository-defined rule.",
+      "properties": {
+        "uses": {
+          "$ref": "#/$defs/rugix_bakery.rules.RuleReference"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ParameterBinding"
+          }
+        },
+        "secrets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.ArtifactSource"
+          }
+        },
+        "rules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rugix_bakery.rules.RuleBinding"
           }
         }
       },
@@ -266,6 +307,25 @@
         "output"
       ],
       "unevaluatedProperties": false
+    },
+    "rugix_bakery.rules.RuleReference": {
+      "description": "A rule name or the implementation of an enclosing rule parameter.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule-parameter": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "rule-parameter"
+          ]
+        }
+      ]
     }
   }
 }
