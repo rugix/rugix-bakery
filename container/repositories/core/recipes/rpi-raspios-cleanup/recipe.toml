@@ -1,6 +1,6 @@
 description = "Remove Raspberry Pi OS first-boot setup that conflicts with Rugix."
 category = "Boot Setup"
-priority = 700000
+priority = 950000
 
 [parameters.disable_swapfile]
 description = "Remove dphys-swapfile. Use true or false."
