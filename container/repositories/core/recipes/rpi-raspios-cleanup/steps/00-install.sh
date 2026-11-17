@@ -4,6 +4,10 @@ set -euo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 
+# Hardware autodetection cannot determine the target root device in the build chroot.
+mkdir -p /etc/initramfs-tools/conf.d
+printf 'MODULES=most\n' > /etc/initramfs-tools/conf.d/rugix
+
 systemctl disable userconfig
 systemctl disable resize2fs_once
 
