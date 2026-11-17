@@ -271,6 +271,18 @@
           "format": "int64",
           "pattern": "^-?[0-9]+$"
         },
+        "before": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "after": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "dependencies": {
           "type": "array",
           "items": {

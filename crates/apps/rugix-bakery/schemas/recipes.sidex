@@ -10,7 +10,17 @@ record RecipeConfig {
     /// Optional group used when presenting a recipe catalog.
     category?: string,
     /// Priority of the recipe.
+    ///
+    /// Higher priorities run first unless `before` or `after` require otherwise.
     priority?: i64,
+    /// Recipes that run after this recipe when they are part of the same layer or mixin.
+    ///
+    /// Does not include the recipes.
+    before?: [string],
+    /// Recipes that run before this recipe when they are part of the same layer or mixin.
+    ///
+    /// Does not include the recipes.
+    after?: [string],
     /// Dependencies of the recipe.
     dependencies?: [string],
     /// Required artifact inputs.

@@ -5657,8 +5657,12 @@ pub mod recipes {
         pub description: ::std::option::Option<::sidex::types::Str>,
         #[doc = "Optional group used when presenting a recipe catalog.\n"]
         pub category: ::std::option::Option<::sidex::types::Str>,
-        #[doc = "Priority of the recipe.\n"]
+        #[doc = "Priority of the recipe.\n\nHigher priorities run first unless `before` or `after` require otherwise.\n"]
         pub priority: ::std::option::Option<i64>,
+        #[doc = "Recipes that run after this recipe when they are part of the same layer or mixin.\n\nDoes not include the recipes.\n"]
+        pub before: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
+        #[doc = "Recipes that run before this recipe when they are part of the same layer or mixin.\n\nDoes not include the recipes.\n"]
+        pub after: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
         #[doc = "Dependencies of the recipe.\n"]
         pub dependencies: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
         #[doc = "Required artifact inputs.\n"]
@@ -5679,75 +5683,7 @@ pub mod recipes {
     }
     #[automatically_derived]
     impl ::sidex::Shaped for RecipeConfig {
-        const SHAPE: &'static ::sidex::Shape = &::sidex::Shape::new(
-            "::rugix_bakery::recipes::RecipeConfig",
-            ::sidex::shape::ShapeKind::Record(::sidex::shape::RecordShape::new(&[
-                ::sidex::shape::FieldShape::new(
-                    "description",
-                    ::sidex::shape::shape_of::<::sidex::types::Str>,
-                )
-                .with_docs("Description of the recipe.\n")
-                .optional(),
-                ::sidex::shape::FieldShape::new(
-                    "category",
-                    ::sidex::shape::shape_of::<::sidex::types::Str>,
-                )
-                .with_docs("Optional group used when presenting a recipe catalog.\n")
-                .optional(),
-                ::sidex::shape::FieldShape::new("priority", ::sidex::shape::shape_of::<i64>)
-                    .with_docs("Priority of the recipe.\n")
-                    .optional(),
-                ::sidex::shape::FieldShape::new(
-                    "dependencies",
-                    ::sidex::shape::shape_of::<::sidex::types::Seq<::sidex::types::Str>>,
-                )
-                .with_docs("Dependencies of the recipe.\n")
-                .optional(),
-                ::sidex::shape::FieldShape::new(
-                    "inputs",
-                    ::sidex::shape::shape_of::<
-                        ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactInput>,
-                    >,
-                )
-                .with_docs("Required artifact inputs.\n")
-                .optional(),
-                ::sidex::shape::FieldShape::new(
-                    "rules",
-                    ::sidex::shape::shape_of::<
-                        ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
-                    >,
-                )
-                .with_docs(
-                    "Prerequisite rules available to this recipe's default input bindings.\n",
-                )
-                .optional(),
-                ::sidex::shape::FieldShape::new(
-                    "input_defaults",
-                    ::sidex::shape::shape_of::<
-                        ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
-                    >,
-                )
-                .with_docs("Input bindings used when the enclosing layer supplies no artifact.\n")
-                .optional()
-                .json_name("input-defaults"),
-                ::sidex::shape::FieldShape::new(
-                    "parameters",
-                    ::sidex::shape::shape_of::<
-                        ::sidex::types::Map<::sidex::types::Str, ParameterDef>,
-                    >,
-                )
-                .with_docs("Parameter definitions of the recipe.\n")
-                .optional(),
-            ])),
-        )
-        .with_docs("Recipe configuration.\n")
-        .with_attrs(&[::sidex::shape::Attr::List {
-            path: "json",
-            args: &[::sidex::shape::Attr::Assign {
-                path: "rename_all",
-                value: ::sidex::shape::AttrValue::String("kebab-case"),
-            }],
-        }]);
+        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::recipes::RecipeConfig" , :: sidex :: shape :: ShapeKind :: Record (:: sidex :: shape :: RecordShape :: new (& [:: sidex :: shape :: FieldShape :: new ("description" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Description of the recipe.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("category" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Optional group used when presenting a recipe catalog.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("priority" , :: sidex :: shape :: shape_of :: < i64 > ,) . with_docs ("Priority of the recipe.\n\nHigher priorities run first unless `before` or `after` require otherwise.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("before" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Seq < :: sidex :: types :: Str , > > ,) . with_docs ("Recipes that run after this recipe when they are part of the same layer or mixin.\n\nDoes not include the recipes.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("after" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Seq < :: sidex :: types :: Str , > > ,) . with_docs ("Recipes that run before this recipe when they are part of the same layer or mixin.\n\nDoes not include the recipes.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("dependencies" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Seq < :: sidex :: types :: Str , > > ,) . with_docs ("Dependencies of the recipe.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("inputs" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , super :: rules :: ArtifactInput , > > ,) . with_docs ("Required artifact inputs.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("rules" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , super :: rules :: RuleInvocation , > > ,) . with_docs ("Prerequisite rules available to this recipe's default input bindings.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("input_defaults" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , super :: rules :: ArtifactSource , > > ,) . with_docs ("Input bindings used when the enclosing layer supplies no artifact.\n") . optional () . json_name ("input-defaults") , :: sidex :: shape :: FieldShape :: new ("parameters" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , ParameterDef , > > ,) . with_docs ("Parameter definitions of the recipe.\n") . optional ()]))) . with_docs ("Recipe configuration.\n") . with_attrs (& [:: sidex :: shape :: Attr :: List { path : "json" , args : & [:: sidex :: shape :: Attr :: Assign { path : "rename_all" , value : :: sidex :: shape :: AttrValue :: String ("kebab-case") }] }]) ;
     }
     #[automatically_derived]
     impl ::sidex::Encode for RecipeConfig {
@@ -5776,22 +5712,30 @@ pub mod recipes {
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 3usize => self
-                    .dependencies
+                    .before
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 4usize => self
-                    .inputs
+                    .after
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 5usize => self
-                    .rules
+                    .dependencies
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 6usize => self
-                    .input_defaults
+                    .inputs
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
                 7usize => self
+                    .rules
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                8usize => self
+                    .input_defaults
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                9usize => self
                     .parameters
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
@@ -5810,16 +5754,20 @@ pub mod recipes {
             let mut __field_2 = ::std::option::Option::<i64>::None;
             let mut __field_3 =
                 ::std::option::Option::<::sidex::types::Seq<::sidex::types::Str>>::None;
-            let mut __field_4 = ::std::option::Option::<
+            let mut __field_4 =
+                ::std::option::Option::<::sidex::types::Seq<::sidex::types::Str>>::None;
+            let mut __field_5 =
+                ::std::option::Option::<::sidex::types::Seq<::sidex::types::Str>>::None;
+            let mut __field_6 = ::std::option::Option::<
                 ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactInput>,
             >::None;
-            let mut __field_5 = ::std::option::Option::<
+            let mut __field_7 = ::std::option::Option::<
                 ::sidex::types::Map<::sidex::types::Str, super::rules::RuleInvocation>,
             >::None;
-            let mut __field_6 = ::std::option::Option::<
+            let mut __field_8 = ::std::option::Option::<
                 ::sidex::types::Map<::sidex::types::Str, super::rules::ArtifactSource>,
             >::None;
-            let mut __field_7 = ::std::option::Option::<
+            let mut __field_9 = ::std::option::Option::<
                 ::sidex::types::Map<::sidex::types::Str, ParameterDef>,
             >::None;
             decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
@@ -5846,17 +5794,15 @@ pub mod recipes {
                         )?)
                     }
                     4usize => {
-                        __field_4 = ::std::option::Option::Some(<::sidex::types::Map<
+                        __field_4 = ::std::option::Option::Some(<::sidex::types::Seq<
                             ::sidex::types::Str,
-                            super::rules::ArtifactInput,
                         > as ::sidex::Decode>::decode(
                             decoder
                         )?)
                     }
                     5usize => {
-                        __field_5 = ::std::option::Option::Some(<::sidex::types::Map<
+                        __field_5 = ::std::option::Option::Some(<::sidex::types::Seq<
                             ::sidex::types::Str,
-                            super::rules::RuleInvocation,
                         > as ::sidex::Decode>::decode(
                             decoder
                         )?)
@@ -5864,13 +5810,29 @@ pub mod recipes {
                     6usize => {
                         __field_6 = ::std::option::Option::Some(<::sidex::types::Map<
                             ::sidex::types::Str,
-                            super::rules::ArtifactSource,
+                            super::rules::ArtifactInput,
                         > as ::sidex::Decode>::decode(
                             decoder
                         )?)
                     }
                     7usize => {
                         __field_7 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            super::rules::RuleInvocation,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    8usize => {
+                        __field_8 = ::std::option::Option::Some(<::sidex::types::Map<
+                            ::sidex::types::Str,
+                            super::rules::ArtifactSource,
+                        > as ::sidex::Decode>::decode(
+                            decoder
+                        )?)
+                    }
+                    9usize => {
+                        __field_9 = ::std::option::Option::Some(<::sidex::types::Map<
                             ::sidex::types::Str,
                             ParameterDef,
                         > as ::sidex::Decode>::decode(
@@ -5885,11 +5847,13 @@ pub mod recipes {
                 description: __field_0,
                 category: __field_1,
                 priority: __field_2,
-                dependencies: __field_3,
-                inputs: __field_4,
-                rules: __field_5,
-                input_defaults: __field_6,
-                parameters: __field_7,
+                before: __field_3,
+                after: __field_4,
+                dependencies: __field_5,
+                inputs: __field_6,
+                rules: __field_7,
+                input_defaults: __field_8,
+                parameters: __field_9,
             })
         }
     }
@@ -5900,6 +5864,8 @@ pub mod recipes {
                 description: ::std::default::Default::default(),
                 category: ::std::default::Default::default(),
                 priority: ::std::default::Default::default(),
+                before: ::std::default::Default::default(),
+                after: ::std::default::Default::default(),
                 dependencies: ::std::default::Default::default(),
                 inputs: ::std::default::Default::default(),
                 rules: ::std::default::Default::default(),
@@ -5947,6 +5913,38 @@ pub mod recipes {
         #[doc = "Sets the value of `priority`."]
         pub fn with_priority(mut self, priority: ::std::option::Option<i64>) -> Self {
             self.priority = priority;
+            self
+        }
+        #[doc = "Sets the value of `before`."]
+        pub fn set_before(
+            &mut self,
+            before: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
+        ) -> &mut Self {
+            self.before = before;
+            self
+        }
+        #[doc = "Sets the value of `before`."]
+        pub fn with_before(
+            mut self,
+            before: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
+        ) -> Self {
+            self.before = before;
+            self
+        }
+        #[doc = "Sets the value of `after`."]
+        pub fn set_after(
+            &mut self,
+            after: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
+        ) -> &mut Self {
+            self.after = after;
+            self
+        }
+        #[doc = "Sets the value of `after`."]
+        pub fn with_after(
+            mut self,
+            after: ::std::option::Option<::sidex::types::Seq<::sidex::types::Str>>,
+        ) -> Self {
+            self.after = after;
             self
         }
         #[doc = "Sets the value of `dependencies`."]
