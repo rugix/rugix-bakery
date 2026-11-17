@@ -44,6 +44,9 @@
   `core/attach-bundle-signature`, which applies Rugix Ctrl's CMS verification.
   `core/sign-bundle-rugix` is a composition with a replaceable `signer`, which
   defaults to `core/sign-cms`.
+- Add `before` and `after` to recipe configurations to order recipes relative to
+  each other without including them. These constraints take precedence over
+  priorities, which still order all other recipes.
 
 - Install Rugix Ctrl Debian packages with APT in `core/rugix-ctrl`, so that
   their dependencies are installed. Rugix Ctrl 1.4.0 depends on

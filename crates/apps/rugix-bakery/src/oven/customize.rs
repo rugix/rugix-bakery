@@ -22,7 +22,7 @@ use crate::config::layers::LayerConfig;
 use crate::config::mixins::MixinConfig;
 use crate::config::recipes::ParameterValue;
 use crate::config::systems::Architecture;
-use crate::oven::archive;
+use crate::oven::{archive, recipe_order};
 use crate::project::library::Library;
 use crate::project::recipes::{PackageManager, Recipe, StepKind};
 use crate::project::repositories::RepositoryIdx;
@@ -240,7 +240,7 @@ pub(crate) fn recipe_schedule(
             bail!("multiple parameter override names resolve to recipe `{name}`");
         }
     }
-    let mut recipes = enabled
+    recipe_order::order_recipes(library, enabled)?
         .into_iter()
         .map(|idx| {
             let recipe = library.recipes[idx].clone();
@@ -284,29 +284,7 @@ pub(crate) fn recipe_schedule(
             }
             Ok(RecipeJob { recipe, parameters })
         })
-        .collect::<Result<Vec<_>, _>>()?;
-    recipes.sort_by(|left, right| {
-        right
-            .recipe
-            .config
-            .priority
-            .unwrap_or_default()
-            .cmp(&left.recipe.config.priority.unwrap_or_default())
-            .then_with(|| {
-                library.repositories[left.recipe.repository]
-                    .source
-                    .id
-                    .as_str()
-                    .cmp(
-                        library.repositories[right.recipe.repository]
-                            .source
-                            .id
-                            .as_str(),
-                    )
-            })
-            .then_with(|| left.recipe.name.deref().cmp(right.recipe.name.deref()))
-    });
-    Ok(recipes)
+        .collect()
 }
 
 fn run_cmd(logger: &Logger, cmd: Cmd<OsString>) -> BakeryResult<()> {

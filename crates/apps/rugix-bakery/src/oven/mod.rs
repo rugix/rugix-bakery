@@ -26,6 +26,7 @@ use crate::BakeryResult;
 mod build;
 pub mod customize;
 mod pipeline;
+mod recipe_order;
 pub mod system;
 pub mod targets;
 

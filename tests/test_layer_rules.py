@@ -228,17 +228,16 @@ token = { rule = { node = "addon", output = "token" } }
     assert (project / "build/device/application").read_text() == "baseaddon"
 
 
-def test_equal_priority_recipe_order_and_cache(env_project: BakeryBuilder) -> None:
-    """Equal-priority recipes execute in a stable order and reuse the same layer."""
-    project = env_project.project_dir
+def prepare_order(project: Path, layer: list[str], recipes: dict[str, str]) -> None:
+    """Define a layer whose recipes record their names in execution order."""
     prepare(project, use_env=False)
     (project / "layers/device.toml").write_text(
-        'root = true\nrecipes = ["gamma", "alpha", "beta"]\n'
+        f"root = true\nrecipes = {json.dumps(layer)}\n"
     )
-    for name in ("alpha", "beta", "gamma"):
+    for name, config in recipes.items():
         recipe = project / "recipes" / name
         (recipe / "steps").mkdir(parents=True)
-        (recipe / "recipe.toml").write_text('description = "Same priority"\n')
+        (recipe / "recipe.toml").write_text(config)
         script = recipe / "steps/00-run.sh"
         script.write_text(
             '#!/bin/sh\nset -eu\nmkdir -p "$RUGIX_ROOT_DIR/etc"\n'
@@ -246,11 +245,39 @@ def test_equal_priority_recipe_order_and_cache(env_project: BakeryBuilder) -> No
             'head -c 32 /dev/urandom > "$RUGIX_ROOT_DIR/etc/token"\n'
         )
         script.chmod(0o755)
+
+
+def test_equal_priority_recipe_order_and_cache(env_project: BakeryBuilder) -> None:
+    """Equal-priority recipes execute in a stable order and reuse the same layer."""
+    prepare_order(
+        env_project.project_dir,
+        ["gamma", "alpha", "beta"],
+        {
+            name: 'description = "Same priority"\n'
+            for name in ("alpha", "beta", "gamma")
+        },
+    )
     output = build_rule(env_project)
     assert (output / "rootfs/etc/order").read_text() == "alphabetagamma"
     token = (output / "rootfs/etc/token").read_bytes()
     for _ in range(5):
         assert (build_rule(env_project) / "rootfs/etc/token").read_bytes() == token
+
+
+def test_recipe_ordering_constraints(env_project: BakeryBuilder) -> None:
+    """Before and after constraints override priorities without including recipes."""
+    prepare_order(
+        env_project.project_dir,
+        ["alpha", "beta", "gamma"],
+        {
+            "alpha": 'priority = 10\nafter = ["gamma", "excluded"]\n',
+            "beta": 'before = ["gamma"]\n',
+            "gamma": "priority = 5\n",
+            "excluded": "",
+        },
+    )
+    output = build_rule(env_project)
+    assert (output / "rootfs/etc/order").read_text() == "betagammaalpha"
 
 
 def test_unidentified_layer_runtime(env_project: BakeryBuilder) -> None:
