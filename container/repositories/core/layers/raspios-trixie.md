@@ -1,6 +1,6 @@
 ## Behavior
 
-Imports the configured Raspberry Pi OS Lite image for arm64. The source URL pins a dated image rather than following the newest release. Add core/rpi-raspios-setup when adapting the imported system for Rugix.
+Imports the configured Raspberry Pi OS Lite image for arm64. The source URL pins the 6 October 2026 release rather than following the newest release. Add core/rpi-raspios-setup when adapting the imported system for Rugix.
 
 ## Example
 
