@@ -376,7 +376,7 @@ fn apply_recipes(
         fs::write(resolved_resolv, resolv_conf).whatever("unable to write `resolv.conf`")?;
 
         stack.push(
-            Mounted::bind(project.dir(), &project_dir)
+            Mounted::bind_recursive(project.dir(), &project_dir)
                 .whatever("unable to bind mount project directory")?,
         );
 
