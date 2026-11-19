@@ -26,6 +26,8 @@ use super::{runtime, ExecutionContext, Plan, RunTask, Task};
 /// One build session. Uncached outputs remain alive until publication.
 pub struct Executor {
     project: PathBuf,
+    /// Project-wide persistent cache directory, shared with recipe executions.
+    project_cache: PathBuf,
     context: ExecutionContext,
     cache: Results,
     env_cache: PathBuf,
@@ -44,8 +46,14 @@ impl Executor {
         context: ExecutionContext,
     ) -> BakeryResult<Self> {
         let results = Results::new(cache, project)?;
+        // The env cache lives in the project partition of the global cache.
+        let project_cache = env_cache
+            .parent()
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| env_cache.to_owned());
         Ok(Self {
             project: fs::canonicalize(project).whatever("unable to resolve project directory")?,
+            project_cache,
             context,
             cache: results,
             env_cache: env_cache.to_owned(),
@@ -61,16 +69,19 @@ impl Executor {
         project: &crate::project::ProjectRef,
         context: ExecutionContext,
     ) -> BakeryResult<Self> {
-        let env_cache = Path::new("/run/rugix/bakery/cache")
-            .join(project.local_id().as_str())
-            .join("envs");
-        Self::new(
+        let project_cache = Path::new("/run/rugix/bakery/cache").join(project.local_id().as_str());
+        let env_cache = project_cache.join("envs");
+        let executor = Self::new(
             project.dir(),
             &project.dir().join(".rugix/rules"),
             &env_cache,
             EnvStorage::Auto,
             context,
-        )
+        )?;
+        Ok(Self {
+            project_cache,
+            ..executor
+        })
     }
 
     /// Preserve a standalone artifact whose path must outlive this session.
@@ -270,7 +281,7 @@ impl Executor {
                     ));
                 }
                 let command: Vec<OsString> = task.run.command.iter().map(OsString::from).collect();
-                let environment = [
+                let mut environment = vec![
                     ("RUGIX_PROJECT_DIR", Some("/run/rugix/bakery/work/project")),
                     (
                         "RUGIX_REBUILD_IF_CHANGED",
@@ -278,6 +289,20 @@ impl Executor {
                     ),
                     ("SOURCE_DATE_EPOCH", source_date_epoch.as_deref()),
                 ];
+                if task.run.uses_cache_dir.unwrap_or(false) {
+                    fs::create_dir_all(&self.project_cache)
+                        .whatever("unable to create the project cache directory")?;
+                    let Some(cache_dir) = self.project_cache.to_str() else {
+                        bail!("project cache directory is not valid UTF-8");
+                    };
+                    environment.push(("RUGIX_CACHE_DIR", Some(cache_dir)));
+                    if task.env.is_some() {
+                        // Environment containers need an explicit bind mount. Commands
+                        // executed by Bakery itself (via `rugix-isolate`) already see
+                        // the cache directory, as they run in a child mount namespace.
+                        mounts.push(mount(&self.project_cache, cache_dir, false));
+                    }
+                }
                 let status = match &task.env {
                     Some(env) => images[env].run_with_env(&command, &mounts, &environment)?,
                     None => runtime::run(&command, &mounts, &environment)?,

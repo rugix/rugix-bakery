@@ -185,6 +185,10 @@ record RunRule {
     cache?: bool,
     /// Supply SOURCE_DATE_EPOCH and include it in the cache identity. Defaults to true.
     uses_source_date_epoch?: bool,
+    /// Expose the project's global cache directory to the command via `RUGIX_CACHE_DIR`.
+    /// The command must not produce output depending on the contents of the cache directory
+    /// beyond caching effects, as the cache directory is not part of the rule identity.
+    uses_cache_dir?: bool,
 }
 
 /// A declared command output.

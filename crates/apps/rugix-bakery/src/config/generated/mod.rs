@@ -9652,10 +9652,12 @@ pub mod rules {
         pub cache: ::std::option::Option<bool>,
         #[doc = "Supply SOURCE_DATE_EPOCH and include it in the cache identity. Defaults to true.\n"]
         pub uses_source_date_epoch: ::std::option::Option<bool>,
+        #[doc = "Expose the project's global cache directory to the command via `RUGIX_CACHE_DIR`.\nThe command must not produce output depending on the contents of the cache directory\nbeyond caching effects, as the cache directory is not part of the rule identity.\n"]
+        pub uses_cache_dir: ::std::option::Option<bool>,
     }
     #[automatically_derived]
     impl ::sidex::Shaped for RunRule {
-        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::rules::RunRule" , :: sidex :: shape :: ShapeKind :: Record (:: sidex :: shape :: RecordShape :: new (& [:: sidex :: shape :: FieldShape :: new ("env" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Optional environment resolved relative to the defining repository. Defaults to Bakery.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("command" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Seq < :: sidex :: types :: Str , > > ,) . with_docs ("Command and literal arguments. No shell expansion is performed by Bakery.\n") , :: sidex :: shape :: FieldShape :: new ("outputs" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , RuleOutput , > > ,) . with_docs ("Files and directories to publish from /run/rugix/bakery/work/outputs.\n") , :: sidex :: shape :: FieldShape :: new ("cache" , :: sidex :: shape :: shape_of :: < bool > ,) . with_docs ("Reuse successful outputs. Defaults to true.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("uses_source_date_epoch" , :: sidex :: shape :: shape_of :: < bool > ,) . with_docs ("Supply SOURCE_DATE_EPOCH and include it in the cache identity. Defaults to true.\n") . optional () . json_name ("uses-source-date-epoch")]))) . with_docs ("A command executed in Bakery or a fresh tooling environment.\n") . with_attrs (& [:: sidex :: shape :: Attr :: List { path : "json" , args : & [:: sidex :: shape :: Attr :: Assign { path : "rename_all" , value : :: sidex :: shape :: AttrValue :: String ("kebab-case") }] }]) ;
+        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::rules::RunRule" , :: sidex :: shape :: ShapeKind :: Record (:: sidex :: shape :: RecordShape :: new (& [:: sidex :: shape :: FieldShape :: new ("env" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Optional environment resolved relative to the defining repository. Defaults to Bakery.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("command" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Seq < :: sidex :: types :: Str , > > ,) . with_docs ("Command and literal arguments. No shell expansion is performed by Bakery.\n") , :: sidex :: shape :: FieldShape :: new ("outputs" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Map < :: sidex :: types :: Str , RuleOutput , > > ,) . with_docs ("Files and directories to publish from /run/rugix/bakery/work/outputs.\n") , :: sidex :: shape :: FieldShape :: new ("cache" , :: sidex :: shape :: shape_of :: < bool > ,) . with_docs ("Reuse successful outputs. Defaults to true.\n") . optional () , :: sidex :: shape :: FieldShape :: new ("uses_source_date_epoch" , :: sidex :: shape :: shape_of :: < bool > ,) . with_docs ("Supply SOURCE_DATE_EPOCH and include it in the cache identity. Defaults to true.\n") . optional () . json_name ("uses-source-date-epoch") , :: sidex :: shape :: FieldShape :: new ("uses_cache_dir" , :: sidex :: shape :: shape_of :: < bool > ,) . with_docs ("Expose the project's global cache directory to the command via `RUGIX_CACHE_DIR`.\nThe command must not produce output depending on the contents of the cache directory\nbeyond caching effects, as the cache directory is not part of the rule identity.\n") . optional () . json_name ("uses-cache-dir")]))) . with_docs ("A command executed in Bakery or a fresh tooling environment.\n") . with_attrs (& [:: sidex :: shape :: Attr :: List { path : "json" , args : & [:: sidex :: shape :: Attr :: Assign { path : "rename_all" , value : :: sidex :: shape :: AttrValue :: String ("kebab-case") }] }]) ;
     }
     #[automatically_derived]
     impl ::sidex::Encode for RunRule {
@@ -9685,6 +9687,10 @@ pub mod rules {
                     .uses_source_date_epoch
                     .as_ref()
                     .map(|value| ::sidex::Encode::encode(value)),
+                5usize => self
+                    .uses_cache_dir
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
                 _ => ::std::option::Option::None,
             }
         }
@@ -9702,6 +9708,7 @@ pub mod rules {
                 ::std::option::Option::<::sidex::types::Map<::sidex::types::Str, RuleOutput>>::None;
             let mut __field_3 = ::std::option::Option::<bool>::None;
             let mut __field_4 = ::std::option::Option::<bool>::None;
+            let mut __field_5 = ::std::option::Option::<bool>::None;
             decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
                 match index {
                     0usize => {
@@ -9732,6 +9739,10 @@ pub mod rules {
                         __field_4 =
                             ::std::option::Option::Some(<bool as ::sidex::Decode>::decode(decoder)?)
                     }
+                    5usize => {
+                        __field_5 =
+                            ::std::option::Option::Some(<bool as ::sidex::Decode>::decode(decoder)?)
+                    }
                     _ => {}
                 }
                 ::std::result::Result::Ok(())
@@ -9744,6 +9755,7 @@ pub mod rules {
                     .ok_or_else(|| ::sidex::DecodeError::new("missing field `outputs`"))?,
                 cache: __field_3,
                 uses_source_date_epoch: __field_4,
+                uses_cache_dir: __field_5,
             })
         }
     }
@@ -9759,6 +9771,7 @@ pub mod rules {
                 env: ::std::default::Default::default(),
                 cache: ::std::default::Default::default(),
                 uses_source_date_epoch: ::std::default::Default::default(),
+                uses_cache_dir: ::std::default::Default::default(),
             }
         }
         #[doc = "Sets the value of `env`."]
@@ -9824,6 +9837,19 @@ pub mod rules {
             uses_source_date_epoch: ::std::option::Option<bool>,
         ) -> Self {
             self.uses_source_date_epoch = uses_source_date_epoch;
+            self
+        }
+        #[doc = "Sets the value of `uses_cache_dir`."]
+        pub fn set_uses_cache_dir(
+            &mut self,
+            uses_cache_dir: ::std::option::Option<bool>,
+        ) -> &mut Self {
+            self.uses_cache_dir = uses_cache_dir;
+            self
+        }
+        #[doc = "Sets the value of `uses_cache_dir`."]
+        pub fn with_uses_cache_dir(mut self, uses_cache_dir: ::std::option::Option<bool>) -> Self {
+            self.uses_cache_dir = uses_cache_dir;
             self
         }
     }
