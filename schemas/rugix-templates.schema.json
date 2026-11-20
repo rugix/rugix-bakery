@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rugix_bakery.templates.TemplateManifest",
+  "type": "object",
+  "description": "Template manifest.\n\nMaps template names to their metadata.",
+  "additionalProperties": {
+    "$ref": "#/$defs/rugix_bakery.templates.TemplateInfo"
+  },
+  "$defs": {
+    "rugix_bakery.templates.TemplateInfo": {
+      "type": "object",
+      "description": "Template metadata.\n\nDescribes a single named template.",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "description"
+      ],
+      "unevaluatedProperties": false
+    }
+  }
+}

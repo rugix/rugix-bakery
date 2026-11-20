@@ -292,6 +292,19 @@ pub enum InternalCommand {
 pub struct InitCommand {
     /// Template to use.
     pub template: Option<String>,
+    /// Git URL of an external template repository.
+    ///
+    /// When combined with `--template-dir`, the directory is interpreted as a
+    /// subdirectory inside the cloned repository.
+    #[clap(long)]
+    pub template_repo: Option<String>,
+    /// Directory with a `rugix-templates.toml` manifest,
+    /// or a subdirectory of the template repository when `--template-repo` is used.
+    #[clap(long)]
+    pub template_dir: Option<PathBuf>,
+    /// Revision (tag, branch, or commit) of the template repository.
+    #[clap(long, requires = "template_repo")]
+    pub template_rev: Option<String>,
 }
 
 /// The `bundler` command.

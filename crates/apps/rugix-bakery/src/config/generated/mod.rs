@@ -11357,6 +11357,136 @@ pub mod systems {
         }
     }
 }
+pub mod templates {
+    #![doc = "Template manifest.\n"]
+    #![allow(
+        clippy::all,
+        clippy::pedantic,
+        clippy::nursery,
+        clippy::cargo,
+        dead_code
+    )]
+    #[doc = "Template metadata.\n\nDescribes a single named template.\n"]
+    #[derive(Clone, Debug)]
+    pub struct TemplateInfo {
+        #[doc = "Description of the template.\n"]
+        pub description: ::sidex::types::Str,
+        #[doc = "Path of the template directory relative to the manifest root.\n\nDefaults to a directory named after the template.\n"]
+        pub path: ::std::option::Option<::sidex::types::Str>,
+    }
+    #[automatically_derived]
+    impl ::sidex::Shaped for TemplateInfo {
+        const SHAPE : & 'static :: sidex :: Shape = & :: sidex :: Shape :: new ("::rugix_bakery::templates::TemplateInfo" , :: sidex :: shape :: ShapeKind :: Record (:: sidex :: shape :: RecordShape :: new (& [:: sidex :: shape :: FieldShape :: new ("description" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Description of the template.\n") , :: sidex :: shape :: FieldShape :: new ("path" , :: sidex :: shape :: shape_of :: < :: sidex :: types :: Str > ,) . with_docs ("Path of the template directory relative to the manifest root.\n\nDefaults to a directory named after the template.\n") . optional ()]))) . with_docs ("Template metadata.\n\nDescribes a single named template.\n") ;
+    }
+    #[automatically_derived]
+    impl ::sidex::Encode for TemplateInfo {
+        fn encode(&self) -> ::sidex::View<'_> {
+            ::sidex::View::Record(self)
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::encode::RecordView for TemplateInfo {
+        fn shape(&self) -> &'static ::sidex::Shape {
+            <Self as ::sidex::Shaped>::SHAPE
+        }
+        fn field(&self, index: usize) -> ::std::option::Option<::sidex::View<'_>> {
+            match index {
+                0usize => ::std::option::Option::Some(::sidex::Encode::encode(&self.description)),
+                1usize => self
+                    .path
+                    .as_ref()
+                    .map(|value| ::sidex::Encode::encode(value)),
+                _ => ::std::option::Option::None,
+            }
+        }
+    }
+    #[automatically_derived]
+    #[allow(deprecated)]
+    impl ::sidex::Decode for TemplateInfo {
+        fn decode(
+            decoder: &mut dyn ::sidex::Decoder,
+        ) -> ::std::result::Result<Self, ::sidex::DecodeError> {
+            let mut __field_0 = ::std::option::Option::<::sidex::types::Str>::None;
+            let mut __field_1 = ::std::option::Option::<::sidex::types::Str>::None;
+            decoder.record(<Self as ::sidex::Shaped>::SHAPE, &mut |index, decoder| {
+                match index {
+                    0usize => {
+                        __field_0 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    1usize => {
+                        __field_1 = ::std::option::Option::Some(
+                            <::sidex::types::Str as ::sidex::Decode>::decode(decoder)?,
+                        )
+                    }
+                    _ => {}
+                }
+                ::std::result::Result::Ok(())
+            })?;
+            ::std::result::Result::Ok(Self {
+                description: __field_0
+                    .ok_or_else(|| ::sidex::DecodeError::new("missing field `description`"))?,
+                path: __field_1,
+            })
+        }
+    }
+    impl TemplateInfo {
+        #[doc = "Creates a new [`TemplateInfo`]."]
+        pub fn new(description: impl ::std::convert::Into<::sidex::types::Str>) -> Self {
+            Self {
+                description: description.into(),
+                path: ::std::default::Default::default(),
+            }
+        }
+        #[doc = "Sets the value of `description`."]
+        pub fn set_description(
+            &mut self,
+            description: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> &mut Self {
+            self.description = description.into();
+            self
+        }
+        #[doc = "Sets the value of `description`."]
+        pub fn with_description(
+            mut self,
+            description: impl ::std::convert::Into<::sidex::types::Str>,
+        ) -> Self {
+            self.description = description.into();
+            self
+        }
+        #[doc = "Sets the value of `path`."]
+        pub fn set_path(&mut self, path: ::std::option::Option<::sidex::types::Str>) -> &mut Self {
+            self.path = path;
+            self
+        }
+        #[doc = "Sets the value of `path`."]
+        pub fn with_path(mut self, path: ::std::option::Option<::sidex::types::Str>) -> Self {
+            self.path = path;
+            self
+        }
+    }
+    #[automatically_derived]
+    impl ::serde::Serialize for TemplateInfo {
+        fn serialize<__S: ::serde::Serializer>(
+            &self,
+            serializer: __S,
+        ) -> ::std::result::Result<__S::Ok, __S::Error> {
+            ::sidex::serde::serialize(self, serializer)
+        }
+    }
+    #[automatically_derived]
+    impl<'de> ::serde::Deserialize<'de> for TemplateInfo {
+        fn deserialize<__D: ::serde::Deserializer<'de>>(
+            deserializer: __D,
+        ) -> ::std::result::Result<Self, __D::Error> {
+            ::sidex::serde::deserialize(deserializer)
+        }
+    }
+    #[doc = "Template manifest.\n\nMaps template names to their metadata.\n"]
+    pub type TemplateManifest = ::sidex::types::Map<::sidex::types::Str, TemplateInfo>;
+}
 pub mod tests {
     #![doc = "Test configuration.\n"]
     #![allow(

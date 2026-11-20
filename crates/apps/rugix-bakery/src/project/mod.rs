@@ -15,6 +15,7 @@ use crate::BakeryResult;
 
 pub mod catalog;
 pub mod envs;
+pub mod git;
 pub mod layers;
 pub mod library;
 pub mod mixins;

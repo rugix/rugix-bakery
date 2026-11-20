@@ -15,3 +15,4 @@ cp generated/rugix_bakery.repositories.RepositoryConfig.schema.json ../../../sch
 cp generated/rugix_bakery.rules.RuleDefinition.schema.json ../../../schemas/rugix-bakery-rule.schema.json
 cp generated/rugix_bakery.catalog.DefinitionCatalog.schema.json ../../../schemas/rugix-bakery-definition-catalog.schema.json
 cp generated/rugix_bakery.catalog.DefinitionInfo.schema.json ../../../schemas/rugix-bakery-definition-info.schema.json
+cp generated/rugix_bakery.templates.TemplateManifest.schema.json ../../../schemas/rugix-templates.schema.json
