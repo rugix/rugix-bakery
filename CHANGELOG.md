@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## Version 0.9.6
+
+- Add opt-in persistent rule cache directories through `uses-cache-dir` and
+  `RUGIX_CACHE_DIR`.
+- Mount the project recursively so rules and recipes can access nested volumes.
+- Improve error reports for artifact resolution.
+- Refresh Raspberry Pi OS Trixie and Bookworm base images and fix initramfs
+  generation during package upgrades.
 - Add release preview and guarded tagging tasks, with automatic GitHub release
   publication after CI checks and system tests succeed.
 
@@ -54,10 +62,6 @@
   each other without including them. These constraints take precedence over
   priorities, which still order all other recipes.
 
-- Install Rugix Ctrl Debian packages with APT in `core/rugix-ctrl`, so that
-  their dependencies are installed. Rugix Ctrl 1.4.0 depends on
-  `ca-certificates`.
-- Update `crypto-bigint`, `ctutils`, and `tokio` to resolve security advisories.
 - Update `russh` to 0.65 to resolve RUSTSEC-2026-0492 and RUSTSEC-2026-0495,
   and replace the yanked `chacha20` 0.10.1 and `wnaf` 0.14.0.
 - Accept `--param-file` in the `test` command, for example, to authorize an SSH
@@ -82,6 +86,12 @@
   them.
 - Construct ext4 filesystems directly from the normalized layer directory and
   pass the configured source date to e2fsprogs for reproducible output.
+
+## Version 0.9.5
+
+- Fix Debian-based image builds with Rugix Ctrl 1.4 by installing package dependencies.
+- Refresh dependencies to resolve security advisories in `crypto-bigint`, `ctutils`,
+  `h2`, `rustls`, `rustls-webpki`, `tokio`, and `webpki-roots`.
 
 ## Version 0.9.4
 
