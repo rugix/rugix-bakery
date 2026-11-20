@@ -1,15 +1,21 @@
 """Check release archive contents using a fixture Cargo command."""
 
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import tarfile
 import tempfile
 import unittest
+from pathlib import Path
 
 BUILD_SCRIPT = Path(__file__).resolve().parents[1] / "build-binaries.sh"
-BINARIES = ["rugix-bakery", "rugix-isolate", "rugix-bundler", "rugix-ctrl", "rugix-util"]
+BINARIES = [
+    "rugix-bakery",
+    "rugix-isolate",
+    "rugix-bundler",
+    "rugix-ctrl",
+    "rugix-util",
+]
 
 
 class BuildBinariesTests(unittest.TestCase):
@@ -22,7 +28,7 @@ class BuildBinariesTests(unittest.TestCase):
         self.bin = self.root / "bin"
         self.bin.mkdir()
         cargo = self.bin / "cargo"
-        cargo.write_text('''#!/usr/bin/env python3
+        cargo.write_text("""#!/usr/bin/env python3
 import os
 from pathlib import Path
 import sys
@@ -30,6 +36,8 @@ import sys
 target = sys.argv[sys.argv.index("--target") + 1]
 names = ["rugix-bakery", "rugix-isolate", "rugix-bundler", "rugix-ctrl", "rugix-util"]
 if sys.argv[1] == "build":
+    if "EXPECTED_VERSION" in os.environ:
+        assert os.environ["RUGIX_GIT_VERSION"] == os.environ["EXPECTED_VERSION"]
     assert "--locked" in sys.argv
     output = Path(os.environ.get("CARGO_TARGET_DIR", "target")) / target / "release"
     output.mkdir(parents=True, exist_ok=True)
@@ -44,7 +52,7 @@ else:
         output = base / "crates/apps" / name
         output.mkdir(parents=True, exist_ok=True)
         (output / (name + ".cdx.json")).write_text('{"bomFormat":"CycloneDX"}')
-''')
+""")
         cargo.chmod(0o755)
         git = self.bin / "git"
         git.write_text("#!/bin/sh\nprintf '%s\\n' test-version\n")
@@ -55,10 +63,13 @@ else:
             "CARGO_TARGET_DIR": str(self.root / "target with spaces"),
         }
 
-    def build(self, *targets: str, **environment: str) -> subprocess.CompletedProcess[str]:
+    def build(
+        self, *targets: str, **environment: str
+    ) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             ["bash", str(self.root / "scripts/build-binaries.sh"), *targets],
             cwd=self.root.parent,
+            check=False,
             env={**self.environment, **environment},
             capture_output=True,
             text=True,
@@ -67,8 +78,12 @@ else:
     def assert_archive(self, target: str) -> None:
         archive = self.root / "build/binaries" / f"{target}.tar"
         with tarfile.open(archive) as contents:
-            files = {member.name.removeprefix("./") for member in contents if member.isfile()}
-            self.assertEqual(files, set(BINARIES + [name + ".cdx.json" for name in BINARIES]))
+            files = {
+                member.name.removeprefix("./") for member in contents if member.isfile()
+            }
+            self.assertEqual(
+                files, set(BINARIES + [name + ".cdx.json" for name in BINARIES])
+            )
         for name in BINARIES:
             self.assertEqual((archive.parent / target / name).read_text(), target)
 
@@ -80,17 +95,25 @@ else:
             self.assert_archive(target)
 
     def test_explicit_target(self) -> None:
-        """Honor an explicit target and a Cargo output directory containing spaces."""
-        result = self.build("aarch64-unknown-linux-musl")
+        """Honor the release version, an explicit target, and a Cargo path containing spaces."""
+        result = self.build(
+            "aarch64-unknown-linux-musl",
+            RUGIX_GIT_VERSION="v0.10.0-rc.1",
+            EXPECTED_VERSION="v0.10.0-rc.1",
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assert_archive("aarch64-unknown-linux-musl")
-        self.assertFalse((self.root / "build/binaries/x86_64-unknown-linux-musl.tar").exists())
+        self.assertFalse(
+            (self.root / "build/binaries/x86_64-unknown-linux-musl.tar").exists()
+        )
 
     def test_missing_sbom_fails(self) -> None:
         """Reject incomplete release artifacts before creating the target archive."""
         result = self.build("x86_64-unknown-linux-musl", MISSING_SBOM="rugix-ctrl")
         self.assertNotEqual(result.returncode, 0)
-        self.assertFalse((self.root / "build/binaries/x86_64-unknown-linux-musl.tar").exists())
+        self.assertFalse(
+            (self.root / "build/binaries/x86_64-unknown-linux-musl.tar").exists()
+        )
 
 
 if __name__ == "__main__":

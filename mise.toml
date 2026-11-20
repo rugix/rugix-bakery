@@ -75,3 +75,13 @@ run = "cargo test --all-features"
 [tasks."test:tooling"]
 description = "Test binary staging and release archive contents."
 run = "python -m unittest discover -s scripts/tests"
+
+[tasks."release:preview"]
+description = "Preview a Bakery release of the checked-out commit and its notes."
+usage = 'arg "<tag>" help="Release tag, for example v0.10.0"'
+run = 'python scripts/release.py preview "$usage_tag"'
+
+[tasks."release:tag"]
+description = "Tag the latest commit of main and push the release tag."
+usage = 'arg "<tag>" help="Release tag, for example v0.10.0"'
+run = 'python scripts/release.py tag "$usage_tag"'

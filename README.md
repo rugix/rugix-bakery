@@ -9,7 +9,7 @@
 </h4>
 <p align="center">
   <a href="https://github.com/rugix/rugix-bakery/releases"><img alt="Rugix Bakery Version Badge" src="https://img.shields.io/github/v/tag/rugix/rugix-bakery?label=version"></a>
-  <a href="https://github.com/rugix/rugix-bakery/actions"><img alt="Pipeline Status Badge" src="https://img.shields.io/github/actions/workflow/status/rugix/rugix-bakery/check-and-lint.yml"></a>
+  <a href="https://github.com/rugix/rugix-bakery/actions"><img alt="Pipeline Status Badge" src="https://img.shields.io/github/actions/workflow/status/rugix/rugix-bakery/build.yml"></a>
 </p>
 
 Rugix Bakery is an open-source build system for custom, OTA-ready Linux system
@@ -88,6 +88,11 @@ mise run build-binaries aarch64-unknown-linux-musl
 Binaries and SBOMs are written to `build/binaries/<target>/` and archived as
 `build/binaries/<target>.tar`. See the [system test guide](tests/README.md)
 for image setup and VM tests.
+
+## Releases
+
+See the [release guide](RELEASING.md) for release previews, tagging, automatic
+publication, and recovery.
 
 ## Support
 
