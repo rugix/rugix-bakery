@@ -11,11 +11,43 @@ on:
       - "v*"
   pull_request:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the GitHub release (requires selecting a release tag)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}-${{ github.event_name == 'push' || inputs.publish || false }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
 
 env:
   REGISTRY: ghcr.io
+  RUGIX_GIT_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
 
 jobs:
+  checks:
+    uses: ./.github/workflows/check-and-lint.yml
+
+  validate_release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate Release
+        if: github.ref_type == 'tag' || inputs.publish
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          test "$REF_TYPE" = tag
+          python3 scripts/release.py validate "$TAG"
+
   build_binaries_linux:
     name: "Build Binaries (${{ matrix.target }})"
     runs-on: ubuntu-latest
@@ -280,6 +312,8 @@ jobs:
     if: >-
       always()
       && github.event_name != 'pull_request'
+      && needs.checks.result == 'success'
+      && needs.validate_release.result == 'success'
       && needs.build_bakery_images.result == 'success'
       && (
         needs.test_bakery_image.result == 'success'
@@ -293,6 +327,8 @@ jobs:
       contents: read
       packages: write
     needs:
+      - checks
+      - validate_release
       - bakery_metadata
       - build_bakery_images
       - test_bakery_image
@@ -346,3 +382,35 @@ jobs:
             | jq '.digest' > digest.txt
           DIGEST=$(cat digest.txt)
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+
+  publish_release:
+    name: Publish Release
+    if: >-
+      github.repository == 'rugix/rugix-bakery'
+      && (github.event_name == 'push' && github.ref_type == 'tag' || inputs.publish)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs:
+      - validate_release
+      - checks
+      - build_binaries_linux
+      - test_bakery_image
+      - build_bakery_image
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Download Binaries
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: binaries-*
+          path: build/binaries
+          merge-multiple: true
+      - name: Publish Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: python3 scripts/release.py publish "$TAG"

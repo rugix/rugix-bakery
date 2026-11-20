@@ -2,7 +2,7 @@
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 
-RUGIX_GIT_VERSION="$(git describe --tags --always)"
+RUGIX_GIT_VERSION="${RUGIX_GIT_VERSION:-$(git describe --tags --always)}"
 export RUGIX_GIT_VERSION
 
 binaries=(rugix-bakery rugix-isolate rugix-bundler rugix-ctrl rugix-util)

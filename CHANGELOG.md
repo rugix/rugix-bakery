@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add release preview and guarded tagging tasks, with automatic GitHub release
+  publication after CI checks and system tests succeed.
+
 - Warn when automatic target emulation setup fails and include emulation guidance
   in subsequent layer build errors, while preserving the original failure.
 
