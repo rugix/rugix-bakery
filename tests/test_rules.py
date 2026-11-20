@@ -106,6 +106,54 @@ def test_composition_and_cache(env_project: BakeryBuilder, use_env: bool) -> Non
 
 
 @pytest.mark.parametrize("use_env", [False, True])
+@pytest.mark.parametrize("uses_cache_dir", [None, False, True])
+def test_persistent_cache_directory(
+    env_project: BakeryBuilder, use_env: bool, uses_cache_dir: bool | None
+) -> None:
+    """Expose a writable cache only on opt-in and preserve it across rule executions."""
+    project = env_project.project_dir
+    cache_check = (
+        """cache="$RUGIX_CACHE_DIR/rule-cache-test"
+if [ "$(cat /run/rugix/bakery/work/inputs/source)" = input ]; then
+    test ! -e "$cache"
+    mkdir "$cache"
+    printf cached > "$cache/marker"
+else
+    test "$(cat "$cache/marker")" = cached
+fi
+"""
+        if uses_cache_dir
+        else 'test "${RUGIX_CACHE_DIR+x}" != x\n'
+    )
+    prepare(
+        project,
+        "set -eu\n"
+        + cache_check
+        + "cat /run/rugix/bakery/work/inputs/source > /run/rugix/bakery/work/outputs/result\n"
+        + "head -c 32 /dev/urandom > /run/rugix/bakery/work/outputs/token\n",
+        use_env=use_env,
+    )
+    if uses_cache_dir is not None:
+        rule = project / "vendor/rules/copy/rule.toml"
+        rule.write_text(
+            rule.read_text().replace(
+                'type = "run"',
+                f'type = "run"\nuses-cache-dir = {str(uses_cache_dir).lower()}',
+            )
+        )
+
+    output = build(env_project)
+    assert (output / "first").read_text() == "input\n"
+    token = (output / "token").read_bytes()
+    assert (build(env_project) / "token").read_bytes() == token
+
+    (project / "source").write_text("changed\n")
+    output = build(env_project)
+    assert (output / "first").read_text() == "changed\n"
+    assert (output / "token").read_bytes() != token
+
+
+@pytest.mark.parametrize("use_env", [False, True])
 def test_failed_build_does_not_publish(
     env_project: BakeryBuilder, use_env: bool
 ) -> None:
