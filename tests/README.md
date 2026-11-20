@@ -24,7 +24,8 @@ The tests cover:
   These tests use temporary env-only projects and do not need QEMU.
 - Repository build rules: composition, owner-relative environment resolution,
   direct Bakery execution, private scratch and artifact mounts, read-only inputs,
-  cached artifacts, sensitive input rotation and reuse, and failed-build recovery.
+  cached artifacts, opt-in persistent cache directories in Bakery and tooling
+  environments, sensitive input rotation and reuse, and failed-build recovery.
 - Runtime project dependencies in rules and layer recipes: content changes with
   preserved timestamps, directory membership, absent paths, registration changes,
   contained symlink targets, read-only project mounts, and failed-build recovery.
