@@ -201,7 +201,7 @@ struct BootParameters {
 }
 
 /// Generated boot metadata must have stable identities before downstream caching.
-fn clamp_tree(root: &Path, epoch: u64) -> BakeryResult<()> {
+pub(crate) fn clamp_tree(root: &Path, epoch: u64) -> BakeryResult<()> {
     let timestamp = UNIX_EPOCH
         .checked_add(Duration::from_secs(epoch))
         .ok_or_else(|| reportify::whatever!("source date is out of range"))?;

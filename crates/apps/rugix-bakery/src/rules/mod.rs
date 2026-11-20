@@ -20,6 +20,7 @@ mod disk;
 mod filesystems;
 mod integrity;
 mod layout;
+mod populate;
 mod sbom;
 mod standard;
 mod verified;
@@ -75,6 +76,7 @@ pub fn execute(name: &str) -> BakeryResult<()> {
             write_bundle_hash()
         }
         "image-layout" => standard::image_layout(),
+        "image-populate-partitions" => populate::image_populate_partitions(),
         "initialize-boot" => standard::initialize_boot(),
         "prepare-boot" => standard::prepare_boot(),
         "assemble-disk" => standard::assemble_disk(),

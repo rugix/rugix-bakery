@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Expose `core/image-populate-partitions` rule which populates partitions based
+  on a prepared image layout. The builtin pipeline adopts this rule as well.
+ 
 ## Version 0.9.6
 
 - Add opt-in persistent rule cache directories through `uses-cache-dir` and

@@ -3,7 +3,7 @@
 use std::collections::HashSet;
 use std::fs::{self, File};
 use std::os::unix::fs::MetadataExt;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Stdio;
 
 use reportify::{bail, ResultExt};
@@ -16,19 +16,18 @@ use crate::BakeryResult;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "kebab-case")]
-struct Ext4 {
-    size: u64,
-    label: String,
-    uuid: String,
-    block_size: u64,
-    reserved_percent: u8,
-    mkfs_options: String,
+pub(crate) struct Ext4 {
+    pub(crate) size: u64,
+    pub(crate) label: String,
+    pub(crate) uuid: String,
+    pub(crate) block_size: u64,
+    pub(crate) reserved_percent: u8,
+    pub(crate) mkfs_options: String,
 }
 
-pub fn ext4() -> BakeryResult<()> {
-    let p: Ext4 = parameters()?;
-    let epoch = super::source_date_epoch()?;
-    let image = "/run/rugix/bakery/work/outputs/image.ext4";
+/// Build an ext4 image from `tree` into `image`, parameterized like the
+/// `image-ext4` core rule. Shared by that rule and `image-populate-partitions`.
+pub(crate) fn build_ext4(tree: &Path, image: &str, p: &Ext4, epoch: u64) -> BakeryResult<()> {
     if !p.block_size.is_power_of_two() || !(1024..=65536).contains(&p.block_size) {
         bail!("ext4 block-size must be a power of two between 1024 and 65536");
     }
@@ -46,7 +45,8 @@ pub fn ext4() -> BakeryResult<()> {
         "--clamp-mtime",
     ])
     .arg(format!("--mtime=@{}", epoch))
-    .args(["--directory=/run/rugix/bakery/work/inputs/tree", "."])
+    .arg(format!("--directory={}", tree.display()))
+    .args(["."])
     .stdout(Stdio::piped());
     let mut archive = tar.spawn().whatever("unable to hash filesystem tree")?;
     let hashed = digest(archive.stdout.as_mut().expect("tar stdout is piped"));
@@ -64,7 +64,7 @@ pub fn ext4() -> BakeryResult<()> {
     let size = if automatic {
         let mut bytes = 0u64;
         let mut seen = HashSet::new();
-        let mut pending = vec![PathBuf::from("/run/rugix/bakery/work/inputs/tree")];
+        let mut pending = vec![tree.to_path_buf()];
         while let Some(path) = pending.pop() {
             let metadata =
                 fs::symlink_metadata(&path).whatever("unable to inspect filesystem input")?;
@@ -109,7 +109,7 @@ pub fn ext4() -> BakeryResult<()> {
         .arg(if p.uuid.is_empty() {
             seed.to_string()
         } else {
-            p.uuid
+            p.uuid.clone()
         });
     if automatic {
         mkfs.arg("-N")
@@ -118,11 +118,11 @@ pub fn ext4() -> BakeryResult<()> {
     if !p.label.is_empty() {
         mkfs.args(["-L", &p.label]);
     }
-    run(mkfs.args(options(&p.mkfs_options)?).args([
-        "-d",
-        "/run/rugix/bakery/work/inputs/tree",
-        image,
-    ]))?;
+    run(mkfs
+        .args(options(&p.mkfs_options)?)
+        .arg("-d")
+        .arg(tree)
+        .arg(image))?;
     if automatic {
         run(epoch_command("resize2fs", epoch)?.args(["-M", image]))?;
         let metadata = output(epoch_command("dumpe2fs", epoch)?.args(["-h", image]))?;
@@ -147,24 +147,33 @@ pub fn ext4() -> BakeryResult<()> {
     Ok(())
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "kebab-case")]
-struct Fat {
-    size: u64,
-    minimum_size: u64,
-    free_percent: u64,
-    size_alignment: u64,
-    label: String,
-    volume_id: String,
-    sectors_per_cluster: u64,
-    mkfs_options: String,
+pub fn ext4() -> BakeryResult<()> {
+    let p: Ext4 = parameters()?;
+    let epoch = super::source_date_epoch()?;
+    build_ext4(
+        Path::new("/run/rugix/bakery/work/inputs/tree"),
+        "/run/rugix/bakery/work/outputs/image.ext4",
+        &p,
+        epoch,
+    )
 }
 
-pub fn fat() -> BakeryResult<()> {
-    let p: Fat = parameters()?;
-    let epoch = super::source_date_epoch()?;
-    let image = "/run/rugix/bakery/work/outputs/image.fat";
-    let root = Path::new("/run/rugix/bakery/work/inputs/tree");
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub(crate) struct Fat {
+    pub(crate) size: u64,
+    pub(crate) minimum_size: u64,
+    pub(crate) free_percent: u64,
+    pub(crate) size_alignment: u64,
+    pub(crate) label: String,
+    pub(crate) volume_id: String,
+    pub(crate) sectors_per_cluster: u64,
+    pub(crate) mkfs_options: String,
+}
+
+/// Build a FAT image from `tree` into `image`, parameterized like the
+/// `image-fat` core rule. Shared by that rule and `image-populate-partitions`.
+pub(crate) fn build_fat(root: &Path, image: &str, p: &Fat, epoch: u64) -> BakeryResult<()> {
     let mut identity = Sha256::new();
     let mut tree = Vec::new();
     let mut file_sizes = Vec::new();
@@ -275,7 +284,7 @@ pub fn fat() -> BakeryResult<()> {
     let volume_id = if p.volume_id.is_empty() {
         hex::encode(identity.finalize())[..8].to_owned()
     } else {
-        p.volume_id
+        p.volume_id.clone()
     };
     mkfs.args(["--invariant", "-i", &volume_id]);
     if p.size == 0 {
@@ -304,34 +313,57 @@ pub fn fat() -> BakeryResult<()> {
     Ok(())
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "kebab-case")]
-struct Squashfs {
-    compression: String,
-    block_size: u64,
-    mkfs_options: String,
+pub fn fat() -> BakeryResult<()> {
+    let p: Fat = parameters()?;
+    let epoch = super::source_date_epoch()?;
+    build_fat(
+        Path::new("/run/rugix/bakery/work/inputs/tree"),
+        "/run/rugix/bakery/work/outputs/image.fat",
+        &p,
+        epoch,
+    )
 }
 
-pub fn squashfs() -> BakeryResult<()> {
-    let p: Squashfs = parameters()?;
-    let epoch = super::source_date_epoch()?;
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub(crate) struct Squashfs {
+    pub(crate) compression: String,
+    pub(crate) block_size: u64,
+    pub(crate) mkfs_options: String,
+}
+
+/// Build a squashfs image from `tree` into `image`, parameterized like the
+/// `image-squashfs` core rule. Shared by that rule and `image-populate-partitions`.
+pub(crate) fn build_squashfs(
+    tree: &Path,
+    image: &str,
+    p: &Squashfs,
+    epoch: u64,
+) -> BakeryResult<()> {
     let compression: &[&str] = if p.compression == "none" {
         &["-noI", "-noD", "-noF", "-noX"]
     } else {
         &["-comp", &p.compression]
     };
     run(epoch_command("mksquashfs", epoch)?
-        .args([
-            "/run/rugix/bakery/work/inputs/tree",
-            "/run/rugix/bakery/work/outputs/image.squashfs",
-            "-noappend",
-            "-processors",
-            "1",
-        ])
+        .arg(tree)
+        .arg(image)
+        .args(["-noappend", "-processors", "1"])
         .args(compression)
         .arg("-b")
         .arg(p.block_size.to_string())
         .args(options(&p.mkfs_options)?))
+}
+
+pub fn squashfs() -> BakeryResult<()> {
+    let p: Squashfs = parameters()?;
+    let epoch = super::source_date_epoch()?;
+    build_squashfs(
+        Path::new("/run/rugix/bakery/work/inputs/tree"),
+        "/run/rugix/bakery/work/outputs/image.squashfs",
+        &p,
+        epoch,
+    )
 }
 
 /// Apply automatic capacity floors and rounding without changing explicit sizes.

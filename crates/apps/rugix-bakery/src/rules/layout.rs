@@ -247,7 +247,7 @@ fn compute_fs_size(root: PathBuf) -> BakeryResult<NumBlocks> {
 }
 
 /// Layout paths must remain inside their declared artifact, including through symlinks.
-fn contained_path(root: &Path, relative: &str) -> BakeryResult<PathBuf> {
+pub(crate) fn contained_path(root: &Path, relative: &str) -> BakeryResult<PathBuf> {
     let relative = Path::new(relative);
     if relative.as_os_str().is_empty()
         || relative
