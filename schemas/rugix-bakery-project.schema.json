@@ -10,6 +10,12 @@
         "$ref": "#/$defs/rugix_bakery.repositories.SourceConfig"
       }
     },
+    "patch": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/rugix_bakery.repositories.SourceConfig"
+      }
+    },
     "systems": {
       "type": "object",
       "additionalProperties": {

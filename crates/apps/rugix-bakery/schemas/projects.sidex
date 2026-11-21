@@ -8,6 +8,10 @@ import systems::SystemConfig
 record ProjectConfig {
     /// Repositories imported into the project.
     repositories?: [string: SourceConfig],
+    /// Patch repository dependencies: maps a repository alias to a full
+    /// replacement source, used verbatim for every declaration of that alias
+    /// (root or transitive).
+    patch?: [string: SourceConfig],
     /// System declarations.
     systems?: [string: SystemConfig],
 }

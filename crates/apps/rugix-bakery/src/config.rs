@@ -8,6 +8,7 @@ use images::{Filesystem, PartitionTableType};
 use projects::ProjectConfig;
 use rugix_tasks::check_canceled;
 use serde::de::DeserializeOwned;
+use serde::Deserialize;
 
 use reportify::{whatever, ResultExt};
 
@@ -85,6 +86,16 @@ impl ProjectConfig {
         self.get_system_config(name)
             .ok_or_else(|| whatever!("unable to to find image {name:?}"))
     }
+}
+
+/// Local, Git-ignored overrides for a project (`rugix-bakery.local.toml`).
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)] // overriding anything else than patch is no-op.
+pub struct LocalProjectOverrides {
+    /// Patches replacing the sources of Git-sourced repositories.
+    ///
+    /// Merged over the project's own `[patch]` table per Git URL.
+    pub patch: Option<::sidex::types::Map<::sidex::types::Str, repositories::SourceConfig>>,
 }
 
 impl Filesystem {
@@ -228,5 +239,48 @@ filesystem = { type = "ext4", clamp-mtime = "2025-01-02T03:04:05+01:00" }
                 assert!(system.get("build").is_none(), "{name} still uses build");
             }
         }
+    }
+
+    use super::LocalProjectOverrides;
+    use crate::config::repositories::SourceConfig;
+
+    /// Local overrides parse a `[patch]` table.
+    #[test]
+    fn local_overrides_accept_patch_table() {
+        let config = super::parse_config::<LocalProjectOverrides>(
+            r#"
+[patch]
+"https://github.com/x/repo.git" = { path = "../repo" }
+"#,
+        )
+        .unwrap();
+        let patch = config.patch.expect("expected patch table");
+        let source = patch
+            .get("https://github.com/x/repo.git")
+            .expect("expected patched source");
+        assert_eq!(
+            source,
+            &SourceConfig::Path(crate::config::repositories::PathSourceConfig {
+                path: "../repo".into(),
+            })
+        );
+    }
+
+    /// An empty local overrides file is valid.
+    #[test]
+    fn local_overrides_accept_empty_file() {
+        let config = super::parse_config::<LocalProjectOverrides>("").unwrap();
+        assert!(config.patch.is_none());
+    }
+
+    /// Local overrides reject anything beyond `[patch]`.
+    #[test]
+    fn local_overrides_reject_unknown_keys() {
+        let error = super::parse_config::<LocalProjectOverrides>("[repositories]\n").unwrap_err();
+        let report = error.to_string();
+        assert!(
+            report.contains("unknown field"),
+            "expected unknown-field error, got: {report}"
+        );
     }
 }

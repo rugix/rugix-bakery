@@ -86,6 +86,11 @@
   them.
 - Construct ext4 filesystems directly from the normalized layer directory and
   pass the configured source date to e2fsprogs for reproducible output.
+- Add a `[patch]` table to `rugix-bakery.toml` that redirects repository
+  dependencies to a replacement source, similar to Cargo's `[patch.crates-io]`.
+  Patches are keyed by repository alias and replace the whole declaration's source
+  for every declaration of that alias, root or transitive.
+  Temporary local patches should be placed in VCS-ignored `rugix-bakery.local.toml`.
 
 ## Version 0.9.5
 

@@ -1,14 +1,15 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use sha1::{Digest, Sha1};
-use tracing::debug;
+use tracing::{debug, warn};
 
 use xscript::{read_str, run, LocalEnv, Run};
 
 use reportify::{bail, ResultExt};
+use sidex::types::{Map, Str};
 
 use crate::config::repositories::{
     GitSourceConfig, PathSourceConfig, RepositoryConfig, SourceConfig,
@@ -28,7 +29,8 @@ pub struct ProjectRepositories {
 
 impl ProjectRepositories {
     pub fn load(project: &ProjectRef) -> BakeryResult<Self> {
-        let mut repositories = RepositoriesLoader::new(project.dir());
+        let patches = project.config().patch.clone().unwrap_or_default();
+        let mut repositories = RepositoriesLoader::new(project.dir(), patches);
         let core = repositories.load_source(
             SourceConfig::Path(PathSourceConfig {
                 path: (paths::repositories_dir()
@@ -50,6 +52,9 @@ impl ProjectRepositories {
                 .collect::<::std::collections::HashMap<_, _>>(),
             true,
         )?;
+        for alias in repositories.unused_patches() {
+            warn!("patch for repository {alias} does not match any repository declaration");
+        }
         Ok(Self {
             repositories: repositories.repositories.map(|_, repo| repo.unwrap()),
             root_repository: root,
@@ -78,19 +83,46 @@ struct RepositoriesLoader {
     repositories: IdxVec<RepositoryIdx, Option<Repository>>,
     /// Table for finding repositories by their source.
     source_to_repository: HashMap<SourceId, RepositoryIdx>,
+    /// Patches replacing the sources of repositories, keyed by repository alias.
+    patches: Map<Str, SourceConfig>,
+    /// Aliases of patches that matched at least one repository declaration.
+    used_patches: HashSet<Str>,
     /// Path to the project's root directory.
     root_dir: PathBuf,
 }
 
 impl RepositoriesLoader {
     /// Create an empty collection of repositories.
-    pub fn new(root_dir: impl AsRef<Path>) -> Self {
+    pub fn new(root_dir: impl AsRef<Path>, patches: Map<Str, SourceConfig>) -> Self {
         let root_dir = root_dir.as_ref();
         Self {
             repositories: IdxVec::new(),
             source_to_repository: HashMap::new(),
+            patches,
+            used_patches: HashSet::new(),
             root_dir: root_dir.to_path_buf(),
         }
+    }
+
+    /// The aliases of patches that did not match any repository declaration.
+    ///
+    /// The aliases are yielded in the order in which the patches were
+    /// declared in the configuration files (the sidex `Map` preserves
+    /// insertion order).
+    fn unused_patches(&self) -> impl Iterator<Item = &Str> {
+        self.patches
+            .keys()
+            .filter(|alias| !self.used_patches.contains(*alias))
+    }
+
+    /// Patch the source of the repository declared under the given alias.
+    fn patch_source(&mut self, alias: &str, source: SourceConfig) -> SourceConfig {
+        let Some(patched) = self.patches.get(alias).cloned() else {
+            return source;
+        };
+        self.used_patches.insert(alias.into());
+        debug!("patching repository {alias} with {:?}", patched);
+        patched
     }
 
     /// Load the repository from the project's root directory.
@@ -101,6 +133,10 @@ impl RepositoriesLoader {
         repositories: HashMap<String, SourceConfig>,
         update: bool,
     ) -> BakeryResult<RepositoryIdx> {
+        let repositories = repositories
+            .into_iter()
+            .map(|(alias, source)| (alias.into(), source))
+            .collect::<Map<_, _>>();
         self.load_repository(
             Source::materialize(
                 SourceConfig::Path(PathSourceConfig { path: "".into() }),
@@ -110,12 +146,7 @@ impl RepositoriesLoader {
             RepositoryConfig {
                 name: Some("root".to_owned().into()),
                 description: None,
-                repositories: Some(
-                    repositories
-                        .into_iter()
-                        .map(|(key, value)| (key.into(), value))
-                        .collect::<::sidex::types::Map<_, _>>(),
-                ),
+                repositories: Some(repositories),
             },
             update,
         )
@@ -174,7 +205,8 @@ impl RepositoriesLoader {
         let mut repositories = HashMap::new();
         if let Some(dependencies) = &config.repositories {
             for (name, source) in dependencies {
-                repositories.insert(name.clone(), self.load_source(source.clone(), update)?);
+                let source = self.patch_source(name, source.clone());
+                repositories.insert(name.clone(), self.load_source(source, update)?);
             }
         }
         let repository = Repository {
@@ -321,4 +353,201 @@ fn check_out_git_source(config: &GitSourceConfig, path: &Path, fetch: bool) -> B
         run!(env, ["git", "checkout", commit]).whatever("error checking out commit")?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn loader(patches: &[(&str, SourceConfig)]) -> RepositoriesLoader {
+        loader_at(Path::new(""), patches)
+    }
+
+    /// A loader rooted at the given directory with the given patches.
+    fn loader_at(dir: &Path, patches: &[(&str, SourceConfig)]) -> RepositoriesLoader {
+        let patches = patches
+            .iter()
+            .map(|(alias, config)| ((*alias).into(), config.clone()))
+            .collect::<Map<Str, _>>();
+        RepositoriesLoader::new(dir, patches)
+    }
+
+    fn git_source(url: &str, dir: Option<&str>) -> SourceConfig {
+        SourceConfig::Git(GitSourceConfig {
+            url: url.into(),
+            tag: None,
+            branch: None,
+            rev: None,
+            dir: dir.map(Into::into),
+        })
+    }
+
+    fn path_source(path: &str) -> SourceConfig {
+        SourceConfig::Path(PathSourceConfig { path: path.into() })
+    }
+
+    /// Create a repository directory with the given manifest content.
+    fn write_repository(dir: &Path, manifest: &str) {
+        std::fs::create_dir_all(dir).unwrap();
+        std::fs::write(dir.join("rugix-repository.toml"), manifest).unwrap();
+    }
+
+    /// The aliases of unused patches, in the order in which the patches were
+    /// declared (the sidex `Map` preserves insertion order).
+    fn unused_aliases(loader: &RepositoriesLoader) -> Vec<String> {
+        loader
+            .unused_patches()
+            .map(|alias| alias.to_string())
+            .collect()
+    }
+
+    #[test]
+    fn patched_declarations_are_replaced_verbatim() {
+        let cases = [
+            (
+                "the original `dir` of a Git declaration is dropped",
+                git_source("https://github.com/x/repo", Some("unipi")),
+                path_source("../recipes"),
+            ),
+            (
+                "path declarations are patched to Git sources alike",
+                path_source("../dep"),
+                git_source("https://github.com/x/repo", Some("unipi")),
+            ),
+        ];
+        for (case, declaration, patch) in cases {
+            let mut loader = loader(&[("dep", patch.clone())]);
+            assert_eq!(loader.patch_source("dep", declaration), patch, "{case}");
+            assert_eq!(unused_aliases(&loader), Vec::<String>::new(), "{case}");
+        }
+    }
+
+    /// Aliases without a patch pass through unchanged; only aliases whose
+    /// declaration was patched count as used.
+    #[test]
+    fn unmatched_aliases_pass_through_and_stay_unused() {
+        let mut loader = loader(&[
+            ("dep", path_source("../recipes")),
+            ("other", path_source("../unused")),
+        ]);
+        let declaration = git_source("https://invalid.example/repo.git", None);
+        assert_eq!(
+            loader.patch_source("unknown", declaration.clone()),
+            declaration,
+            "declarations of aliases without a patch pass through unchanged"
+        );
+        assert_eq!(
+            unused_aliases(&loader),
+            ["dep", "other"],
+            "no patch may count as used before one of its aliases is declared"
+        );
+        assert_eq!(
+            loader.patch_source("dep", git_source("https://invalid.example/repo.git", None)),
+            path_source("../recipes")
+        );
+        assert_eq!(
+            unused_aliases(&loader),
+            ["other"],
+            "only aliases whose declaration was patched count as used"
+        );
+    }
+
+    /// The root table's git repository is patched with a path source instead.
+    #[test]
+    fn root_table_is_patched() {
+        let dir = tempfile::tempdir().unwrap();
+        write_repository(&dir.path().join("dep"), r#"name = "dep""#);
+        let mut loader = loader_at(dir.path(), &[("dep", path_source("dep"))]);
+        let root = loader
+            .load_root(
+                [(
+                    "dep".to_owned(),
+                    git_source("https://invalid.example/repo.git", None),
+                )]
+                .into_iter()
+                .collect(),
+                false,
+            )
+            .unwrap();
+        let dep = &loader.repositories[root].as_ref().unwrap().repositories["dep"];
+        assert_eq!(
+            loader.repositories[*dep].as_ref().unwrap().source.dir,
+            dir.path().join("dep"),
+            "the dependency must have been loaded from the patched source"
+        );
+        assert_eq!(unused_aliases(&loader), Vec::<String>::new());
+    }
+
+    /// Transitive tables are patched: a dependency declared by a loaded
+    /// repository is redirected by the project-level patch.
+    #[test]
+    fn transitive_table_is_patched() {
+        let dir = tempfile::tempdir().unwrap();
+        write_repository(
+            &dir.path().join("mid"),
+            r#"
+            name = "mid"
+            [repositories]
+            dep = { path = "../nowhere" }
+            "#,
+        );
+        write_repository(&dir.path().join("dep"), r#"name = "dep""#);
+        let mut loader = loader_at(dir.path(), &[("dep", path_source("dep"))]);
+        let root = loader
+            .load_root(
+                [("mid".to_owned(), path_source("mid"))]
+                    .into_iter()
+                    .collect(),
+                false,
+            )
+            .unwrap();
+        let mid_idx = loader.repositories[root].as_ref().unwrap().repositories["mid"].clone();
+        let mid = loader.repositories[mid_idx].as_ref().unwrap();
+        assert!(
+            mid.repositories.contains_key("dep"),
+            "the patched transitive dependency must have been loaded"
+        );
+        assert_eq!(unused_aliases(&loader), Vec::<String>::new());
+    }
+
+    /// Two scopes patched to the same source collapse into one repository.
+    #[test]
+    fn two_scopes_patched_to_the_same_source_merge() {
+        let dir = tempfile::tempdir().unwrap();
+        write_repository(&dir.path().join("dep"), r#"name = "dep""#);
+        // A second scope declaring `dep` differently; without the patch, it
+        // would fail to load `../nowhere`.
+        write_repository(
+            &dir.path().join("mid"),
+            r#"
+            name = "mid"
+            [repositories]
+            dep = { path = "../nowhere" }
+            "#,
+        );
+        let mut loader = loader_at(dir.path(), &[("dep", path_source("dep"))]);
+        let root = loader
+            .load_root(
+                [
+                    (
+                        "dep".to_owned(),
+                        git_source("https://invalid.example/repo.git", None),
+                    ),
+                    ("mid".to_owned(), path_source("mid")),
+                ]
+                .into_iter()
+                .collect(),
+                false,
+            )
+            .unwrap();
+        let repository = loader.repositories[root].as_ref().unwrap();
+        let root_dep = repository.repositories["dep"].clone();
+        let mid_idx = repository.repositories["mid"].clone();
+        let mid_dep = loader.repositories[mid_idx].as_ref().unwrap().repositories["dep"].clone();
+        assert_eq!(
+            root_dep, mid_dep,
+            "all scopes patched to the same source must resolve to one repository"
+        );
+        assert_eq!(unused_aliases(&loader), Vec::<String>::new());
+    }
 }

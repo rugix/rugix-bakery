@@ -8,9 +8,10 @@ use library::Library;
 use reportify::ResultExt;
 use repositories::ProjectRepositories;
 use si_crypto_hashes::HashAlgorithm;
+use tracing::{info, warn};
 
-use crate::config::load_config;
 use crate::config::projects::ProjectConfig;
+use crate::config::{load_config, LocalProjectOverrides};
 use crate::BakeryResult;
 
 pub mod catalog;
@@ -149,17 +150,52 @@ impl ProjectLoader {
         )
     }
 
+    /// The full path to the local overrides file.
+    ///
+    /// The overrides file is discovered next to the configuration file by
+    /// replacing its extension:
+    /// * `rugix-bakery.toml` -> `rugix-bakery.local.toml`,
+    /// * `--config custom.toml` -> `custom.local.toml`.
+    fn local_overrides_path(&self) -> PathBuf {
+        self.config_path().with_extension("local.toml")
+    }
+
     /// Load the project.
     pub fn load(self) -> BakeryResult<ProjectRef> {
-        let config = load_config(&self.config_path())?;
+        let mut config: ProjectConfig = load_config(&self.config_path())?;
+        self.apply_local_overrides(&mut config)?;
         Ok(ProjectRef {
             shared: Arc::new(ProjectShared {
                 dir: self.project_dir,
-                config,
+                config: config.into(),
                 id: self.local_id,
                 lazy: ProjectLazy::default(),
             }),
         })
+    }
+
+    /// Apply local overrides from a `*.local.toml` file next to the
+    /// configuration file, if present.
+    fn apply_local_overrides(&self, config: &mut ProjectConfig) -> BakeryResult<()> {
+        let overrides_path = self.local_overrides_path();
+        if !overrides_path.is_file() {
+            return Ok(());
+        }
+        info!("applying local overrides from {}", overrides_path.display());
+        let overrides: LocalProjectOverrides = load_config(&overrides_path)?;
+        if let Some(local_patches) = overrides.patch {
+            let patches = config.patch.get_or_insert_with(Default::default);
+            for (alias, source) in local_patches {
+                if patches.contains_key(&alias) {
+                    warn!(
+                        "local patch for {alias} overrides the [patch] entry of {}",
+                        self.config_path().display()
+                    );
+                }
+                patches.insert(alias, source);
+            }
+        }
+        Ok(())
     }
 }
 
@@ -170,4 +206,132 @@ fn local_id_from_bytes(bytes: &[u8]) -> LocalProjectId {
             .raw_hex_string()[..10]
             .into(),
     )
+}
+
+#[cfg(test)]
+mod project_tests {
+    use super::*;
+    use crate::config::repositories::{PathSourceConfig, SourceConfig};
+
+    /// Local patch entries are merged over the shared ones and win on collision.
+    #[test]
+    fn local_overrides_merge_and_win() {
+        let project_dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            project_dir.path().join("rugix-bakery.toml"),
+            r#"
+[patch]
+shared-only = { path = "shared-only" }
+shadowed = { path = "shared" }
+"#,
+        )
+        .unwrap();
+        std::fs::write(
+            project_dir.path().join("rugix-bakery.local.toml"),
+            r#"
+[patch]
+shadowed = { path = "local-wins" }
+local-only = { path = "local-only" }
+"#,
+        )
+        .unwrap();
+        let project = ProjectLoader::new(project_dir.path()).load().unwrap();
+        let patches = project.config().patch.as_ref().unwrap();
+        assert_eq!(
+            patches.get("shared-only").unwrap(),
+            &SourceConfig::Path(crate::config::repositories::PathSourceConfig {
+                path: "shared-only".into(),
+            })
+        );
+        assert_eq!(
+            patches.get("shadowed").unwrap(),
+            &SourceConfig::Path(crate::config::repositories::PathSourceConfig {
+                path: "local-wins".into(),
+            }),
+            "local patches must take precedence over shared ones"
+        );
+        assert_eq!(
+            patches.get("local-only").unwrap(),
+            &SourceConfig::Path(crate::config::repositories::PathSourceConfig {
+                path: "local-only".into(),
+            })
+        );
+    }
+
+    #[test]
+    fn local_overrides_are_optional() {
+        let project_dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            project_dir.path().join("rugix-bakery.toml"),
+            r#"
+[patch]
+"https://github.com/x/shared-only.git" = { path = "shared-only" }
+"#,
+        )
+        .unwrap();
+        let project = ProjectLoader::new(project_dir.path()).load().unwrap();
+        let patches = project.config().patch.as_ref().unwrap();
+        assert_eq!(patches.len(), 1);
+    }
+
+    /// The overrides path pairs with the configuration file, custom names included.
+    #[test]
+    fn local_overrides_path_follows_config_file() {
+        let project_dir = tempfile::tempdir().unwrap();
+        let loader = ProjectLoader::new(project_dir.path());
+        assert_eq!(
+            loader.local_overrides_path(),
+            project_dir.path().join("rugix-bakery.local.toml")
+        );
+        let loader = loader.with_config_file(Some(Path::new("cfg/custom.toml")));
+        assert_eq!(
+            loader.local_overrides_path(),
+            project_dir.path().join("cfg/custom.local.toml")
+        );
+    }
+
+    /// The repository root, for locating the bundled share directory in tests.
+    fn project_root() -> std::path::PathBuf {
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join("..")
+            .canonicalize()
+            .unwrap()
+    }
+
+    /// A local override with an alias key patches the root declaration of the
+    /// same alias; the patched repository resolves end-to-end.
+    #[test]
+    fn local_override_patches_root_declaration() {
+        let project_dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            project_dir.path().join("rugix-bakery.toml"),
+            r#"
+[repositories]
+rugix-extra = { git = "https://github.com/rugix/rugix-extra.git", branch = "v0.9" }
+"#,
+        )
+        .unwrap();
+        std::fs::write(
+            project_dir.path().join("rugix-bakery.local.toml"),
+            r#"
+[patch]
+rugix-extra = { path = "x" }
+"#,
+        )
+        .unwrap();
+        let override_dir = project_dir.path().join("x");
+        std::fs::create_dir(&override_dir).unwrap();
+        std::fs::write(override_dir.join("rugix-repository.toml"), "").unwrap();
+        // The core repository ships with the bakery share directory.
+        std::env::set_var("RUGIX_BAKERY_SHARE_DIR", project_root().join("container"));
+        let project = ProjectLoader::new(project_dir.path()).load().unwrap();
+        let repositories = project.repositories().unwrap();
+        let root = &repositories.repositories[repositories.root_repository];
+        let resolved_repository_idx = root.repositories["rugix-extra"];
+        assert_eq!(
+            repositories[resolved_repository_idx].source.config,
+            SourceConfig::Path(PathSourceConfig::new("x"))
+        );
+    }
 }
