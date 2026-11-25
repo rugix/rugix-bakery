@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Support external template repositories in `init`, both git repos and local
+  directories.
+- Replace the bundled `templates.toml` manifest with `rugix-templates.toml`.
+
 ## Version 0.9.6
 
 - Add opt-in persistent rule cache directories through `uses-cache-dir` and

@@ -218,7 +218,7 @@ filesystem = { type = "ext4", clamp-mtime = "2025-01-02T03:04:05+01:00" }
     #[test]
     fn bundled_template_configurations() {
         let templates = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../container/templates");
-        let catalog: toml::Table = load_config(&templates.join("templates.toml")).unwrap();
+        let catalog: toml::Table = load_config(&templates.join("rugix-templates.toml")).unwrap();
         for name in catalog.keys() {
             let path = templates.join(name).join("rugix-bakery.toml");
             let config: ProjectConfig = load_config(&path).unwrap();

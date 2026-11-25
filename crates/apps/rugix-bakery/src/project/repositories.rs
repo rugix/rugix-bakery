@@ -1,18 +1,14 @@
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use sha1::{Digest, Sha1};
 use tracing::debug;
 
-use xscript::{read_str, run, LocalEnv, Run};
-
 use reportify::{bail, ResultExt};
 
-use crate::config::repositories::{
-    GitSourceConfig, PathSourceConfig, RepositoryConfig, SourceConfig,
-};
+use crate::config::repositories::{PathSourceConfig, RepositoryConfig, SourceConfig};
+use crate::project::git::{check_out_git_source, compute_git_source_id, SourceId};
 use crate::utils::idx_vec::{new_idx_type, IdxVec};
 use crate::{paths, BakeryResult};
 
@@ -247,78 +243,15 @@ impl Source {
     }
 }
 
-/// Globally unique id of a source.
-///
-/// The id is computed by hashing the path or URL of a source.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SourceId(Arc<str>);
-
-impl SourceId {
-    /// The string representation of the id.
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-
-    /// The short string representation of the id.
-    pub fn as_short_str(&self) -> &str {
-        &self.as_str()[..6]
-    }
-}
-
-impl Display for SourceId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
 /// Compute the globally unique id of the source.
 fn compute_source_id(config: &SourceConfig) -> SourceId {
-    let mut hasher = Sha1::new();
     match config {
         SourceConfig::Path(path_source) => {
+            let mut hasher = Sha1::new();
             hasher.update(b"path");
             hasher.update(path_source.path.as_bytes());
+            SourceId::from_hash(&hex::encode(&hasher.finalize()[..]))
         }
-        SourceConfig::Git(git_source) => {
-            hasher.update(b"git");
-            hasher.update(git_source.url.as_bytes());
-            if let Some(inner_path) = &git_source.dir {
-                hasher.update(inner_path.as_bytes());
-            }
-        }
+        SourceConfig::Git(git_source) => compute_git_source_id(git_source),
     }
-    SourceId(hex::encode(&hasher.finalize()[..]).into())
-}
-
-/// Check out the Git repository in the given directory.
-///
-/// The *fetch* flag indicates whether updates should be fetched from the remote.
-fn check_out_git_source(config: &GitSourceConfig, path: &Path, fetch: bool) -> BakeryResult<()> {
-    if !path.exists() {
-        run!(["git", "clone", &config.url, path]).whatever("unable to clone repository")?;
-    }
-    let env = LocalEnv::new(path);
-    if fetch {
-        run!(env, ["git", "fetch", "--all"]).whatever("unable to fetch updates of repository")?;
-    }
-    macro_rules! rev_parse {
-        ($rev:literal) => {
-            read_str!(env, ["git", "rev-parse", "--verify", $rev]).whatever("unable to parse rev")
-        };
-    }
-    let mut commit = rev_parse!("refs/remotes/origin/HEAD^{{commit}}")?;
-    if let Some(tag) = &config.tag {
-        commit = rev_parse!("refs/tags/{tag}^{{commit}}")?;
-    }
-    if let Some(branch) = &config.branch {
-        commit = rev_parse!("refs/remotes/origin/{branch}^{{commit}}")?;
-    }
-    if let Some(rev) = &config.rev {
-        commit = rev_parse!("{rev}^{{commit}}")?;
-    }
-    let head = rev_parse!("HEAD^{{commit}}")?;
-    if head != commit {
-        run!(env, ["git", "checkout", commit]).whatever("error checking out commit")?;
-    }
-    Ok(())
 }

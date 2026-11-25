@@ -1,0 +1,18 @@
+//! Template manifest.
+
+/// Template metadata.
+///
+/// Describes a single named template.
+record TemplateInfo {
+    /// Description of the template.
+    description: string,
+    /// Path of the template directory relative to the manifest root.
+    ///
+    /// Defaults to a directory named after the template.
+    path?: string,
+}
+
+/// Template manifest.
+///
+/// Maps template names to their metadata.
+alias TemplateManifest: [string: TemplateInfo]
