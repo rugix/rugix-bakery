@@ -198,80 +198,92 @@ impl Pipeline {
             )]),
         )?;
         let mut filesystems = BTreeMap::new();
-        let mut partition_images = BTreeMap::new();
+        // Partition filesystem trees are addressed by their declared roots,
+        // exactly like image-layout sizing: nested roots resolve within the
+        // prepared tree of their top-level name.
+        let mut roots = BTreeMap::new();
+        for root in layout
+            .partitions
+            .iter()
+            .flatten()
+            .filter_map(|partition| partition.root.as_deref())
+        {
+            validate_root(root)?;
+            let first = Path::new(root)
+                .components()
+                .next()
+                .expect("root was validated")
+                .as_os_str()
+                .to_str()
+                .expect("configuration is UTF-8");
+            roots.insert(
+                PathBuf::from(first),
+                match first {
+                    "boot" => inputs["boot"].clone(),
+                    "config" => inputs["config"].clone(),
+                    _ => select(
+                        inputs["layer"].clone(),
+                        &format!("roots/{first}"),
+                        ArtifactKind::Directory,
+                    )?,
+                },
+            );
+        }
+        let populated = planner.core_rule(
+            "image-populate-partitions",
+            BTreeMap::from([
+                ("layout".into(), Artifact::json(&layout)?),
+                ("image".into(), inputs["image"].clone()),
+                ("roots".into(), directory(roots)),
+            ]),
+            BTreeMap::new(),
+        )?;
         for (specification, partition) in layout.partitions.iter().flatten().zip(&table.partitions)
         {
             let Some(filesystem) = &specification.filesystem else {
                 continue;
             };
-            let tree = match specification.root.as_deref() {
-                Some(root) => root_tree(&inputs, &boot, root)?,
-                None => directory(BTreeMap::new()),
-            };
-            let mut parameters = BTreeMap::new();
-            let capacity = table.blocks_to_bytes(partition.size).into_raw();
-            let name = match filesystem {
-                Filesystem::Ext4(options) => {
-                    parameters.insert("size".into(), integer(capacity)?);
-                    parameters.insert(
-                        "mkfs-options".into(),
-                        shell_options(options.additional_options.as_deref())?,
-                    );
-                    let archive_parameters = options
-                        .clamp_mtime
-                        .map(|time| {
-                            (
-                                "clamp-mtime".into(),
-                                ParameterValue::String(time.to_string().into()),
-                            )
-                        })
-                        .into_iter()
-                        .collect();
-                    let archive = planner.core_rule(
-                        "archive-tree",
-                        BTreeMap::from([("tree".into(), tree.clone())]),
-                        archive_parameters,
-                    )?;
-                    filesystems.insert(
-                        PathBuf::from(format!("partition-{}.tar", partition.number)),
-                        archive["archive"].clone(),
-                    );
-                    "image-ext4"
-                }
-                Filesystem::Fat32 => {
-                    parameters.insert("size".into(), integer(capacity)?);
-                    "image-fat"
-                }
-                Filesystem::Squashfs(options) => {
-                    parameters.insert("compression".into(), ParameterValue::String("gzip".into()));
-                    let mut args = options
-                        .additional_options
-                        .as_deref()
-                        .unwrap_or_default()
-                        .to_vec();
-                    if options.no_compression.unwrap_or(false) {
-                        args.extend(["-noI", "-noD", "-noF", "-noX"].map(Str::from));
-                    }
-                    parameters.insert("mkfs-options".into(), shell_options(Some(&args))?);
-                    "image-squashfs"
-                }
-            };
-            let result =
-                planner.core_rule(name, BTreeMap::from([("tree".into(), tree)]), parameters)?;
+            // The pipeline additionally archives ext4 trees so that bundle
+            // payloads can carry partition filesystems.
+            if let Filesystem::Ext4(options) = filesystem {
+                let tree = match specification.root.as_deref() {
+                    Some(root) => root_tree(&inputs, &boot, root)?,
+                    None => directory(BTreeMap::new()),
+                };
+                let archive_parameters = options
+                    .clamp_mtime
+                    .map(|time| {
+                        (
+                            "clamp-mtime".into(),
+                            ParameterValue::String(time.to_string().into()),
+                        )
+                    })
+                    .into_iter()
+                    .collect();
+                let archive = planner.core_rule(
+                    "archive-tree",
+                    BTreeMap::from([("tree".into(), tree)]),
+                    archive_parameters,
+                )?;
+                filesystems.insert(
+                    PathBuf::from(format!("partition-{}.tar", partition.number)),
+                    archive["archive"].clone(),
+                );
+            }
             filesystems.insert(
                 PathBuf::from(format!("partition-{}.img", partition.number)),
-                result["image"].clone(),
-            );
-            partition_images.insert(
-                PathBuf::from(partition.number.to_string()),
-                result["image"].clone(),
+                select(
+                    populated["partitions"].clone(),
+                    &partition.number.to_string(),
+                    ArtifactKind::File,
+                )?,
             );
         }
         let image = planner.core_rule(
             "assemble-disk",
             BTreeMap::from([
                 ("image".into(), inputs["image"].clone()),
-                ("partitions".into(), directory(partition_images)),
+                ("partitions".into(), populated["partitions"].clone()),
             ]),
             BTreeMap::new(),
         )?;
@@ -414,19 +426,6 @@ fn select(source: Artifact, path: &str, kind: ArtifactKind) -> BakeryResult<Arti
 fn integer(value: u64) -> BakeryResult<ParameterValue> {
     Ok(ParameterValue::Integer(
         i64::try_from(value).whatever("rule parameter exceeds integer range")?,
-    ))
-}
-
-fn shell_options(options: Option<&[Str]>) -> BakeryResult<ParameterValue> {
-    Ok(ParameterValue::String(
-        shlex::try_join(
-            options
-                .unwrap_or_default()
-                .iter()
-                .map(|value| value.as_str()),
-        )
-        .whatever("formatter arguments contain NUL")?
-        .into(),
     ))
 }
 
